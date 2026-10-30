@@ -3,9 +3,11 @@
 # OX-DIGITAL Education Platform
 ### **Architected & Developed by المهندس / حسام سمير (Hosam Samer)**
 
-[![OX-DIGITAL](https://img.shields.io/badge/OX--DIGITAL-Enterprise%20Solution-8B0000?style=for-the-badge&logo=codeforces&logoColor=white)](https://ox-digital.com)
+[![OX-DIGITAL](https://img.shields.io/badge/OX--DIGITAL-Enterprise%20Solution-8B0000?style=for-the-badge&logo=codeforces&logoColor=white)](https://ox-digital-eg.vercel.app/)
 [![Status](https://img.shields.io/badge/Status-Active%20Development-success?style=for-the-badge)]()
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)]()
+[![Node.js](https://img.shields.io/badge/Node.js-v24-green?style=for-the-badge&logo=nodedotjs)](https://nodejs.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-blue?style=for-the-badge&logo=postgresql)](https://www.postgresql.org)
 
 *An advanced enterprise educational platform designed for schools, teachers, and tutoring centers, under the direct supervision of Engineer Hossam Samer.*
 
@@ -16,9 +18,18 @@
 ## 🎨 UI/UX Branding & Identity
 
 The platform embraces the official **OX-DIGITAL** corporate identity to deliver a modern, professional, and immersive user experience:
-* **Primary Color Palette:** Dark Burgundy & Black tones.
-* **Visual Accents:** Glowing Red Neon accents with clean typography.
-* **Frontend Architecture:** All client-side components are located under the `apps/frontend` directory.
+* **Primary Color Palette:** Dark Burgundy & Black tones (`#0a0a0a` / `#58111a`).
+* **Visual Accents:** Glowing Red Neon accents (`#ff0033`) with clean typography.
+* **Frontend Architecture:** All client-side components and Tailwind/Vite styles are located under the `apps/frontend` directory.
+
+---
+
+## 🏗️ System Architecture & Tech Stack
+
+* **Monorepo Structure:** Managed efficiently via npm workspaces (`apps/`, `services/`, `packages/`).
+* **Backend & Micro-services:** Node.js, Express, TypeScript, and specialized background workers.
+* **Database & ORM:** PostgreSQL powered by Prisma ORM for robust relational mapping.
+* **AI & Automation:** Integrated Google Generative AI capabilities for smart educational tools.
 
 ---
 
