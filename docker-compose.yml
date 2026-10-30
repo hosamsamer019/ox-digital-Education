@@ -1,0 +1,157 @@
+name: ox-digital-dev
+
+
+services:
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    container_name: ox-digital-dev-frontend
+    restart: always
+    ports:
+      # Avoid host port 80 conflict with any running services (e.g. alsaden-nginx)
+      - "${DEV_HTTP_PORT:-3000}:80"
+    environment:
+      - VITE_AUTH_API_URL=http://auth-service:4001/api/auth
+      - VITE_USER_API_URL=http://user-service:4002/api/users
+      - VITE_AI_API_URL=http://ai-service:4003/api/ai
+      - VITE_COURSE_API_URL=http://course-service:4004/api/courses
+      - VITE_ANALYTICS_API_URL=http://analytics-service:4005/api/analytics
+    depends_on:
+      - auth-service
+      - user-service
+      - ai-service
+      - course-service
+      - analytics-service
+    networks:
+      - ox-digital-dev-network
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: auth-service
+    container_name: ox-digital-dev-auth-service
+    restart: always
+    ports:
+      - "4001:4001"
+    env_file: .env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ox-digital-dev-network
+
+  user-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: user-service
+    container_name: ox-digital-dev-user-service
+    restart: always
+    ports:
+      - "4002:4002"
+    env_file: .env
+    depends_on:
+      - postgres
+    networks:
+      - ox-digital-dev-network
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: ai-service
+    container_name: ox-digital-dev-ai-service
+    restart: always
+    ports:
+      - "4003:4003"
+    env_file: .env
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - ox-digital-dev-network
+
+  course-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: course-service
+    container_name: ox-digital-dev-course-service
+    restart: always
+    ports:
+      - "4004:4004"
+    env_file: .env
+    depends_on:
+      - postgres
+    networks:
+      - ox-digital-dev-network
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: analytics-service
+    container_name: ox-digital-dev-analytics-service
+    restart: always
+    ports:
+      - "4005:4005"
+    env_file: .env
+    depends_on:
+      - postgres
+    networks:
+      - ox-digital-dev-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: ox-digital-dev-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-ox_digital_dev}
+    ports:
+      # Ephemeral/alternative host port to prevent conflicts with host 5432
+      - "${DEV_DB_PORT:-5433}:5432"
+    volumes:
+      - ox-digital-dev-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-ox_digital_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ox-digital-dev-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ox-digital-dev-redis
+    restart: always
+    ports:
+      - "${DEV_REDIS_PORT:-6380}:6379"
+    volumes:
+      - ox-digital-dev-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ox-digital-dev-network
+
+networks:
+  ox-digital-dev-network:
+    name: ox-digital-dev-network
+    driver: bridge
+
+volumes:
+  ox-digital-dev-postgres-data:
+    name: ox-digital-dev-postgres-data
+  ox-digital-dev-redis-data:
+    name: ox-digital-dev-redis-data

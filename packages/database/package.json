@@ -1,0 +1,24 @@
+{
+  "name": "@smartmath/database",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "npm run generate && tsc && node -e \"const fs=require('fs'); if(fs.existsSync('dist/src/index.js')) fs.copyFileSync('dist/src/index.js', 'dist/index.js'); if(fs.existsSync('dist/src/index.d.ts')) fs.copyFileSync('dist/src/index.d.ts', 'dist/index.d.ts');\"",
+    "generate": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.9.1",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^25.6.0",
+    "prisma": "^5.9.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "prisma": {
+    "seed": "ts-node --esm prisma/seed.ts"
+  }
+}

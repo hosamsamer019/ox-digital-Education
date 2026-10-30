@@ -1,0 +1,108 @@
+name: ox-digital-dev-hls
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: ox-digital-dev-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "127.0.0.1:6381:6379"
+    volumes:
+      - ox-digital-dev-redis-data:/data
+    networks:
+      - ox-digital-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    container_name: ox-digital-dev-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: devminioadmin
+      MINIO_ROOT_PASSWORD: devminiopassword123
+    ports:
+      - "127.0.0.1:9100:9000"
+      - "127.0.0.1:9101:9001"
+    volumes:
+      - ox-digital-dev-minio-data:/data
+    networks:
+      - ox-digital-dev-network
+
+  video-worker:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: video-worker
+    image: ox-digital-dev-video-worker:local-dev
+    container_name: ox-digital-dev-video-worker
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:password@ox-digital-dev-postgres:5432/ox_digital_dev?schema=public
+      REDIS_URL: redis://ox-digital-dev-redis:6379
+      CLOUDFLARE_R2_ENDPOINT: http://ox-digital-dev-minio:9000
+      CLOUDFLARE_R2_ACCESS_KEY_ID: devminioadmin
+      CLOUDFLARE_R2_SECRET_ACCESS_KEY: devminiopassword123
+      CLOUDFLARE_R2_BUCKET_NAME: ox-digital-dev-hls
+      S3_FORCE_PATH_STYLE: "true"
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "ffmpeg -version >/dev/null 2>&1 && exit 0"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - ox-digital-dev-network
+
+  course-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: course-service
+    image: ox-digital-dev-course-service:local-dev
+    container_name: ox-digital-dev-course-service
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4014:4004"
+    environment:
+      NODE_ENV: development
+      PORT: 4004
+      DATABASE_URL: postgresql://postgres:password@ox-digital-dev-postgres:5432/ox_digital_dev?schema=public
+      REDIS_URL: redis://ox-digital-dev-redis:6379
+      DISABLE_REDIS: "true"
+      JWT_SECRET: dev-only-jwt-secret-do-not-use-in-production-12345
+      CLOUDFLARE_R2_ENDPOINT: http://ox-digital-dev-minio:9000
+      CLOUDFLARE_R2_ACCESS_KEY_ID: devminioadmin
+      CLOUDFLARE_R2_SECRET_ACCESS_KEY: devminiopassword123
+      CLOUDFLARE_R2_BUCKET_NAME: ox-digital-dev-hls
+      S3_FORCE_PATH_STYLE: "true"
+    depends_on:
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    networks:
+      - ox-digital-dev-network
+
+volumes:
+  ox-digital-dev-redis-data:
+    name: ox-digital-dev-redis-data
+  ox-digital-dev-minio-data:
+    name: ox-digital-dev-minio-data
+
+networks:
+  ox-digital-dev-network:
+    name: ox-digital-dev-network
+    external: true

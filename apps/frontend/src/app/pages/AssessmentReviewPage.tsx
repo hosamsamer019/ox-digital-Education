@@ -1,0 +1,72 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { assessmentService } from '../services/assessment.service';
+import AssessmentReview from '../components/ui/AssessmentReview';
+import { ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+
+export default function AssessmentReviewPage() {
+  const { id, attemptId } = useParams<{ id: string; attemptId: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reviewData, setReviewData] = useState<any>(null);
+
+  useEffect(() => {
+    if (id && attemptId) {
+      fetchReview();
+    }
+  }, [id, attemptId]);
+
+  const fetchReview = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await assessmentService.getAssessmentReview(id!, attemptId!);
+      setReviewData(res.data);
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        setError('لم يتم العثور على المحاولة');
+      } else if (err.response?.status === 403) {
+        setError('غير مصرح لك بالوصول إلى هذه النتيجة');
+      } else {
+        setError('حدث خطأ أثناء تحميل النتيجة التفصيلية');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isTeacher = user?.role === 'TEACHER' || user?.role === 'ADMIN';
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-[#090b10] p-4 sm:p-6 lg:p-8 font-['Cairo']" dir="rtl">
+      <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-[#9e1b1b] dark:hover:text-white font-bold transition-colors"
+        >
+          <ArrowRight className="w-5 h-5" />
+          العودة
+        </button>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">النتيجة التفصيلية ومراجعة الإجابات</h1>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="w-12 h-12 text-[#9e1b1b] animate-spin" />
+        </div>
+      ) : error ? (
+        <div className="max-w-4xl mx-auto bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300 p-8 rounded-2xl flex flex-col items-center justify-center text-center border border-rose-200 dark:border-rose-900/40">
+          <AlertTriangle className="w-12 h-12 text-[#9e1b1b] mb-4" />
+          <h3 className="text-xl font-bold mb-2">عذراً</h3>
+          <p>{error}</p>
+        </div>
+      ) : reviewData ? (
+        <AssessmentReview data={reviewData} isTeacher={isTeacher} />
+      ) : null}
+    </div>
+  );
+}

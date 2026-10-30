@@ -1,0 +1,188 @@
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import axios from 'axios';
+import { authApi } from '../services/api';
+
+export type UserRole = 'ONLINE_STUDENT' | 'CENTER_STUDENT' | 'TEACHER' | 'ADMIN' | 'PARENT';
+
+export function getDefaultRouteForRole(role?: UserRole | string | null): string {
+  switch (role) {
+    case 'ONLINE_STUDENT':
+      return '/student/online/home';
+    case 'CENTER_STUDENT':
+      return '/student/center/home';
+    case 'TEACHER':
+      return '/teacher/home';
+    case 'PARENT':
+      return '/parent/home';
+    case 'ADMIN':
+      return '/admin/home';
+    default:
+      return '/';
+  }
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  avatar?: string;
+  phone?: string;
+  grade?: string;
+  institution?: string;
+  subscriptionPlan?: 'basic' | 'pro' | 'enterprise';
+  isActive: boolean;
+  parentId?: string;
+  centerGroupId?: string;
+  centerGroup?: any; // extended data from profile
+}
+
+interface AuthContextType {
+  user: User | null;
+  login: (email: string, password: string, role: UserRole) => Promise<boolean>;
+  loginGuest: (name: string, phone: string, code: string) => Promise<{ success: boolean; assessmentId?: string; message?: string; code?: string; openAt?: string | null; closeAt?: string | null; user?: any }>;
+  register: (data: { name: string; email: string; password: string; role: UserRole }) => Promise<void>;
+  logout: () => Promise<void>;
+  checkAuth: () => Promise<void>;
+  isAuthenticated: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem('edu-user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  useEffect(() => {
+    const syncAuth = (e: StorageEvent) => {
+      if (e.key === 'edu-user') {
+        setUser(e.newValue ? JSON.parse(e.newValue) : null);
+      }
+      if (e.key === 'token' && !e.newValue) {
+        setUser(null);
+      }
+    };
+    window.addEventListener('storage', syncAuth);
+    return () => window.removeEventListener('storage', syncAuth);
+  }, []);
+
+  const fetchExtendedProfile = async (baseUser: Partial<User>) => {
+    try {
+      const { userService } = await import('../services/user.service');
+      const profile = await userService.getProfile();
+      return { ...baseUser, ...profile };
+    } catch (e) {
+      console.warn('Failed to fetch extended profile, using base user');
+      return baseUser as User;
+    }
+  };
+
+  const login = async (email: string, password: string, role: UserRole): Promise<boolean> => {
+    try {
+      const response = await authApi.post('/login', { email, password, role });
+      const { token, user: loggedUser } = response.data;
+      
+      localStorage.setItem('token', token);
+      
+      // Fetch extended profile
+      const fullUser = await fetchExtendedProfile(loggedUser);
+      
+      setUser(fullUser);
+      localStorage.setItem('edu-user', JSON.stringify(fullUser));
+      return true;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        // Expected invalid credentials: do not console.error
+      } else {
+        console.error('Login failed:', error);
+      }
+      return false;
+    }
+  };
+
+  const loginGuest = async (name: string, phone: string, code: string): Promise<any> => {
+    try {
+      const response = await authApi.post('/external-exam', { 
+        name: name.trim(), 
+        phone: phone?.trim() ? phone.trim() : undefined, 
+        code: code.trim() 
+      });
+      const { token, assessmentId, user: guestUser } = response.data;
+      
+      localStorage.setItem('token', token);
+      setUser(guestUser);
+      localStorage.setItem('edu-user', JSON.stringify(guestUser));
+      return { success: true, assessmentId, user: guestUser };
+    } catch (error: any) {
+      console.error('Guest login failed:', error);
+      const data = error.response?.data;
+      return { 
+        success: false, 
+        message: data?.message || (data?.errors && data.errors[0]?.message) || 'فشل تسجيل الدخول الخارجي',
+        code: data?.code,
+        openAt: data?.openAt || null,
+        closeAt: data?.closeAt || null
+      };
+    }
+  };
+
+  const register = async (data: { name: string; email: string; password: string; role: UserRole }): Promise<void> => {
+    const response = await authApi.post('/register', data);
+    const { token, user: registeredUser } = response.data;
+    
+    localStorage.setItem('token', token);
+    
+    const fullUser = await fetchExtendedProfile(registeredUser);
+    
+    setUser(fullUser);
+    localStorage.setItem('edu-user', JSON.stringify(fullUser));
+  };
+
+  const logout = async () => {
+    try {
+      await authApi.post('/logout');
+    } catch (error) {
+      console.error('Logout API failed:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('token');
+      localStorage.removeItem('edu-user');
+    }
+  };
+
+  const checkAuth = async () => {
+    try {
+      let baseUser: any = null;
+      try {
+        const res = await authApi.get('/me');
+        baseUser = res.data;
+      } catch (authErr) {
+        // Fallback if /me fails
+        const { userService } = await import('../services/user.service');
+        baseUser = await userService.getProfile();
+      }
+      
+      if (baseUser) {
+        const fullUser = await fetchExtendedProfile(baseUser);
+        setUser(fullUser);
+        localStorage.setItem('edu-user', JSON.stringify(fullUser));
+      }
+    } catch (err) {
+      console.error('checkAuth failed:', err);
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, loginGuest, register, logout, checkAuth, isAuthenticated: !!user }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+}

@@ -1,0 +1,66 @@
+{
+  "testRunId": "run-20261026-215500",
+  "courseId": "53d6bf94-2ad9-47bb-96d0-46fb4aa36b58",
+  "lessonId": "8003a954-fbe4-492c-871a-21776f22d427",
+  "mediaId": "7f17a981-22d2-4023-bfa3-3393882a989c",
+  "canonicalSource": "gdrive:1GpUrvzEoEshP6ExyC4ced8nAdEtF1_G-",
+  "storagePrefix": "videos/7f17a981-22d2-4023-bfa3-3393882a989c/",
+  "masterKey": "videos/7f17a981-22d2-4023-bfa3-3393882a989c/attempts/token-1/hls/master.m3u8",
+  "finalStatus": "COMPLETED",
+  "workerId": "worker-1-1793041298971",
+  "fencingToken": "1",
+  "durationSeconds": "",
+  "renditions": "",
+  "totalMinioObjects": 397,
+  "renditionPlaylistsCount": 3,
+  "segmentFilesCount": 393,
+  "unauthStatus": 401,
+  "unenrolledStatus": 403,
+  "authStatus": 200,
+  "hasActiveHls": true,
+  "resolvedPlayableUrl": "/api/courses/lessons/8003a954-fbe4-492c-871a-21776f22d427/hls/master.m3u8",
+  "discoveredLevels": [
+    {
+      "bandwidth": 2628000,
+      "width": 1280,
+      "height": 720,
+      "uri": "720p/index.m3u8",
+      "label": "720p HD"
+    },
+    {
+      "bandwidth": 1296000,
+      "width": 854,
+      "height": 480,
+      "uri": "480p/index.m3u8",
+      "label": "480p"
+    },
+    {
+      "bandwidth": 664000,
+      "width": 640,
+      "height": 360,
+      "uri": "360p/index.m3u8",
+      "label": "360p"
+    }
+  ],
+  "qualityOptions": [
+    {
+      "id": -1,
+      "label": "تلقائي (Auto)"
+    },
+    {
+      "id": 0,
+      "label": "720p HD",
+      "height": 720
+    },
+    {
+      "id": 1,
+      "label": "480p",
+      "height": 480
+    },
+    {
+      "id": 2,
+      "label": "360p",
+      "height": 360
+    }
+  ]
+}

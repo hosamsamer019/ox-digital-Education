@@ -1,0 +1,372 @@
+name: ox-digital-education
+
+
+services:
+  # ============================================================================
+  # Nginx Gateway (Single Public Ingress Point)
+  # ============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: ox-digital-nginx
+    ports:
+      # Defaults to 8080/8443 to safely coexist with any legacy services on host ports 80/443.
+      # Set HTTP_PORT=80 and HTTPS_PORT=443 in .env.production when cutting over to production.
+      - "${HTTP_PORT:-8080}:80"
+      - "${HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - auth-service
+      - user-service
+      - course-service
+      - ai-service
+      - analytics-service
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:80/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: always
+    networks:
+      - ox-digital-network
+
+  # ============================================================================
+  # Frontend Application (React + Vite SPA)
+  # ============================================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    container_name: ox-digital-frontend
+    restart: always
+    networks:
+      - ox-digital-network
+    # Internal only: No host port binding. Nginx proxies requests to frontend:80.
+
+  # ============================================================================
+  # Auth Service
+  # ============================================================================
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: auth-service
+    container_name: ox-digital-auth-service
+    environment:
+      - NODE_ENV=production
+      - PORT=4001
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL:-${DATABASE_URL}}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-${REFRESH_TOKEN_SECRET}}
+      - CLIENT_URL=${CLIENT_URL}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-${CLIENT_URL}}
+      - TRUST_PROXY=${TRUST_PROXY:-1}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - SENDGRID_FROM=${SENDGRID_FROM:-}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    networks:
+      - ox-digital-network
+
+  # ============================================================================
+  # User Service
+  # ============================================================================
+  user-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: user-service
+    container_name: ox-digital-user-service
+    environment:
+      - NODE_ENV=production
+      - PORT=4002
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL:-${DATABASE_URL}}
+      - JWT_SECRET=${JWT_SECRET}
+      - CLIENT_URL=${CLIENT_URL}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-${CLIENT_URL}}
+      - TRUST_PROXY=${TRUST_PROXY:-1}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+    networks:
+      - ox-digital-network
+
+  # ============================================================================
+  # AI Service
+  # ============================================================================
+  ai-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: ai-service
+    container_name: ox-digital-ai-service
+    environment:
+      - NODE_ENV=production
+      - PORT=4003
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL:-${DATABASE_URL}}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - CLIENT_URL=${CLIENT_URL}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-${CLIENT_URL}}
+      - TRUST_PROXY=${TRUST_PROXY:-1}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-mistralai/mistral-small-24b-instruct-2501}
+      - OPENROUTER_FALLBACK_MODEL=${OPENROUTER_FALLBACK_MODEL:-}
+      - OPENROUTER_EMERGENCY_MODEL=${OPENROUTER_EMERGENCY_MODEL:-}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      - OPENROUTER_SITE_URL=${OPENROUTER_SITE_URL:-http://localhost:8080}
+      - OPENROUTER_APP_NAME=${OPENROUTER_APP_NAME:-OX-DIGITAL Education}
+      - OPENROUTER_TIMEOUT_MS=${OPENROUTER_TIMEOUT_MS:-30000}
+      - OPENROUTER_MAX_RETRIES=${OPENROUTER_MAX_RETRIES:-0}
+      - OPENROUTER_ENABLE_FALLBACKS=${OPENROUTER_ENABLE_FALLBACKS:-false}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    networks:
+      - ox-digital-network
+
+  # ============================================================================
+  # Course Service
+  # ============================================================================
+  course-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: course-service
+    container_name: ox-digital-course-service
+    environment:
+      - NODE_ENV=production
+      - PORT=4004
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL:-${DATABASE_URL}}
+      - REDIS_URL=${REDIS_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - CLIENT_URL=${CLIENT_URL}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-${CLIENT_URL}}
+      - TRUST_PROXY=${TRUST_PROXY:-1}
+      - SUPABASE_URL=${SUPABASE_URL:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+      - PAYMOB_API_KEY=${PAYMOB_API_KEY:-}
+      - FAWRY_MERCHANT_CODE=${FAWRY_MERCHANT_CODE:-}
+      - FAWRY_SECURITY_KEY=${FAWRY_SECURITY_KEY:-}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
+    volumes:
+      - ox-digital-course-uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    networks:
+      - ox-digital-network
+
+  # ============================================================================
+  # Analytics Service
+  # ============================================================================
+  analytics-service:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: analytics-service
+    container_name: ox-digital-analytics-service
+    environment:
+      - NODE_ENV=production
+      - PORT=4005
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL:-${DATABASE_URL}}
+      - JWT_SECRET=${JWT_SECRET}
+      - CLIENT_URL=${CLIENT_URL}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-${CLIENT_URL}}
+      - TRUST_PROXY=${TRUST_PROXY:-1}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: always
+    networks:
+      - ox-digital-network
+
+  # ============================================================================
+  # Video Worker (Transcoding & Cloud Storage Synchronization)
+  # ============================================================================
+  video-worker:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: video-worker
+    container_name: ox-digital-video-worker
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL:-${DATABASE_URL}}
+      - REDIS_URL=${REDIS_URL}
+      - CLOUDFLARE_R2_ENDPOINT=${CLOUDFLARE_R2_ENDPOINT:-}
+      - CLOUDFLARE_R2_ACCESS_KEY_ID=${CLOUDFLARE_R2_ACCESS_KEY_ID:-}
+      - CLOUDFLARE_R2_SECRET_ACCESS_KEY=${CLOUDFLARE_R2_SECRET_ACCESS_KEY:-}
+      - CLOUDFLARE_R2_BUCKET_NAME=${CLOUDFLARE_R2_BUCKET_NAME:-}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: '4G'
+        reservations:
+          cpus: '0.5'
+          memory: '1G'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pgrep -f 'node' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    restart: always
+    networks:
+      - ox-digital-network
+
+  # ============================================================================
+  # Database Migration Runner (One-Shot Safe Migration)
+  # ============================================================================
+  prisma-migrate:
+    build:
+      context: .
+      dockerfile: services/Dockerfile
+      args:
+        SERVICE_NAME: auth-service
+    container_name: ox-digital-prisma-migrate
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL:-${DATABASE_URL}}
+    command: ["npx", "prisma", "migrate", "deploy", "--schema=/app/packages/database/prisma/schema.prisma"]
+    volumes:
+      - ./scripts:/app/scripts:ro
+    profiles:
+      - tools
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ox-digital-network
+
+  # ============================================================================
+  # PostgreSQL Database (Internal Only — Strictly Isolated)
+  # ============================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: ox-digital-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ox_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be configured in environment}
+      POSTGRES_DB: ${POSTGRES_DB:-ox_digital_education}
+    # No public port binding — isolated strictly on ox-digital-network
+    volumes:
+      - ox-digital-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-ox_admin} -d $${POSTGRES_DB:-ox_digital_education}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ox-digital-network
+
+  # ============================================================================
+  # Redis Cache & JTI Session Store (Internal Only — Strictly Isolated)
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ox-digital-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ox-digital-network
+    volumes:
+      - ox-digital-redis-data:/data
+    # No public port binding — isolated strictly on ox-digital-network
+
+  # ============================================================================
+  # Automated Database Backup Service (Dedicated Local & Cloud Storage)
+  # ============================================================================
+  pg-backup:
+    image: postgres:15-alpine
+    container_name: ox-digital-pg-backup
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - GDRIVE_CLIENT_ID=${GDRIVE_CLIENT_ID:-}
+      - GDRIVE_CLIENT_SECRET=${GDRIVE_CLIENT_SECRET:-}
+      - GDRIVE_REFRESH_TOKEN=${GDRIVE_REFRESH_TOKEN:-}
+      - GDRIVE_FOLDER_PATH=${GDRIVE_FOLDER_PATH:-OX-Digital-Backups/PostgreSQL}
+      - LOCAL_RETENTION_DAYS=${LOCAL_RETENTION_DAYS:-7}
+      - REMOTE_RETENTION_COUNT=${REMOTE_RETENTION_COUNT:-30}
+    volumes:
+      - ./scripts:/scripts:ro
+      - ./backups:/backups
+      - ox-digital-postgres-backups:/var/backups
+    entrypoint: ["/bin/sh", "-c", "apk add --no-cache python3 && printenv | grep -E '^(DATABASE_URL|GDRIVE_|LOCAL_RETENTION|REMOTE_RETENTION|BACKUP_DIR|PG|PATH)=' > /container.env && chmod 600 /container.env && echo '0 3 * * * /bin/sh /scripts/pg_backup.sh >> /var/log/cron.log 2>&1' | crontab - && crond -f -d 8"]
+    restart: always
+    networks:
+      - ox-digital-network
+
+networks:
+  ox-digital-network:
+    name: ox-digital-network
+    driver: bridge
+
+volumes:
+  ox-digital-postgres-data:
+    name: ox-digital-postgres-data
+  ox-digital-redis-data:
+    name: ox-digital-redis-data
+  ox-digital-course-uploads:
+    name: ox-digital-course-uploads
+  ox-digital-postgres-backups:
+    name: ox-digital-postgres-backups

@@ -1,0 +1,613 @@
+import { Request, Response } from 'express';
+import { db } from '../../../../packages/database/src/index.js';
+import { AuthRequest } from '../middlewares/auth.middleware.js';
+import { checkUserEnrollment } from '../utils/enrollment.js';
+import { io } from '../socket.js';
+import { normalizeExamQuestions } from '../utils/question.helper.js';
+import { sanitizeQuestionsForStudent, generateExamAccessCode, linkQuestionAssetsToAssessment } from './assessment.controller.js';
+
+export const getAllExams = async (req: AuthRequest, res: Response) => {
+  try {
+    let whereClause: any = {};
+    const requesterRole = (req.user?.role || '').toUpperCase();
+    if (requesterRole === 'TEACHER') {
+      whereClause = { course: { teacherId: req.user?.userId } };
+    } else if (requesterRole.includes('STUDENT')) {
+      whereClause = {
+        course: {
+          enrollments: {
+            some: { studentId: req.user?.userId }
+          }
+        }
+      };
+    }
+
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const skip = (page - 1) * limit;
+
+    const exams = await db.exam.findMany({
+      where: whereClause,
+      skip,
+      take: limit,
+      include: {
+        _count: { select: { attempts: true } },
+        course: { select: { title: true } },
+        attempts: requesterRole.includes('STUDENT') ? { where: { studentId: req.user?.userId } } : false
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    // Fetch corresponding assessments to include allowExternalStudents, examAccessCode, allowedIps
+    const examIds = exams.map(e => e.id);
+    const assessments = await db.assessment.findMany({
+      where: { id: { in: examIds } },
+      select: { id: true, allowExternalStudents: true, examAccessCode: true, allowedIps: true }
+    });
+    const assessmentMap = new Map(assessments.map(a => [a.id, a]));
+    
+    const mappedExams = exams.map(exam => {
+      let status = 'available';
+      let score = null;
+      if (exam.attempts && exam.attempts.length > 0) {
+        status = 'completed';
+        score = exam.attempts[0].score;
+      }
+      if (requesterRole !== 'ADMIN' && requesterRole !== 'TEACHER') {
+        exam.questions = sanitizeQuestionsForStudent(exam.questions as any) as any;
+      }
+      const { attempts, ...rest } = exam as any;
+      const assessData = assessmentMap.get(exam.id);
+      return {
+        ...rest,
+        status,
+        score,
+        allowExternalStudents: assessData?.allowExternalStudents ?? false,
+        examAccessCode: assessData?.examAccessCode ?? null,
+        allowedIps: assessData?.allowedIps ?? null
+      };
+    });
+    
+    const total = await db.exam.count({ where: whereClause });
+    
+    res.json({
+      data: mappedExams,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching exams', error: error.message });
+  }
+};
+
+export const getExamsByCourse = async (req: AuthRequest, res: Response) => {
+  try {
+    const { courseId } = req.params;
+    
+    const isEnrolled = await checkUserEnrollment(req.user, courseId);
+    if (!isEnrolled) return res.status(403).json({ message: 'Not enrolled in this course' });
+
+    const exams = await db.exam.findMany({
+      where: { courseId },
+      include: {
+        _count: { select: { attempts: true } }
+      }
+    });
+    res.json(exams);
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching exams', error: error.message });
+  }
+};
+
+export const getExamDetails = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const exam = await db.exam.findUnique({
+      where: { id },
+      include: { course: { select: { id: true, teacherId: true } } }
+    });
+    if (!exam) return res.status(404).json({ message: 'Exam not found' });
+
+    const assessData = await db.assessment.findUnique({
+      where: { id },
+      select: { allowExternalStudents: true, examAccessCode: true, allowedIps: true }
+    });
+
+    const requesterRole = (req.user?.role || '').toUpperCase();
+    const requesterId = req.user?.userId;
+
+    // Authorization & Enrollment checks
+    if (requesterRole === 'TEACHER') {
+      if (exam.course && exam.course.teacherId !== requesterId) {
+        return res.status(403).json({ message: 'Forbidden: You do not own this course or exam.' });
+      }
+    } else if (requesterRole !== 'ADMIN') {
+      // Student, Parent, Guest, External Student
+      if (exam.courseId) {
+        const isEnrolled = await checkUserEnrollment(req.user, exam.courseId);
+        const isAllowedGuest = assessData?.allowExternalStudents && (req.user?.isGuest || req.user?.isExternalStudent);
+        if (!isEnrolled && !isAllowedGuest) {
+          return res.status(403).json({ message: 'Not enrolled in this course.' });
+        }
+      }
+    }
+
+    // Fetch attempts scoped strictly by role
+    let attempts: any[] = [];
+    if (requesterRole === 'ADMIN' || requesterRole === 'TEACHER') {
+      attempts = await db.assessmentAttempt.findMany({
+        where: { assessmentId: id },
+        include: {
+          student: { select: { name: true, email: true } },
+        }
+      });
+    } else if (requesterRole === 'PARENT') {
+      attempts = await db.assessmentAttempt.findMany({
+        where: { assessmentId: id, student: { parentId: requesterId } },
+        include: {
+          student: { select: { name: true, email: true } },
+        }
+      });
+    } else {
+      // Student: only own attempts
+      attempts = await db.assessmentAttempt.findMany({
+        where: { assessmentId: id, studentId: requesterId },
+        include: {
+          student: { select: { name: true, email: true } },
+        }
+      });
+    }
+
+    if (requesterRole !== 'ADMIN' && requesterRole !== 'TEACHER') {
+      exam.questions = sanitizeQuestionsForStudent(exam.questions as any) as any;
+    }
+
+    res.json({
+      ...exam,
+      allowExternalStudents: assessData?.allowExternalStudents ?? false,
+      examAccessCode: requesterRole === 'ADMIN' || requesterRole === 'TEACHER' ? (assessData?.examAccessCode ?? null) : null,
+      allowedIps: requesterRole === 'ADMIN' || requesterRole === 'TEACHER' ? (assessData?.allowedIps ?? null) : null,
+      attempts
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching exam details', error: error.message });
+  }
+};
+
+
+import { z } from 'zod';
+
+const createExamSchema = z.object({
+  title: z.string().min(2),
+  courseId: z.string().min(1),
+  duration: z.number().min(5).optional(),
+  requiresCamera: z.boolean().optional(),
+  startTime: z.string().optional().nullable(),
+  endTime: z.string().optional().nullable(),
+  randomization: z.boolean().optional(),
+  passingScore: z.number().optional(),
+  allowExternalStudents: z.boolean().optional(),
+  allowedIps: z.string().optional().nullable(),
+  questions: z.array(z.object({
+    id: z.union([z.number(), z.string()]),
+    text: z.string(),
+    type: z.string(),
+    options: z.array(z.string()).optional(),
+    correct: z.any().optional(),
+    imageUrl: z.string().optional().nullable(),
+    imageStorageKey: z.string().optional().nullable(),
+    imageAssetId: z.string().optional().nullable(),
+    points: z.number().optional().nullable(),
+    explanation: z.string().optional().nullable(),
+    mathExpression: z.string().optional().nullable(),
+    diagram: z.any().optional().nullable(),
+    given: z.any().optional().nullable(),
+    required: z.string().optional().nullable(),
+    generationLogic: z.any().optional(),
+    solutionSteps: z.any().optional(),
+    solutionExplanation: z.string().optional(),
+    validationStatus: z.string().optional()
+  }).passthrough()).optional()
+});
+
+export const createExam = async (req: AuthRequest, res: Response) => {
+  try {
+    const requesterRole = (req.user?.role || '').toUpperCase();
+    const requesterId = req.user?.userId;
+
+    const validatedData = createExamSchema.parse(req.body);
+    const { title, courseId, duration, questions, requiresCamera, startTime, endTime, randomization, passingScore, allowExternalStudents, allowedIps } = validatedData;
+    
+    const course = await db.course.findUnique({ where: { id: courseId } });
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+
+    if (requesterRole !== 'ADMIN') {
+      if (course.teacherId !== requesterId) {
+        return res.status(403).json({ message: 'Forbidden: You do not own this course' });
+      }
+    }
+
+    const exam = await db.exam.create({
+      data: {
+        title,
+        courseId,
+        duration: duration || 60,
+        questions: (questions || []) as any,
+        requiresCamera: requiresCamera || false,
+        startTime: startTime ? new Date(startTime) : null,
+        endTime: endTime ? new Date(endTime) : null,
+        randomization: randomization || false,
+        passingScore: passingScore || 50
+      }
+    });
+
+    const examAccessCode = allowExternalStudents ? generateExamAccessCode() : null;
+
+    // Mirror to unified Assessment table
+    await db.assessment.create({
+      data: {
+        id: exam.id,
+        title: exam.title,
+        type: 'EXAM',
+        courseId: exam.courseId,
+        teacherId: course.teacherId,
+        durationMinutes: exam.duration,
+        questions: exam.questions as any,
+        passingScore: exam.passingScore,
+        randomization: exam.randomization,
+        openAt: exam.startTime,
+        closeAt: exam.endTime,
+        allowExternalStudents: !!allowExternalStudents,
+        examAccessCode,
+        allowedIps: allowedIps || null,
+        status: 'PUBLISHED'
+      }
+    });
+
+    if (exam.questions && Array.isArray(exam.questions)) {
+      await linkQuestionAssetsToAssessment(exam.id, exam.questions as any[]);
+    }
+
+    io.to(`course:${courseId}`).emit('exam_created', exam);
+    
+    // Notify enrolled students and their parents
+    const { notifyCourseStudents } = await import('../utils/notification.helper.js');
+    await notifyCourseStudents(courseId, 'امتحان جديد', `تم نشر امتحان جديد: ${title}`);
+
+    res.status(201).json({
+      ...exam,
+      allowExternalStudents: !!allowExternalStudents,
+      examAccessCode,
+      allowedIps: allowedIps || null
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ errors: error.errors });
+    }
+    res.status(500).json({ message: 'Error creating exam', error: error.message });
+  }
+};
+
+export const updateExam = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const requesterRole = (req.user?.role || '').toUpperCase();
+    const requesterId = req.user?.userId;
+
+    const validatedData = createExamSchema.parse(req.body);
+    const { title, courseId, duration, questions, requiresCamera, startTime, endTime, randomization, passingScore, allowExternalStudents, allowedIps } = validatedData;
+    
+    // Ensure the exam exists
+    const existing = await db.exam.findUnique({ where: { id }, include: { course: true } });
+    if (!existing) return res.status(404).json({ message: 'Exam not found' });
+
+    if (requesterRole !== 'ADMIN' && existing.course.teacherId !== requesterId) {
+      return res.status(403).json({ message: 'Forbidden: You do not own this exam' });
+    }
+
+    // If they are changing the courseId, verify they own the new course too
+    if (existing.courseId !== courseId && requesterRole !== 'ADMIN') {
+       const newCourse = await db.course.findUnique({ where: { id: courseId } });
+       if (!newCourse) return res.status(404).json({ message: 'New course not found' });
+       if (newCourse.teacherId !== requesterId) {
+         return res.status(403).json({ message: 'Forbidden: You do not own the target course' });
+       }
+    }
+
+    const updateData = {
+      title,
+      courseId,
+      duration: duration || 60,
+      questions: (questions || []) as any,
+      requiresCamera: requiresCamera || false,
+      startTime: startTime ? new Date(startTime) : null,
+      endTime: endTime ? new Date(endTime) : null,
+      randomization: randomization || false,
+      passingScore: passingScore || 50
+    };
+
+    const updatedExam = await db.exam.update({
+      where: { id },
+      data: updateData
+    });
+
+    let existingAssess = await db.assessment.findUnique({ where: { id } });
+    let examAccessCode = existingAssess?.examAccessCode;
+    if (allowExternalStudents && !examAccessCode) {
+      examAccessCode = generateExamAccessCode();
+    }
+
+    // Mirror to unified Assessment table
+    try {
+      if (existingAssess) {
+        await db.assessment.update({
+          where: { id },
+          data: {
+            ...(updateData.title && { title: updateData.title }),
+            ...(updateData.duration && { durationMinutes: updateData.duration }),
+            ...(updateData.questions && { questions: updateData.questions as any }),
+            ...(updateData.passingScore && { passingScore: updateData.passingScore }),
+            ...(updateData.randomization !== undefined && { randomization: updateData.randomization }),
+            ...(updateData.startTime !== undefined && { openAt: updateData.startTime }),
+            ...(updateData.endTime !== undefined && { closeAt: updateData.endTime }),
+            ...(allowExternalStudents !== undefined && { allowExternalStudents: !!allowExternalStudents }),
+            ...(allowedIps !== undefined && { allowedIps: allowedIps || null }),
+            ...(examAccessCode !== undefined && { examAccessCode })
+          }
+        });
+      } else {
+        await db.assessment.create({
+          data: {
+            id: updatedExam.id,
+            title: updatedExam.title,
+            type: 'EXAM',
+            courseId: updatedExam.courseId,
+            teacherId: existing.course.teacherId,
+            durationMinutes: updatedExam.duration,
+            questions: updatedExam.questions as any,
+            passingScore: updatedExam.passingScore,
+            randomization: updatedExam.randomization,
+            openAt: updatedExam.startTime,
+            closeAt: updatedExam.endTime,
+            allowExternalStudents: !!allowExternalStudents,
+            examAccessCode,
+            allowedIps: allowedIps || null,
+            status: 'PUBLISHED'
+          }
+        });
+      }
+    } catch (err) {}
+
+    if (updatedExam.questions && Array.isArray(updatedExam.questions)) {
+      await linkQuestionAssetsToAssessment(id, updatedExam.questions as any[]);
+    }
+
+    io.to(`course:${updatedExam.courseId}`).emit('exam_updated', updatedExam);
+
+    // Notify enrolled students and their parents
+    const { notifyCourseStudents } = await import('../utils/notification.helper.js');
+    await notifyCourseStudents(updatedExam.courseId, 'تحديث امتحان', `تم تحديث الامتحان: ${updatedExam.title}`);
+
+    res.json({
+      ...updatedExam,
+      allowExternalStudents: !!allowExternalStudents,
+      examAccessCode,
+      allowedIps: allowedIps || null
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ errors: error.errors });
+    }
+    res.status(500).json({ message: 'Error updating exam', error: error.message });
+  }
+};
+
+export const startAttempt = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id: examId } = req.params;
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const exam = await db.exam.findUnique({ where: { id: examId } });
+    if (!exam) return res.status(404).json({ message: 'Exam not found' });
+
+    const now = new Date();
+    if (exam.startTime && now < exam.startTime) {
+      return res.status(400).json({ message: 'Exam has not started yet' });
+    }
+    if (exam.endTime && now > exam.endTime) {
+      return res.status(400).json({ message: 'Exam has already ended' });
+    }
+
+    const isEnrolled = await checkUserEnrollment(req.user, exam.courseId);
+    if (!isEnrolled) return res.status(403).json({ message: 'Not enrolled in this course' });
+
+    const attempt = await db.examAttempt.create({
+      data: {
+        studentId: userId,
+        examId,
+        score: 0
+      }
+    });
+    res.status(201).json(attempt);
+  } catch (error: any) {
+    res.status(400).json({ message: 'Error starting exam', error: error.message });
+  }
+};
+
+export const submitAttempt = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id: examId } = req.params;
+    const userId = req.user?.userId;
+    const { answers } = req.body; 
+    
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    // Load exam and correct answers from database
+    const exam = await db.exam.findUnique({ where: { id: examId } });
+    if (!exam) return res.status(404).json({ message: 'Exam not found' });
+
+    const now = new Date();
+    if (exam.endTime && now > exam.endTime) {
+       // Allow a small grace period for network latency (e.g., 2 minutes)
+       if (now.getTime() - exam.endTime.getTime() > 120000) {
+         return res.status(400).json({ message: 'Exam window has closed' });
+       }
+    }
+
+    const isEnrolled = await checkUserEnrollment(req.user, exam.courseId);
+    if (!isEnrolled) return res.status(403).json({ message: 'Not enrolled in this course' });
+
+    let calculatedScore = 0;
+    const questions = Array.isArray(exam.questions) ? exam.questions : [];
+    
+    if (questions.length > 0 && Array.isArray(answers)) {
+      let correctCount = 0;
+      for (const ans of answers) {
+        const q: any = questions.find((q: any) => q.id === ans.questionId);
+        // Using 'correct' as the answer index key, as expected by the frontend
+        if (q && q.correct !== undefined && ans.selectedOption === q.correct) {
+          correctCount++;
+        }
+      }
+      calculatedScore = (correctCount / questions.length) * 100;
+    }
+
+    // Find the latest attempt to update, or create a new one
+    const existingAttempt = await db.examAttempt.findFirst({
+      where: { studentId: userId, examId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (existingAttempt) {
+      const startedAt = existingAttempt.createdAt;
+      const elapsedMinutes = (now.getTime() - startedAt.getTime()) / 60000;
+      // If they exceeded duration + 5 minutes grace period, cap score or reject
+      if (elapsedMinutes > exam.duration + 5) {
+         return res.status(400).json({ message: 'Time limit exceeded' });
+      }
+    }
+
+    let attempt;
+    if (existingAttempt) {
+      attempt = await db.examAttempt.update({
+        where: { id: existingAttempt.id },
+        data: {
+          score: calculatedScore,
+          answers: answers || []
+        }
+      });
+    } else {
+      attempt = await db.examAttempt.create({
+        data: {
+          studentId: userId,
+          examId,
+          score: calculatedScore,
+          answers: answers || []
+        }
+      });
+    }
+    
+    // Notify teacher of submission
+    const { notifyTeacher } = await import('../utils/notification.helper.js');
+    await notifyTeacher(exam.courseId, 'تسليم امتحان', `قام الطالب بتسليم امتحان: ${exam.title}`);
+
+    res.json({ success: true, score: calculatedScore, attempt });
+  } catch (error: any) {
+    res.status(400).json({ message: 'Error submitting exam', error: error.message });
+  }
+};
+
+export const syncAttempt = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id: examId } = req.params;
+    const userId = req.user?.userId;
+    const { answers } = req.body;
+    
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const existingAttempt = await db.examAttempt.findFirst({
+      where: { studentId: userId, examId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    if (existingAttempt) {
+      await db.examAttempt.update({
+        where: { id: existingAttempt.id },
+        data: { answers: answers || [] }
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(400).json({ message: 'Error syncing exam attempt', error: error.message });
+  }
+};
+
+export const reportViolation = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id: examId } = req.params;
+    const userId = req.user?.userId;
+    const { type } = req.body;
+    
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const attempt = await db.examAttempt.findFirst({
+      where: { studentId: userId, examId },
+      orderBy: { createdAt: 'desc' },
+      include: { ExamViolation: true }
+    });
+
+    if (!attempt) return res.status(404).json({ message: 'No active attempt found' });
+
+    const crypto = await import('crypto');
+    await db.examViolation.create({
+      data: {
+        id: crypto.randomUUID(),
+        attemptId: attempt.id,
+        type: type || 'UNKNOWN'
+      }
+    });
+
+    // If 2 or more violations, disqualify
+    if (attempt.ExamViolation.length >= 1) { // They just got their 2nd violation (1 + 1 new)
+      await db.examAttempt.update({
+        where: { id: attempt.id },
+        data: { score: 0 }
+      });
+      return res.status(403).json({ message: 'Disqualified due to multiple violations' });
+    }
+
+    res.json({ success: true, message: 'Violation recorded' });
+  } catch (error: any) {
+    res.status(400).json({ message: 'Error reporting violation', error: error.message });
+  }
+};
+
+export const deleteExam = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const requesterRole = (req.user?.role || '').toUpperCase();
+    const requesterId = req.user?.userId;
+
+    const exam = await db.exam.findUnique({
+      where: { id },
+      include: { course: true }
+    });
+
+    if (!exam) {
+      return res.status(404).json({ message: 'Exam not found' });
+    }
+
+    if (requesterRole !== 'ADMIN' && exam.course.teacherId !== requesterId) {
+      return res.status(403).json({ message: 'Insufficient permissions to delete this exam' });
+    }
+
+    await db.exam.delete({ where: { id } });
+    res.json({ message: 'Deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error deleting exam', error: error.message });
+  }
+};

@@ -1,0 +1,72 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Production builds
+dist/
+build/
+.next/
+
+# Testing & coverage
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Uploads & local storage
+uploads/
+secrets/
+
+# Credentials & keys
+*.pem
+*.key
+*.pub
+*.dump
+credentials.json
+secret.json
+token.json
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Compiled package artifacts (build outputs)
+packages/*/src/*.js
+packages/*/src/*.d.ts
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local backups & scratch artifacts
+backups/
+scratch/
+*.bak
+*.tmp
+*.swp
+*.swo
+
+# Temporary recovery & fix scripts
+recover*.js
+fix*.js
+k6_bin/
+.turbo/
+.cache/
+.vite/
+.vercel/
+*_output.txt
+tsc_output.txt
+
+

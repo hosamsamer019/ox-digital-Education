@@ -1,0 +1,113 @@
+import axios from 'axios';
+
+const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : ((globalThis as any).process?.env || {});
+const isLocalhost = typeof window !== 'undefined' ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') : false;
+const useProdPaths = env.PROD || env.NODE_ENV === 'production' || !isLocalhost;
+
+const AUTH_URL = env.VITE_AUTH_API_URL || (useProdPaths ? '/api/auth' : 'http://localhost:4001/api/auth');
+const USER_URL = env.VITE_USER_API_URL || (useProdPaths ? '/api/users' : 'http://localhost:4002/api/users');
+const AI_URL = env.VITE_AI_API_URL || (useProdPaths ? '/api/ai' : 'http://localhost:4003/api/ai');
+const COURSE_URL = env.VITE_COURSE_API_URL || (useProdPaths ? '/api/courses' : 'http://localhost:4004/api/courses');
+const EXAM_URL = env.VITE_EXAM_API_URL || (useProdPaths ? '/api/exams' : 'http://localhost:4004/api/exams');
+const HOMEWORK_URL = env.VITE_HOMEWORK_API_URL || (useProdPaths ? '/api/homework' : 'http://localhost:4004/api/homework');
+const ANALYTICS_URL = env.VITE_ANALYTICS_API_URL || (useProdPaths ? '/api/analytics' : 'http://localhost:4005/api/analytics');
+const NOTIFICATION_URL = env.VITE_NOTIFICATION_API_URL || (useProdPaths ? '/api/notifications' : 'http://localhost:4002/api/notifications');
+const ATTENDANCE_URL = env.VITE_ATTENDANCE_API_URL || (useProdPaths ? '/api/attendance' : 'http://localhost:4002/api/attendance');
+const QUESTION_URL = env.VITE_QUESTION_API_URL || (useProdPaths ? '/api/questions' : 'http://localhost:4004/api/questions');
+const ASSESSMENT_URL = env.VITE_ASSESSMENT_API_URL || (useProdPaths ? '/api/assessments' : 'http://localhost:4004/api/assessments');
+
+export const authApi = axios.create({
+  baseURL: AUTH_URL,
+  withCredentials: true,
+});
+
+export const userApi = axios.create({
+  baseURL: USER_URL,
+});
+
+export const attendanceApi = axios.create({
+  baseURL: ATTENDANCE_URL,
+});
+
+export const aiApi = axios.create({
+  baseURL: AI_URL,
+});
+
+export const courseApi = axios.create({
+  baseURL: COURSE_URL,
+});
+
+export const examApi = axios.create({
+  baseURL: EXAM_URL,
+});
+
+export const homeworkApi = axios.create({
+  baseURL: HOMEWORK_URL,
+});
+
+export const analyticsApi = axios.create({
+  baseURL: ANALYTICS_URL,
+});
+
+export const notificationApi = axios.create({
+  baseURL: NOTIFICATION_URL,
+});
+
+export const questionApi = axios.create({
+  baseURL: QUESTION_URL,
+});
+
+export const assessmentApi = axios.create({
+  baseURL: ASSESSMENT_URL,
+});
+
+// Interceptor to add Token to authApi requests
+authApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Interceptor to add Token to requests and handle 401s
+[userApi, attendanceApi, aiApi, courseApi, examApi, homeworkApi, analyticsApi, notificationApi, questionApi, assessmentApi].forEach(api => {
+  api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+
+
+  api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config;
+      const isAuthError = error.response?.status === 401 || (error.response?.status === 403 && (error.response?.data?.message?.toLowerCase().includes('expired') || error.response?.data?.message?.toLowerCase().includes('token')));
+      if (isAuthError && !originalRequest._retry) {
+        originalRequest._retry = true;
+        try {
+          const res = await authApi.post('/refresh-token');
+          if (res.data.token) {
+            localStorage.setItem('token', res.data.token);
+            originalRequest.headers.Authorization = `Bearer ${res.data.token}`;
+            return api(originalRequest);
+          }
+        } catch (refreshError) {
+          const userStr = localStorage.getItem('edu-user');
+          const isExt = userStr ? JSON.parse(userStr)?.role === 'EXTERNAL_STUDENT' || JSON.parse(userStr)?.isGuest : false;
+          localStorage.removeItem('token');
+          localStorage.removeItem('edu-user');
+          if (isExt || window.location.pathname.startsWith('/external-exam')) {
+            window.location.href = '/external-exam?expired=true';
+          } else {
+            window.location.href = '/login';
+          }
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
+});
