@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState } from 'react';
 import { Brain, Sparkles, RefreshCw, History, Star, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -164,6 +165,7 @@ function normalizeMathSolution(data: any): MathSolution {
 }
 
 export default function AIMathSolverPage() {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
   const [problem, setProblem] = useState('');
   const [solving, setSolving] = useState(false);
@@ -201,7 +203,7 @@ export default function AIMathSolverPage() {
   const handleSaveSolution = async () => {
     try {
       await aiApi.post('/history/save', { problem, solution });
-      alert('تم حفظ الحل في السجل بنجاح');
+      alert(t('تم حفظ الحل في السجل بنجاح'));
       fetchHistory();
     } catch (err) {
       console.error('Failed to save', err);
@@ -218,7 +220,7 @@ export default function AIMathSolverPage() {
       setItemToDelete(null);
     } catch (err) {
       console.error('Failed to delete history item', err);
-      alert('فشل حذف المسألة من السجل');
+      alert(t('فشل حذف المسألة من السجل'));
     } finally {
       setIsDeletingHistory(false);
     }
@@ -232,7 +234,7 @@ export default function AIMathSolverPage() {
       setShowDeleteAllHistoryModal(false);
     } catch (err) {
       console.error('Failed to delete all history', err);
-      alert('فشل حذف سجل المسائل بالكامل');
+      alert(t('فشل حذف سجل المسائل بالكامل'));
     } finally {
       setIsDeletingHistory(false);
     }
@@ -249,7 +251,7 @@ export default function AIMathSolverPage() {
       setSolution(parsed);
     } catch (error) {
       console.error('AI Solver failed:', error);
-      alert('حدث خطأ أثناء حل المسألة');
+      alert(t('حدث خطأ أثناء حل المسألة'));
     } finally {
       setSolving(false);
     }
@@ -265,8 +267,8 @@ export default function AIMathSolverPage() {
               <Brain className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className={`text-2xl font-bold ${textPrimary}`}>حل المسائل بالذكاء الاصطناعي</h1>
-              <p className={textSecondary}>شرح تفصيلي خطوة بخطوة لأي مسألة رياضية</p>
+              <h1 className={`text-2xl font-bold ${textPrimary}`}>{t('حل المسائل بالذكاء الاصطناعي')}</h1>
+              <p className={textSecondary}>{t('شرح تفصيلي خطوة بخطوة لأي مسألة رياضية')}</p>
             </div>
           </div>
           <button
@@ -275,7 +277,7 @@ export default function AIMathSolverPage() {
               isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
           >
-            <History className="w-4 h-4" /> السجل
+            <History className="w-4 h-4" /> {t('السجل')}
           </button>
         </div>
       </div>
@@ -285,11 +287,11 @@ export default function AIMathSolverPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Problem Input */}
           <div className={`${cardBg} border rounded-2xl p-6`}>
-            <h2 className={`font-bold ${textPrimary} mb-4`}>أدخل المسألة الرياضية</h2>
+            <h2 className={`font-bold ${textPrimary} mb-4`}>{t('أدخل المسألة الرياضية')}</h2>
             <textarea
               value={problem}
               onChange={(e) => setProblem(e.target.value)}
-              placeholder="مثال: حل المعادلة 2x² + 5x - 3 = 0، أو احسب ∫(x²+1)dx"
+              placeholder={t('مثال: حل المعادلة 2x² + 5x - 3 = 0، أو احسب ∫(x²+1)dx')}
               rows={4}
               className={`w-full px-4 py-3 rounded-xl border text-sm resize-none ${
                 isDark
@@ -321,12 +323,12 @@ export default function AIMathSolverPage() {
                 {solving ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    جاري الحل...
+                    {t('جاري الحل...')}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    حل المسألة
+                    {t('حل المسألة')}
                   </>
                 )}
               </button>
@@ -339,8 +341,8 @@ export default function AIMathSolverPage() {
               <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
                 <Brain className="w-8 h-8 text-white" />
               </div>
-              <h3 className={`font-bold ${textPrimary} mb-2`}>الذكاء الاصطناعي يحلل المسألة...</h3>
-              <p className={`text-sm ${textSecondary}`}>يتم إنشاء شرح تفصيلي خطوة بخطوة</p>
+              <h3 className={`font-bold ${textPrimary} mb-2`}>{t('الذكاء الاصطناعي يحلل المسألة...')}</h3>
+              <p className={`text-sm ${textSecondary}`}>{t('يتم إنشاء شرح تفصيلي خطوة بخطوة')}</p>
               <div className="flex justify-center gap-2 mt-4">
                 {[0, 1, 2].map((i) => (
                   <div
@@ -359,7 +361,7 @@ export default function AIMathSolverPage() {
               <div className="bg-gradient-to-l from-purple-600 to-indigo-700 p-6">
                 <div className="flex items-center gap-2 mb-2">
                   <Sparkles className="w-5 h-5 text-yellow-400" />
-                  <span className="text-white font-bold">الإجابة النهائية</span>
+                  <span className="text-white font-bold">{t('الإجابة النهائية')}</span>
                 </div>
                 <div className="text-2xl font-bold text-white overflow-x-auto py-1">
                   <MathContent content={solution.answer} />
@@ -368,7 +370,7 @@ export default function AIMathSolverPage() {
 
               {/* Steps */}
               <div className="p-6">
-                <h3 className={`font-bold ${textPrimary} mb-4`}>الحل التفصيلي خطوة بخطوة</h3>
+                <h3 className={`font-bold ${textPrimary} mb-4`}>{t('الحل التفصيلي خطوة بخطوة')}</h3>
                 <div className="space-y-6">
                   {solution.steps.map((step) => (
                     <div
@@ -412,7 +414,7 @@ export default function AIMathSolverPage() {
                         : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    <Star className="w-4 h-4" /> حفظ الحل
+                    <Star className="w-4 h-4" /> {t('حفظ الحل')}
                   </button>
                   <button
                     onClick={() => {
@@ -425,7 +427,7 @@ export default function AIMathSolverPage() {
                         : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    <RefreshCw className="w-4 h-4" /> مسألة جديدة
+                    <RefreshCw className="w-4 h-4" /> {t('مسألة جديدة')}
                   </button>
                 </div>
               </div>
@@ -436,7 +438,7 @@ export default function AIMathSolverPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           <div className={`${cardBg} border rounded-2xl p-5`}>
-            <h3 className={`font-bold ${textPrimary} mb-4`}>أمثلة للتجربة</h3>
+            <h3 className={`font-bold ${textPrimary} mb-4`}>{t('أمثلة للتجربة')}</h3>
             <div className="space-y-2">
               {sampleProblems?.map((sample, idx) => (
                 <button
@@ -455,7 +457,7 @@ export default function AIMathSolverPage() {
           </div>
 
           <div className={`${cardBg} border rounded-2xl p-5`}>
-            <h3 className={`font-bold ${textPrimary} mb-4`}>المواضيع المتاحة</h3>
+            <h3 className={`font-bold ${textPrimary} mb-4`}>{t('المواضيع المتاحة')}</h3>
             <div className="flex flex-wrap gap-2">
               {['جبر', 'هندسة', 'تفاضل', 'تكامل', 'إحصاء', 'مثلثات', 'أعداد', 'دوال'].map((topic) => (
                 <span
@@ -471,23 +473,23 @@ export default function AIMathSolverPage() {
           {showHistory && (
             <div className={`${cardBg} border rounded-2xl p-5`}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className={`font-bold ${textPrimary}`}>السجل السابق</h3>
+                <h3 className={`font-bold ${textPrimary}`}>{t('السجل السابق')}</h3>
                 {history?.length > 0 && (
                   <button
                     onClick={() => setShowDeleteAllHistoryModal(true)}
                     className="text-xs text-red-500 hover:text-red-700 dark:hover:text-red-400 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-                    title="حذف جميع المسائل المحفوظة"
+                    title={t('حذف جميع المسائل المحفوظة')}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    <span>حذف الكل</span>
+                    <span>{t('حذف الكل')}</span>
                   </button>
                 )}
               </div>
 
               {loadingHistory ? (
-                <div className="text-center py-4 text-gray-500">جاري التحميل...</div>
+                <div className="text-center py-4 text-gray-500">{t('جاري التحميل...')}</div>
               ) : history?.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">لا يوجد سجل حالياً</div>
+                <div className="text-center py-4 text-gray-500">{t('لا يوجد سجل حالياً')}</div>
               ) : (
                 <div className="space-y-3">
                   {(Array.isArray(history) ? history : []).map((item) => (
@@ -516,8 +518,8 @@ export default function AIMathSolverPage() {
                           setShowDeleteItemModal(true);
                         }}
                         className="p-3 text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-80 hover:opacity-100 transition-colors"
-                        title="حذف هذه المسألة"
-                        aria-label="حذف المسألة"
+                        title={t('حذف هذه المسألة')}
+                        aria-label={t('حذف المسألة')}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -547,11 +549,11 @@ export default function AIMathSolverPage() {
             </div>
 
             <h3 className={`text-lg font-bold ${textPrimary} mb-2`}>
-              حذف المسألة من السجل
+              {t('حذف المسألة من السجل')}
             </h3>
 
             <p className={`text-sm ${textSecondary} mb-3`}>
-              هل أنت متأكد من رغبتك في حذف هذه المسألة وحلها المحفوظ؟
+              {t('هل أنت متأكد من رغبتك في حذف هذه المسألة وحلها المحفوظ؟')}
             </p>
 
             <div className="bg-gray-50 dark:bg-gray-900/60 p-3 rounded-xl border border-gray-200 dark:border-gray-700 mb-4 text-xs font-mono line-clamp-2 text-gray-800 dark:text-gray-200">
@@ -567,7 +569,7 @@ export default function AIMathSolverPage() {
                   isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                 } transition-colors`}
               >
-                إلغاء
+                {t('إلغاء')}
               </button>
               <button
                 type="button"
@@ -600,12 +602,11 @@ export default function AIMathSolverPage() {
             </div>
 
             <h3 className={`text-lg font-bold ${textPrimary} mb-2`}>
-              حذف جميع المسائل المحفوظة
+              {t('حذف جميع المسائل المحفوظة')}
             </h3>
 
             <p className={`text-sm ${textSecondary} mb-4 leading-relaxed`}>
-              هل أنت متأكد من رغبتك في حذف <strong>سجل المسائل الرياضية بالكامل ({history.length})</strong>؟
-              لا يمكن استعادة المسائل والحلول المحذوفة.
+              {t('هل أنت متأكد من رغبتك في حذف')} <strong>{t('سجل المسائل الرياضية بالكامل (')}{history.length})</strong>{t('؟\n              لا يمكن استعادة المسائل والحلول المحذوفة.')}
             </p>
 
             <div className="flex gap-3 justify-end mt-6">
@@ -617,7 +618,7 @@ export default function AIMathSolverPage() {
                   isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-100'
                 } transition-colors`}
               >
-                إلغاء
+                {t('إلغاء')}
               </button>
               <button
                 type="button"

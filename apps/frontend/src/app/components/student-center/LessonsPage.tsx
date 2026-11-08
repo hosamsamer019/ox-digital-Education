@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, BookOpen, Clock, CheckCircle } from 'lucide-react';
@@ -5,6 +6,7 @@ import { courseService } from '../../services/course.service';
 import { extractYouTubeVideoId } from '../../utils/videoUtils';
 
 export default function LessonsPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [lessons, setLessons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,22 +21,22 @@ export default function LessonsPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8" dir="rtl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">الدروس التعليمية</h1>
-        <p className="text-gray-600 dark:text-gray-400">شاهد الدروس وسجل تقدمك مباشرة داخل المنصة</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('الدروس التعليمية')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('شاهد الدروس وسجل تقدمك مباشرة داخل المنصة')}</p>
       </div>
 
       {loading && (
         <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="mr-3 text-gray-600 dark:text-gray-400 font-medium">جاري تحميل الدروس...</span>
+          <div className="w-8 h-8 border-4 border-slate-300 dark:border-slate-800 border-t-[#9e1b1b] rounded-full animate-spin motion-reduce:animate-none"></div>
+          <span className="mr-3 text-gray-600 dark:text-gray-400 font-medium">{t('جاري تحميل الدروس...')}</span>
         </div>
       )}
 
       {!loading && lessons.length === 0 && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-12 text-center">
           <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-lg font-bold text-gray-700 dark:text-gray-200">لا توجد دروس متاحة حالياً</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">سيتم إضافة الدروس التعليمية قريباً</p>
+          <p className="text-lg font-bold text-gray-700 dark:text-gray-200">{t('لا توجد دروس متاحة حالياً')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('سيتم إضافة الدروس التعليمية قريباً')}</p>
         </div>
       )}
 
@@ -79,7 +81,7 @@ export default function LessonsPage() {
                   {isWatched && (
                     <div className="absolute top-3 right-3 bg-emerald-600 text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow">
                       <CheckCircle className="w-3.5 h-3.5" />
-                      <span>مكتمل</span>
+                      <span>{t('مكتمل')}</span>
                     </div>
                   )}
                 </div>
@@ -106,7 +108,7 @@ export default function LessonsPage() {
                     className="mt-4 w-full py-2.5 px-4 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold rounded-xl text-sm group-hover:bg-emerald-600 group-hover:text-white dark:group-hover:bg-emerald-600 dark:group-hover:text-white transition-all duration-200 flex items-center justify-center gap-2"
                   >
                     <Play className="w-4 h-4 fill-current" />
-                    <span>مشاهدة الدرس في المنصة</span>
+                    <span>{t('مشاهدة الدرس في المنصة')}</span>
                   </button>
                 </div>
               </div>

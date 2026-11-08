@@ -1,6 +1,8 @@
+import { useLanguage, t } from '../../../contexts/LanguageContext';
 import { ShieldCheck, Eye, Lock, FileCheck2, Cpu } from 'lucide-react';
 
 export default function SecurityProof() {
+  const { t } = useLanguage();
   const pillars = [
     {
       icon: Eye,
@@ -35,13 +37,13 @@ export default function SecurityProof() {
         <div className="text-right max-w-3xl mb-14">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-3">
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>النزاهة الأكاديمية وحماية المحتوى</span>
+            <span>{t('النزاهة الأكاديمية وحماية المحتوى')}</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight leading-snug font-sans">
-            منظومة أمان مدمجة تحمي جهد المعلم ونزاهة تقييم الطالب
+            {t('منظومة أمان مدمجة تحمي جهد المعلم ونزاهة تقييم الطالب')}
           </h2>
           <p className="mt-3 text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed">
-            التقنيات الأمنية في OX-DIGITAL ليست مجرد شعار، بل بروتوكولات حقيقية تعمل داخل مشغل الفيديو ونظام الامتحانات لحفظ الحقوق وضمان عدالة التقييم.
+            {t('التقنيات الأمنية في OX-DIGITAL ليست مجرد شعار، بل بروتوكولات حقيقية تعمل داخل مشغل الفيديو ونظام الامتحانات لحفظ الحقوق وضمان عدالة التقييم.')}
           </p>
         </div>
 

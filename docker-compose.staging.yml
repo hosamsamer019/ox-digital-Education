@@ -268,6 +268,7 @@ services:
     command: ["npx", "prisma", "migrate", "deploy", "--schema=/app/packages/database/prisma/schema.prisma"]
     volumes:
       - ./scripts:/app/scripts:ro
+      - ./packages/database:/app/packages/database:ro
     profiles:
       - tools
     depends_on:
@@ -282,6 +283,8 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: ox-digital-staging-postgres
+    ports:
+      - "127.0.0.1:5432:5432"
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-ox_staging_admin}

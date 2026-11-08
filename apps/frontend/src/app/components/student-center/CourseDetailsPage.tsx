@@ -1,24 +1,37 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Play, Lock, CheckCircle, Clock } from 'lucide-react';
+import { Play, Lock, CheckCircle2, Clock, ChevronRight, BookOpen, AlertCircle } from 'lucide-react';
 import { courseService } from '../../services/course.service';
-
+import { useTheme } from '../../contexts/ThemeContext';
+import { LoadingState } from '../ui/LoadingState';
 
 export default function CourseDetailsPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { courseId } = useParams();
+  const { isDark } = useTheme();
+
   const [course, setCourse] = useState<any>({ title: 'جاري التحميل...', description: '' });
   const [lessons, setLessons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
     totalLessons: 0,
     completedLessons: 0,
     completionPercentage: 0
   });
 
+  const cardBg = isDark ? 'bg-[#0f131d] border-slate-800/90' : 'bg-white border-slate-200/90 shadow-xs';
+  const wellBg = isDark ? 'bg-[#161c28]/70 border-slate-800/60' : 'bg-slate-50/80 border-slate-200/80';
+  const textPrimary = isDark ? 'text-slate-100' : 'text-slate-900';
+  const textSecondary = isDark ? 'text-slate-400' : 'text-slate-500';
+
   useEffect(() => {
     if (!courseId) return;
     setLoading(true);
+    setError(null);
+
     courseService.getCourseDetails(courseId)
       .then((res) => {
         const data = res.data?.data ? res.data.data : res.data;
@@ -65,105 +78,147 @@ export default function CourseDetailsPage() {
       })
       .catch((err) => {
         console.error('Failed to load course details:', err);
+        setError(t('تعذر تحميل تفاصيل المقرر الدراسي.'));
       })
       .finally(() => {
         setLoading(false);
       });
   }, [courseId]);
 
+  if (loading) {
+    return <LoadingState message={t('جاري إعداد محتوى ومحاضرات المقرر...')} />;
+  }
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
-      <div className="mb-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8" dir="rtl">
+      {/* Back button and Course Header */}
+      <div>
         <button
           onClick={() => navigate('/student/center/courses')}
-          className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 mb-4"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#9e1b1b] dark:text-red-400 hover:underline mb-4"
         >
-          ← العودة للدورات
+          <ChevronRight className="w-4 h-4" />
+          <span>{t('العودة لقائمة الدورات والمناهج')}</span>
         </button>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{course.title}</h1>
-        <p className="text-gray-600 dark:text-gray-400">{course.description}</p>
+
+        <h1 className={`text-2xl sm:text-3xl font-extrabold ${textPrimary} tracking-tight`}>
+          {course.title}
+        </h1>
+        {course.description && (
+          <p className={`text-sm ${textSecondary} mt-2 max-w-3xl leading-relaxed`}>
+            {course.description}
+          </p>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-100 dark:border-gray-700">
-          <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
+      {/* Error Alert */}
+      {error && (
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+            <p className="text-sm font-medium text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* 3 Metric Cards for Course Progress */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div className={`${cardBg} rounded-2xl p-5 sm:p-6 border`}>
+          <div className="text-2xl sm:text-3xl font-extrabold text-[#9e1b1b] dark:text-red-400 mb-1 font-mono">
             {loading ? '-' : stats.totalLessons}
           </div>
-          <div className="text-gray-600 dark:text-gray-400">إجمالي الدروس</div>
+          <div className={`text-xs font-bold ${textSecondary}`}>{t('إجمالي الدروس')}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-100 dark:border-gray-700">
-          <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">
+
+        <div className={`${cardBg} rounded-2xl p-5 sm:p-6 border`}>
+          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mb-1 font-mono">
             {loading ? '-' : stats.completedLessons}
           </div>
-          <div className="text-gray-600 dark:text-gray-400">الدروس المكتملة</div>
+          <div className={`text-xs font-bold ${textSecondary}`}>{t('الدروس المكتملة')}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-100 dark:border-gray-700">
-          <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-2">
+
+        <div className={`${cardBg} rounded-2xl p-5 sm:p-6 border`}>
+          <div className="text-2xl sm:text-3xl font-extrabold text-amber-600 dark:text-amber-400 mb-1 font-mono">
             {loading ? '-' : `${stats.completionPercentage}%`}
           </div>
-          <div className="text-gray-600 dark:text-gray-400">نسبة الإنجاز</div>
+          <div className={`text-xs font-bold ${textSecondary}`}>{t('نسبة الإنجاز')}</div>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 p-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">قائمة الدروس</h2>
+      {/* Lessons List Section */}
+      <div className={`${cardBg} rounded-2xl border p-6`}>
+        <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
+          <h2 className={`text-lg font-bold ${textPrimary}`}>{t('فهرس المحاضرات والدروس')}</h2>
+          <span className="text-xs font-mono font-bold text-slate-400">
+            {lessons.length} {t('درس متوفر')}
+          </span>
+        </div>
 
-        <div className="space-y-3">
-          {lessons.map((lesson) => (
-            <div
-              key={lesson.id}
-              className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${
-                lesson.locked
-                  ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 cursor-not-allowed'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-indigo-500 dark:hover:border-indigo-400 cursor-pointer bg-white dark:bg-gray-800'
-              }`}
-              onClick={() => !lesson.locked && navigate(`/student/center/videos/${lesson.id}`)}
-            >
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                lesson.completed
-                  ? 'bg-green-100 dark:bg-green-950/40 text-green-600 dark:text-green-400'
-                  : lesson.locked
-                  ? 'bg-gray-200 dark:bg-gray-700 text-gray-400'
-                  : 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
-              }`}>
-                {lesson.completed ? (
-                  <CheckCircle className="w-6 h-6" />
-                ) : lesson.locked ? (
-                  <Lock className="w-6 h-6" />
-                ) : (
-                  <Play className="w-6 h-6" />
-                )}
-              </div>
-
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900 dark:text-white">{lesson.title}</h3>
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mt-1">
-                  <Clock className="w-4 h-4" />
-                  <span>{lesson.duration}</span>
-                  {lesson.completed && (
-                    <span className="text-green-600 dark:text-green-400 mr-2">• مكتمل</span>
+        {lessons.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 space-y-2">
+            <BookOpen className="w-10 h-10 mx-auto text-slate-500" />
+            <p className="text-sm font-bold">{t('لا توجد دروس مضافة لهذا المقرر بعد.')}</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {lessons.map((lesson) => (
+              <div
+                key={lesson.id}
+                onClick={() => !lesson.locked && navigate(`/student/center/videos/${lesson.id}`)}
+                className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
+                  lesson.locked
+                    ? 'border-slate-200 dark:border-slate-800/80 bg-slate-500/5 cursor-not-allowed opacity-75'
+                    : 'border-slate-200/80 dark:border-slate-800 hover:border-[#9e1b1b]/50 cursor-pointer hover:shadow-xs'
+                }`}
+              >
+                <div
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${
+                    lesson.completed
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'
+                      : lesson.locked
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                      : 'bg-[#9e1b1b]/10 text-[#9e1b1b] dark:bg-[#9e1b1b]/20 dark:text-red-400'
+                  }`}
+                >
+                  {lesson.completed ? (
+                    <CheckCircle2 className="w-5 h-5" />
+                  ) : lesson.locked ? (
+                    <Lock className="w-5 h-5" />
+                  ) : (
+                    <Play className="w-5 h-5 fill-current translate-x-[-1px]" />
                   )}
-                  {lesson.locked && (
-                    <span className="text-gray-400 mr-2">• مقفل</span>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h3 className={`font-bold text-sm ${textPrimary} truncate`}>{lesson.title}</h3>
+                  <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{lesson.duration}</span>
+                    {lesson.completed && (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{t('• مكتمل')}</span>
+                    )}
+                    {lesson.locked && (
+                      <span className="text-slate-400 font-bold">{t('• مغلق')}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  {lesson.locked ? (
+                    <span className="text-xs font-bold text-slate-400 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800">
+                      {t('مغلق')}
+                    </span>
+                  ) : (
+                    <button className="px-4 py-2 rounded-xl text-xs font-bold bg-[#9e1b1b] text-white hover:bg-[#b01e1e] transition-colors">
+                      {t('مشاهدة المحاضرة')}
+                    </button>
                   )}
                 </div>
               </div>
-
-              <div>
-                {lesson.locked ? (
-                  <span className="text-sm text-gray-400">مقفل</span>
-                ) : (
-                  <button className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600">
-                    مشاهدة
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

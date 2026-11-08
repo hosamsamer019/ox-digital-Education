@@ -1,8 +1,10 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, Plus, MessageCircle, Trash2, AlertTriangle, Loader2, CheckCircle2, X } from 'lucide-react';
 import { aiApi } from '../../services/api';
 
 export default function ChatbotPage() {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<any[]>([
     { id: 'welcome', text: 'مرحباً! أنا المساعد الذكي. كيف يمكنني مساعدتك اليوم؟', sender: 'bot', time: '10:00' },
   ]);
@@ -239,22 +241,22 @@ export default function ChatbotPage() {
   const renderSidebarContent = () => (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100 dark:border-gray-700">
-        <h3 className="font-bold text-gray-700 dark:text-gray-200 text-sm">المحادثات السابقة</h3>
+        <h3 className="font-bold text-gray-700 dark:text-gray-200 text-sm">{t('المحادثات السابقة')}</h3>
         {sessions.length > 0 && (
           <button
             onClick={() => setShowDeleteAllModal(true)}
             className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
-            title="حذف جميع المحادثات"
+            title={t('حذف جميع المحادثات')}
           >
             <Trash2 className="w-3.5 h-3.5" />
-            <span>حذف الكل</span>
+            <span>{t('حذف الكل')}</span>
           </button>
         )}
       </div>
 
       {sessions.length === 0 ? (
         <div className="text-center py-8 text-gray-400 dark:text-gray-500 text-sm">
-          لا توجد محادثات سابقة
+          {t('لا توجد محادثات سابقة')}
         </div>
       ) : (
         <div className="space-y-1.5 overflow-y-auto flex-1 pr-1">
@@ -285,7 +287,7 @@ export default function ChatbotPage() {
                     setShowDeleteModal(true);
                   }}
                   className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-md transition-colors opacity-80 hover:opacity-100"
-                  title="حذف هذه المحادثة"
+                  title={t('حذف هذه المحادثة')}
                   aria-label={`حذف محادثة: ${previewText}`}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -327,8 +329,8 @@ export default function ChatbotPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">المساعد الذكي</h1>
-          <p className="text-gray-600 dark:text-gray-400">اسأل أي سؤال متعلق بالرياضيات</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('المساعد الذكي')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('اسأل أي سؤال متعلق بالرياضيات')}</p>
         </div>
         <div className="flex items-center gap-2">
           {sessions.length > 0 && (
@@ -337,7 +339,7 @@ export default function ChatbotPage() {
               className="md:hidden flex items-center gap-1.5 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               <MessageCircle className="w-4 h-4" />
-              <span>المحادثات ({sessions.length})</span>
+              <span>{t('المحادثات (')}{sessions.length})</span>
             </button>
           )}
           <button
@@ -345,7 +347,7 @@ export default function ChatbotPage() {
             className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            <span>محادثة جديدة</span>
+            <span>{t('محادثة جديدة')}</span>
           </button>
         </div>
       </div>
@@ -362,7 +364,7 @@ export default function ChatbotPage() {
           <div className="md:hidden fixed inset-0 z-40 bg-black/50 flex items-end">
             <div className="bg-white dark:bg-gray-800 w-full max-h-[70vh] rounded-t-2xl p-4 shadow-xl border-t border-gray-200 dark:border-gray-700 flex flex-col">
               <div className="flex justify-between items-center mb-2">
-                <span className="font-bold text-gray-800 dark:text-gray-200">سجل المحادثات</span>
+                <span className="font-bold text-gray-800 dark:text-gray-200">{t('سجل المحادثات')}</span>
                 <button
                   onClick={() => setShowMobileHistory(false)}
                   className="p-1 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -445,7 +447,7 @@ export default function ChatbotPage() {
 
           {messages.length <= 1 && (
             <div className="px-6 pb-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">أسئلة مقترحة:</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{t('أسئلة مقترحة:')}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {(Array.isArray(suggestedQuestions) ? suggestedQuestions : []).map((question, idx) => (
                   <button
@@ -467,7 +469,7 @@ export default function ChatbotPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="اكتب سؤالك هنا..."
+                placeholder={t('اكتب سؤالك هنا...')}
                 disabled={loading}
                 className="flex-1 px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100 dark:disabled:bg-gray-800"
               />
@@ -475,7 +477,7 @@ export default function ChatbotPage() {
                 onClick={handleSend}
                 disabled={!input.trim() || loading}
                 className="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
-                title="إرسال"
+                title={t('إرسال')}
               >
                 <Send className="w-6 h-6" />
               </button>
@@ -502,11 +504,11 @@ export default function ChatbotPage() {
             </div>
 
             <h3 id="delete-dialog-title" className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              تأكيد حذف المحادثة
+              {t('تأكيد حذف المحادثة')}
             </h3>
 
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-              هل أنت متأكد من رغبتك في حذف هذه المحادثة؟
+              {t('هل أنت متأكد من رغبتك في حذف هذه المحادثة؟')}
             </p>
 
             <div className="bg-gray-50 dark:bg-gray-900/60 p-3 rounded-xl border border-gray-200 dark:border-gray-700 mb-4 text-xs text-gray-700 dark:text-gray-300 font-mono line-clamp-2">
@@ -515,7 +517,7 @@ export default function ChatbotPage() {
 
             <p className="text-xs text-red-500 dark:text-red-400 mb-6 flex items-center gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>لا يمكن التراجع عن هذا الإجراء وسيتم حذف جميع الرسائل التابعة لها.</span>
+              <span>{t('لا يمكن التراجع عن هذا الإجراء وسيتم حذف جميع الرسائل التابعة لها.')}</span>
             </p>
 
             <div className="flex gap-3 justify-end">
@@ -525,7 +527,7 @@ export default function ChatbotPage() {
                 disabled={isDeleting}
                 className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
               >
-                إلغاء
+                {t('إلغاء')}
               </button>
               <button
                 type="button"
@@ -559,16 +561,15 @@ export default function ChatbotPage() {
             </div>
 
             <h3 id="delete-all-dialog-title" className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              حذف جميع المحادثات
+              {t('حذف جميع المحادثات')}
             </h3>
 
             <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 leading-relaxed">
-              هل أنت متأكد تماماً من رغبتك في حذف <strong>جميع المحادثات ({sessions.length})</strong>؟
-              سيتم مسح سجل المحادثات والرسائل بالكامل ولا يمكن استرجاعها.
+              {t('هل أنت متأكد تماماً من رغبتك في حذف')} <strong>{t('جميع المحادثات (')}{sessions.length})</strong>{t('؟\n              سيتم مسح سجل المحادثات والرسائل بالكامل ولا يمكن استرجاعها.')}
             </p>
 
             <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-800 dark:text-amber-300 mb-6">
-              ملاحظة: هذا الإجراء يخص فقط محادثاتك مع المساعد الذكي ولا يمس حسابك أو درجاتك أو أي واجبات.
+              {t('ملاحظة: هذا الإجراء يخص فقط محادثاتك مع المساعد الذكي ولا يمس حسابك أو درجاتك أو أي واجبات.')}
             </div>
 
             <div className="flex gap-3 justify-end">
@@ -578,7 +579,7 @@ export default function ChatbotPage() {
                 disabled={isDeleting}
                 className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
               >
-                إلغاء
+                {t('إلغاء')}
               </button>
               <button
                 type="button"

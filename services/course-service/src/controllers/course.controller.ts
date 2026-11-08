@@ -80,6 +80,12 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
     } else if (isStudent) {
       whereClause = { enrollments: { some: { studentId: requesterId } } };
     }
+
+    // Tenant Isolation (OD-701): Scope courses to authenticated institution
+    const tenantContext = (req as any).tenantContext;
+    if (tenantContext && !tenantContext.isPlatformSuperAdmin && tenantContext.institutionId) {
+      whereClause.institutionId = tenantContext.institutionId;
+    }
     
     const courses = await db.course.findMany({
       where: whereClause,
@@ -87,8 +93,15 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
       take: limit,
       include: {
         lessons: {
-          include: {
-            quizzes: false,
+          select: {
+            id: true,
+            title: true,
+            videoUrl: true,
+            pdfUrl: true,
+            courseId: true,
+            createdAt: true,
+            publishedAt: true,
+            updatedAt: true,
             progress: isStudent && requesterId ? {
               where: { studentId: requesterId }
             } : false
@@ -283,7 +296,7 @@ export const postLessonEvents = async (req: AuthRequest, res: Response) => {
 
     if (!studentId) return res.status(401).json({ message: 'Unauthorized' });
 
-    const lesson = await db.lesson.findUnique({ where: { id: lessonId } });
+    const lesson = await db.lesson.findUnique({ where: { id: lessonId }, select: { id: true, courseId: true } });
     if (!lesson) return res.status(404).json({ message: 'Lesson not found' });
     
     const isEnrolled = await checkUserEnrollment(req.user, lesson.courseId);
@@ -450,7 +463,21 @@ export const getStudentVideoAnalytics = async (req: AuthRequest, res: Response) 
       where: { studentId },
       include: {
         lesson: {
-          include: { course: true }
+          select: {
+        id: true,
+        title: true,
+        videoUrl: true,
+        courseId: true,
+        publishedAt: true,
+        course: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            teacherId: true
+          }
+        }
+      }
         },
         riskHistory: {
           orderBy: { detectedAt: 'desc' }
@@ -483,9 +510,16 @@ export const getLessons = async (req: AuthRequest, res: Response) => {
       where: whereClause,
       skip,
       take: limit,
-      include: {
-        course: { select: { title: true } },
-        // Removed deep quizzes include for list view to save memory
+      select: {
+        id: true,
+        title: true,
+        videoUrl: true,
+        pdfUrl: true,
+        courseId: true,
+        createdAt: true,
+        publishedAt: true,
+        updatedAt: true,
+        course: { select: { title: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -517,17 +551,17 @@ export const getLessonDetails = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const lesson = await db.lesson.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        videoUrl: true,
+        pdfUrl: true,
+        courseId: true,
+        createdAt: true,
+        publishedAt: true,
+        updatedAt: true,
         course: true,
         quizzes: true,
-        activeMedia: {
-          select: {
-            id: true,
-            status: true,
-            canonicalSource: true,
-            masterPlaylistKey: true
-          }
-        },
         progress: req.user?.role?.toUpperCase().includes('STUDENT') ? {
           where: { studentId: req.user?.userId }
         } : false
@@ -565,16 +599,16 @@ export const getCourseDetails = async (req: AuthRequest, res: Response) => {
       where: { id },
       include: {
         lessons: {
-          include: {
+          select: {
+            id: true,
+            title: true,
+            videoUrl: true,
+            pdfUrl: true,
+            courseId: true,
+            createdAt: true,
+            publishedAt: true,
+            updatedAt: true,
             quizzes: true,
-            activeMedia: {
-              select: {
-                id: true,
-                status: true,
-                canonicalSource: true,
-                masterPlaylistKey: true
-              }
-            },
             progress: isStudent && requesterId ? {
               where: { studentId: requesterId }
             } : true
@@ -672,7 +706,8 @@ export const getStudentCourseStats = async (req: AuthRequest, res: Response) => 
         course: {
           include: {
             lessons: {
-              include: {
+              select: {
+                id: true,
                 progress: {
                   where: { studentId }
                 }
@@ -878,7 +913,7 @@ export const updateLesson = async (req: AuthRequest, res: Response) => {
     
     const lesson = await db.lesson.findUnique({
       where: { id },
-      include: { course: true }
+      select: { id: true, courseId: true, videoUrl: true, course: { select: { teacherId: true } } }
     });
 
     if (!lesson) {
@@ -992,7 +1027,7 @@ export const deleteLesson = async (req: AuthRequest, res: Response) => {
 
     const lesson = await db.lesson.findUnique({
       where: { id },
-      include: { course: true }
+      select: { id: true, courseId: true, course: { select: { teacherId: true } } }
     });
     if (!lesson) return res.status(404).json({ message: 'Lesson not found' });
 
@@ -1017,7 +1052,7 @@ export const updateVideoProgress = async (req: AuthRequest, res: Response) => {
     if (!studentId) return res.status(401).json({ message: 'Unauthorized' });
 
     // Verify enrollment
-    const lesson = await db.lesson.findUnique({ where: { id: lessonId } });
+    const lesson = await db.lesson.findUnique({ where: { id: lessonId }, select: { id: true, courseId: true } });
     if (!lesson) return res.status(404).json({ message: 'Lesson not found' });
     
     const isEnrolled = await checkUserEnrollment(req.user, lesson.courseId);
@@ -1087,7 +1122,21 @@ export const getVideoAnalytics = async (req: AuthRequest, res: Response) => {
 
     const lesson = await db.lesson.findUnique({
       where: { id: lessonId },
-      include: { course: true }
+      select: {
+        id: true,
+        title: true,
+        videoUrl: true,
+        courseId: true,
+        publishedAt: true,
+        course: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            teacherId: true
+          }
+        }
+      }
     });
 
     if (!lesson) {
@@ -1326,7 +1375,7 @@ export const generateLessonVideoTicket = async (req: AuthRequest, res: Response)
     const { id } = req.params;
     const lesson = await db.lesson.findUnique({
       where: { id },
-      include: { course: true }
+      select: { id: true, courseId: true }
     });
 
     if (!lesson) {
@@ -1356,7 +1405,7 @@ export const streamLessonVideo = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const lesson = await db.lesson.findUnique({
       where: { id },
-      include: { course: true }
+      select: { id: true, courseId: true, videoUrl: true }
     });
 
     if (!lesson) {
@@ -1545,7 +1594,21 @@ export const streamLessonHls = async (req: AuthRequest, res: Response) => {
     // 1. Fetch lesson
     const lesson = await (db as any).lesson.findUnique({
       where: { id },
-      include: { course: true }
+      select: {
+        id: true,
+        title: true,
+        videoUrl: true,
+        courseId: true,
+        publishedAt: true,
+        course: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            teacherId: true
+          }
+        }
+      }
     });
 
     if (!lesson) {

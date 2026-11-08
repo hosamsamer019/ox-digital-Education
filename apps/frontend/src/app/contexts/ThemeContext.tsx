@@ -1,49 +1,129 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
-type Theme = 'light' | 'dark';
+export type Theme = 'default' | 'light' | 'dark' | 'blue' | 'green' | 'purple' | 'warm-orange';
+
+export const DARK_THEMES: Theme[] = ['dark', 'blue', 'green', 'purple', 'warm-orange'];
+export const LIGHT_THEMES: Theme[] = ['default', 'light'];
 
 interface ThemeContextType {
   theme: Theme;
+  setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
   isDark: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
+export function resolveThemeAlias(raw: string | null | undefined): Theme | null {
+  if (!raw) return null;
+  const normalized = raw.trim().toLowerCase();
+  if (normalized === 'navy') return 'blue';
+  if (normalized === 'sepia') return 'warm-orange';
+  if (normalized === 'high-contrast') return 'dark';
+  if (['default', 'light', 'dark', 'blue', 'green', 'purple', 'warm-orange'].includes(normalized)) {
+    return normalized as Theme;
+  }
+  return null;
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [theme, setThemeState] = useState<Theme>(() => {
     try {
-      const saved = localStorage.getItem('edu-theme') as Theme;
-      if (saved === 'light' || saved === 'dark') return saved;
+      const saved = resolveThemeAlias(
+        localStorage.getItem('preferred_theme') || localStorage.getItem('edu-theme')
+      );
+      if (saved) return saved;
+
+      const eduUser = localStorage.getItem('edu-user');
+      if (eduUser) {
+        const parsed = JSON.parse(eduUser);
+        const userTheme = resolveThemeAlias(parsed?.theme);
+        if (userTheme) return userTheme;
+      }
+
       if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
         return 'dark';
       }
     } catch {
-      // Fallback in case of sandboxed localStorage
+      // Fallback in case of restricted environment
     }
-    return 'dark'; // Approved institutional default
+    return 'dark'; // Canonical platform default for unauthenticated guest splash & initial state
   });
 
-  useEffect(() => {
+  const applyThemeToDOM = useCallback((targetTheme: Theme) => {
+    if (typeof document === 'undefined') return;
     const root = document.documentElement;
-    if (theme === 'dark') {
+    root.setAttribute('data-theme', targetTheme);
+
+    if (DARK_THEMES.includes(targetTheme)) {
       root.classList.add('dark');
-      root.setAttribute('data-theme', 'dark');
     } else {
       root.classList.remove('dark');
-      root.setAttribute('data-theme', 'light');
     }
+
     try {
-      localStorage.setItem('edu-theme', theme);
+      localStorage.setItem('edu-theme', targetTheme);
+      localStorage.setItem('preferred_theme', targetTheme);
+      const userRaw = localStorage.getItem('edu-user');
+      if (userRaw) {
+        const parsed = JSON.parse(userRaw);
+        if (parsed.theme !== targetTheme) {
+          parsed.theme = targetTheme;
+          localStorage.setItem('edu-user', JSON.stringify(parsed));
+        }
+      }
     } catch {
       // Ignore storage errors in restricted contexts
     }
-  }, [theme]);
+  }, []);
 
-  const toggleTheme = () => setTheme((t) => (t === 'light' ? 'dark' : 'light'));
+  const setTheme = useCallback((newTheme: Theme) => {
+    const resolved = resolveThemeAlias(newTheme) || 'default';
+    setThemeState(resolved);
+    applyThemeToDOM(resolved);
+  }, [applyThemeToDOM]);
+
+  useEffect(() => {
+    applyThemeToDOM(theme);
+  }, [theme, applyThemeToDOM]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'preferred_theme' || e.key === 'edu-theme') {
+        const resolved = resolveThemeAlias(e.newValue);
+        if (resolved && resolved !== theme) {
+          setThemeState(resolved);
+          applyThemeToDOM(resolved);
+        }
+      }
+    };
+    const handleSync = (e: any) => {
+      const syncTheme = resolveThemeAlias(e.detail?.theme);
+      if (syncTheme && syncTheme !== theme) {
+        setThemeState(syncTheme);
+        applyThemeToDOM(syncTheme);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('app:preference-sync', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('app:preference-sync', handleSync);
+    };
+  }, [theme, applyThemeToDOM]);
+
+  const toggleTheme = useCallback(() => {
+    setThemeState((current) => {
+      const nextTheme: Theme = DARK_THEMES.includes(current) ? 'default' : 'dark';
+      applyThemeToDOM(nextTheme);
+      return nextTheme;
+    });
+  }, [applyThemeToDOM]);
+
+  const isDark = DARK_THEMES.includes(theme);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, isDark: theme === 'dark' }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme, isDark }}>
       {children}
     </ThemeContext.Provider>
   );

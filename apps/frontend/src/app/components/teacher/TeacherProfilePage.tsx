@@ -9,7 +9,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 export default function TeacherProfilePage() {
   const { isDark } = useTheme();
   const { user, checkAuth } = useAuth();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [stats, setStats] = useState<{ students: number; courses: number; averageScore: number | null }>({
@@ -115,7 +115,7 @@ export default function TeacherProfilePage() {
               <div className="flex items-center gap-2 justify-center md:justify-start mb-1">
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#9e1b1b]/10 text-[#9e1b1b] border border-[#9e1b1b]/20">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  حساب معلم معتمد
+                  {t('حساب معلم معتمد')}
                 </span>
                 <span className="text-xs text-slate-400">OX-DIGITAL Education</span>
               </div>
@@ -135,7 +135,7 @@ export default function TeacherProfilePage() {
               } ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {editing ? <Save className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
-              <span>{editing ? (saving ? 'جاري الحفظ...' : 'حفظ التغييرات') : 'تعديل البيانات'}</span>
+              <span>{editing ? (saving ? t('جاري الحفظ...') : t('حفظ التغييرات')) : t('تعديل البيانات')}</span>
             </button>
           </div>
         </div>
@@ -155,12 +155,12 @@ export default function TeacherProfilePage() {
         {/* Info Form */}
         <div className={`${cardBg} border rounded-2xl p-6`}>
           <h2 className={`font-bold text-base sm:text-lg ${textPrimary} mb-5`}>
-            المعلومات الشخصية والبيانات الأكاديمية
+            {t('المعلومات الشخصية والبيانات الأكاديمية')}
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>الاسم الكامل</label>
+              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>{t('الاسم الكامل')}</label>
               <div className="relative">
                 <User className={`absolute top-1/2 -translate-y-1/2 right-3 w-4 h-4 ${textSecondary}`} />
                 <input
@@ -173,7 +173,7 @@ export default function TeacherProfilePage() {
             </div>
 
             <div>
-              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>البريد الإلكتروني</label>
+              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>{t('البريد الإلكتروني')}</label>
               <div className="relative">
                 <Mail className={`absolute top-1/2 -translate-y-1/2 right-3 w-4 h-4 ${textSecondary}`} />
                 <input
@@ -186,7 +186,7 @@ export default function TeacherProfilePage() {
             </div>
 
             <div>
-              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>معرف الحساب (Account ID)</label>
+              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>{t('معرف الحساب (Account ID)')}</label>
               <div className="relative flex items-center">
                 <User className={`absolute top-1/2 -translate-y-1/2 right-3 w-4 h-4 ${textSecondary}`} />
                 <input
@@ -199,7 +199,7 @@ export default function TeacherProfilePage() {
             </div>
 
             <div>
-              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>رقم الهاتف</label>
+              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>{t('رقم الهاتف')}</label>
               <div className="relative">
                 <Phone className={`absolute top-1/2 -translate-y-1/2 right-3 w-4 h-4 ${textSecondary}`} />
                 <input
@@ -212,7 +212,7 @@ export default function TeacherProfilePage() {
             </div>
 
             <div>
-              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>المحافظة / المدينة</label>
+              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>{t('المحافظة / المدينة')}</label>
               <div className="relative">
                 <MapPin className={`absolute top-1/2 -translate-y-1/2 right-3 w-4 h-4 ${textSecondary}`} />
                 <input
@@ -225,13 +225,13 @@ export default function TeacherProfilePage() {
             </div>
 
             <div>
-              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>لغة الواجهة</label>
+              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>{t('لغة الواجهة')}</label>
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as any)}
                 className={inputClass}
               >
-                <option value="ARABIC">العربية (الافتراضية)</option>
+                <option value="ARABIC">{t('العربية (الافتراضية)')}</option>
                 <option value="ENGLISH">English</option>
               </select>
             </div>

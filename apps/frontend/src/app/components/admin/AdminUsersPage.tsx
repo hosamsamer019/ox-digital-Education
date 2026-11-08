@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Search, Plus, Edit, Trash2, X, AlertTriangle, Shield, Filter } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, AlertTriangle, Shield, Filter, Loader2 } from 'lucide-react';
 const ACADEMIC_CONFIG = {
   EG: {
     label: 'مصر',
@@ -36,9 +36,11 @@ const ACADEMIC_CONFIG = {
 } as const;
 import { userService } from '../../services/user.service';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();
+  const { t, isRtl } = useLanguage();
   
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
@@ -349,8 +351,8 @@ export default function AdminUsersPage() {
             <Shield className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">إدارة المستخدمين</h1>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">إضافة وتعديل وحذف المستخدمين، وإدارة الصلاحيات</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{t('إدارة المستخدمين')}</h1>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{t('إضافة وتعديل وحذف المستخدمين، وإدارة الصلاحيات')}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -361,7 +363,7 @@ export default function AdminUsersPage() {
               className="flex items-center gap-2 bg-red-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>حذف المحدد ({totalSelectedCount})</span>
+              <span>{t('حذف المحدد (')}{totalSelectedCount})</span>
             </button>
           )}
           <button
@@ -369,7 +371,7 @@ export default function AdminUsersPage() {
             className="flex items-center gap-2 bg-purple-600 text-white px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold rounded-lg hover:bg-purple-700 transition-colors"
           >
             <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span>إضافة مستخدم</span>
+            <span>{t('addUser')}</span>
           </button>
         </div>
       </div>
@@ -380,7 +382,7 @@ export default function AdminUsersPage() {
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="ابحث عن مستخدم (بالاسم أو البريد)..."
+              placeholder={t('searchUserPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pr-10 px-4 py-2.5 sm:py-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-purple-500"
@@ -393,12 +395,14 @@ export default function AdminUsersPage() {
               onChange={(e) => setRoleFilter(e.target.value)}
               className="w-full pr-10 px-4 py-2.5 sm:py-3 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-purple-500 appearance-none"
             >
-              <option value="">كل الأدوار</option>
-              <option value="ADMIN">مدير</option>
-              <option value="TEACHER">معلم</option>
-              <option value="ONLINE_STUDENT">طالب أونلاين</option>
-              <option value="CENTER_STUDENT">طالب سنتر</option>
-              <option value="PARENT">ولي أمر</option>
+              <option value="">{t('allRoles')}</option>
+              <option value="ADMIN">{t('adminRole')}</option>
+              <option value="PRIMARY_MANAGER">{t('primaryManagerRole')}</option>
+              <option value="ACCOUNTANT">{t('accountantRole')}</option>
+              <option value="TEACHER">{t('teacherRole')}</option>
+              <option value="ONLINE_STUDENT">{t('onlineStudentRole')}</option>
+              <option value="CENTER_STUDENT">{t('centerStudentRole')}</option>
+              <option value="PARENT">{t('parentRole')}</option>
             </select>
           </div>
         </div>
@@ -415,15 +419,24 @@ export default function AdminUsersPage() {
                     className="w-4 h-4 text-purple-600 rounded border-gray-300 dark:border-gray-600 focus:ring-purple-500 cursor-pointer"
                   />
                 </th>
-                <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">الاسم</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">البريد الإلكتروني</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">الدور</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300 rounded-tl-lg">الإجراءات</th>
+                <th className={`${isRtl ? "text-right" : "text-left"} py-3 px-4 font-medium text-gray-700 dark:text-gray-300`}>{t('name')}</th>
+                <th className={`${isRtl ? "text-right" : "text-left"} py-3 px-4 font-medium text-gray-700 dark:text-gray-300`}>{t('email')}</th>
+                <th className={`${isRtl ? "text-right" : "text-left"} py-3 px-4 font-medium text-gray-700 dark:text-gray-300`}>{t('role')}</th>
+                <th className={`${isRtl ? "text-right" : "text-left"} py-3 px-4 font-medium text-gray-700 dark:text-gray-300 rounded-tl-lg`}>{t('actions')}</th>
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">جاري تحميل البيانات...</td></tr>}
-              {!loading && users.length === 0 && <tr><td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">لا يوجد مستخدمين</td></tr>}
+              {loading && (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2" role="status">
+                      <Loader2 className="w-6 h-6 animate-spin text-[#9e1b1b]" />
+                      <span className="text-xs font-medium text-muted-foreground">{t('جاري تحميل بيانات المستخدمين...')}</span>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {!loading && users.length === 0 && <tr><td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">{t('noUsersFound')}</td></tr>}
               {users.map((user) => {
                 const isSelf = user.id === currentUser?.id;
                 const checked = isSelected(user.id);
@@ -439,7 +452,7 @@ export default function AdminUsersPage() {
                       />
                     </td>
                     <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">
-                      {user.name} {isSelf && <span className="text-xs text-gray-400 dark:text-gray-500 mr-2">(أنت)</span>}
+                      {user.name} {isSelf && <span className="text-xs text-gray-400 dark:text-gray-500 mr-2">{t('(أنت)')}</span>}
                     </td>
                     <td className="py-3 px-4 text-gray-600 dark:text-gray-400">{user.email}</td>
                     <td className="py-3 px-4">
@@ -454,11 +467,11 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <button onClick={() => handleEdit(user)} title="تعديل" className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors">
+                        <button onClick={() => handleEdit(user)} title={t('تعديل')} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors">
                           <Edit className="w-4 h-4" />
                         </button>
                         {!isSelf && (
-                          <button onClick={() => prepareSingleDelete(user.id)} title="حذف" className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors">
+                          <button onClick={() => prepareSingleDelete(user.id)} title={t('حذف')} className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
@@ -474,8 +487,8 @@ export default function AdminUsersPage() {
             <div className="flex flex-1 flex-col sm:flex-row items-center justify-between gap-3 w-full">
               <div className="text-center sm:text-start">
                 <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                  الصفحة <span className="font-medium">{page}</span> من <span className="font-medium">{totalPages}</span>
-                  <span className="mr-3 text-gray-500 dark:text-gray-400">إجمالي النتائج: {totalUsersMatching}</span>
+                  {t('الصفحة')} <span className="font-medium">{page}</span> {t('من')} <span className="font-medium">{totalPages}</span>
+                  <span className="mr-3 text-gray-500 dark:text-gray-400">{t('إجمالي النتائج:')} {totalUsersMatching}</span>
                 </p>
               </div>
               <div>
@@ -485,14 +498,14 @@ export default function AdminUsersPage() {
                     disabled={page === 1}
                     className="relative inline-flex items-center rounded-r-md px-3 py-1.5 text-xs sm:text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 focus:z-20 disabled:opacity-50"
                   >
-                    <span>السابق</span>
+                    <span>{t('السابق')}</span>
                   </button>
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                     className="relative inline-flex items-center rounded-l-md px-3 py-1.5 text-xs sm:text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 focus:z-20 disabled:opacity-50"
                   >
-                    <span>التالي</span>
+                    <span>{t('التالي')}</span>
                   </button>
                 </nav>
               </div>
@@ -510,49 +523,49 @@ export default function AdminUsersPage() {
                 <AlertTriangle className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">تأكيد الحذف الكلي!</h2>
-                <p className="text-red-500/80 dark:text-red-400/80 text-sm">هذا الإجراء نهائي ولا يمكن التراجع عنه.</p>
+                <h2 className="text-2xl font-bold">{t('تأكيد الحذف الكلي!')}</h2>
+                <p className="text-red-500/80 dark:text-red-400/80 text-sm">{t('هذا الإجراء نهائي ولا يمكن التراجع عنه.')}</p>
               </div>
             </div>
 
             <div className="bg-red-50 dark:bg-red-950/30 p-5 rounded-xl mb-8 space-y-3 border border-red-100 dark:border-red-900/50 max-h-[50vh] overflow-y-auto">
               {impactData.users === 0 ? (
-                <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">لا يوجد مستخدمون محددون للحذف</p>
+                <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">{t('لا يوجد مستخدمون محددون للحذف')}</p>
               ) : (
                 <>
                   <p className="font-bold text-gray-800 dark:text-gray-100 text-lg border-b border-red-200 dark:border-red-800 pb-2">
-                    سيتم حذف البيانات التالية نهائياً:
+                    {t('سيتم حذف البيانات التالية نهائياً:')}
                   </p>
                   
                   {impactData.emails && impactData.emails.length > 0 && (
                     <div className="py-2 mb-2 border-b border-red-200 dark:border-red-800">
-                      <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">الحسابات المتأثرة ({impactData.users}):</p>
+                      <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('الحسابات المتأثرة (')}{impactData.users}):</p>
                       <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside bg-white/50 dark:bg-gray-900/50 p-2 rounded">
                         {impactData.emails.map((email: string, i: number) => (
                           <li key={i}>{email}</li>
                         ))}
                       </ul>
                       {impactData.users > 10 && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mr-2">...و {impactData.users - 10} مستخدمين آخرين</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mr-2">{t('...و')} {impactData.users - 10} {t('مستخدمين آخرين')}</p>
                       )}
                     </div>
                   )}
 
                   <ul className="text-gray-700 dark:text-gray-300 text-sm space-y-2 pt-2">
-                    <li className="flex justify-between"><span>المستخدمين:</span> <span className="font-bold text-red-600 dark:text-red-400">{impactData.users}</span></li>
-                    <li className="flex justify-between"><span>منهم معلمين:</span> <span className="font-bold">{impactData.teachers}</span></li>
+                    <li className="flex justify-between"><span>{t('المستخدمين:')}</span> <span className="font-bold text-red-600 dark:text-red-400">{impactData.users}</span></li>
+                    <li className="flex justify-between"><span>{t('منهم معلمين:')}</span> <span className="font-bold">{impactData.teachers}</span></li>
                     {impactData.teachers > 0 && (
-                      <li className="flex justify-between"><span>الدورات التعليمية (بكل محتوياتها):</span> <span className="font-bold text-red-600 dark:text-red-400">{impactData.courses}</span></li>
+                      <li className="flex justify-between"><span>{t('الدورات التعليمية (بكل محتوياتها):')}</span> <span className="font-bold text-red-600 dark:text-red-400">{impactData.courses}</span></li>
                     )}
-                    <li className="flex justify-between"><span>الاشتراكات/التسجيلات:</span> <span className="font-bold">{impactData.enrollments}</span></li>
-                    <li className="flex justify-between"><span>محاولات الامتحانات:</span> <span className="font-bold">{impactData.examAttempts}</span></li>
-                    <li className="flex justify-between"><span>المدفوعات:</span> <span className="font-bold">{impactData.payments}</span></li>
-                    <li className="flex justify-between"><span>الواجبات المسلمة:</span> <span className="font-bold">{impactData.submissions}</span></li>
-                    <li className="flex justify-between"><span>سجلات الحضور:</span> <span className="font-bold">{impactData.attendances}</span></li>
+                    <li className="flex justify-between"><span>{t('الاشتراكات/التسجيلات:')}</span> <span className="font-bold">{impactData.enrollments}</span></li>
+                    <li className="flex justify-between"><span>{t('محاولات الامتحانات:')}</span> <span className="font-bold">{impactData.examAttempts}</span></li>
+                    <li className="flex justify-between"><span>{t('المدفوعات:')}</span> <span className="font-bold">{impactData.payments}</span></li>
+                    <li className="flex justify-between"><span>{t('الواجبات المسلمة:')}</span> <span className="font-bold">{impactData.submissions}</span></li>
+                    <li className="flex justify-between"><span>{t('سجلات الحضور:')}</span> <span className="font-bold">{impactData.attendances}</span></li>
                   </ul>
                   
                   <div className="mt-4 p-3 bg-red-100/50 dark:bg-red-950/50 rounded-lg text-xs text-red-800 dark:text-red-300 leading-relaxed border border-red-200 dark:border-red-800">
-                    <strong>تنبيه:</strong> سيتم أيضاً حذف أية رسائل دردشة، وأية بيانات أخرى مرتبطة بهؤلاء المستخدمين.
+                    <strong>{t('تنبيه:')}</strong> {t('سيتم أيضاً حذف أية رسائل دردشة، وأية بيانات أخرى مرتبطة بهؤلاء المستخدمين.')}
                   </div>
                 </>
               )}
@@ -564,15 +577,13 @@ export default function AdminUsersPage() {
                 disabled={isDeleting || impactData.users === 0}
                 className={`flex-1 bg-red-600 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-red-200 dark:shadow-none transition-all ${isDeleting || impactData.users === 0 ? 'opacity-50 cursor-not-allowed hover:bg-red-600' : 'hover:bg-red-700'}`}
               >
-                {isDeleting ? 'جاري الحذف...' : 'نعم، قم بالحذف الكلي'}
+                {isDeleting ? t('جاري الحذف...') : t('نعم، قم بالحذف الكلي')}
               </button>
               <button
                 onClick={() => setShowImpactModal(false)}
                 disabled={isDeleting}
                 className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-3.5 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                إلغاء
-              </button>
+              >{t('cancel')}</button>
             </div>
           </div>
         </div>
@@ -584,7 +595,7 @@ export default function AdminUsersPage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-8 pb-4 border-b border-gray-100 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {editingUser ? 'تعديل مستخدم' : 'إضافة مستخدم جديد'}
+                {editingUser ? t('تعديل مستخدم') : t('إضافة مستخدم جديد')}
               </h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 bg-gray-50 dark:bg-gray-700 p-2 rounded-full transition-colors">
                 <X className="w-5 h-5" />
@@ -594,7 +605,7 @@ export default function AdminUsersPage() {
             <div className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  الاسم الكامل <span className="text-red-500">*</span>
+                  {t('الاسم الكامل')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -608,7 +619,7 @@ export default function AdminUsersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  البريد الإلكتروني <span className="text-red-500">*</span>
+                  {t('البريد الإلكتروني')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -622,7 +633,7 @@ export default function AdminUsersPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {editingUser ? 'كلمة المرور الجديدة (اتركها فارغة للاحتفاظ بالقديمة)' : <>كلمة المرور <span className="text-red-500">*</span></>}
+                  {editingUser ? t('كلمة المرور الجديدة (اتركها فارغة للاحتفاظ بالقديمة)') : <>{t('كلمة المرور')} <span className="text-red-500">*</span></>}
                 </label>
                 <input
                   type="password"
@@ -636,18 +647,19 @@ export default function AdminUsersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الدور (Role)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('الدور (Role)')}</label>
                 <select
                   disabled={isSaving}
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value})}
                   className={`w-full px-4 py-2.5 bg-white dark:bg-gray-700 border ${validationErrors.role ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-gray-600'} text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-purple-500 transition-all outline-none`}
                 >
-                  <option value="ADMIN">ADMIN (مدير)</option>
-                  <option value="TEACHER">TEACHER (معلم)</option>
-                  <option value="ONLINE_STUDENT">ONLINE_STUDENT (طالب أونلاين)</option>
-                  <option value="CENTER_STUDENT">CENTER_STUDENT (طالب سنتر)</option>
-                  <option value="PARENT">PARENT (ولي أمر)</option>
+                  <option value="ADMIN">{t('ADMIN (مدير)')}</option>
+                  <option value="ACCOUNTANT">{t('ACCOUNTANT (محاسب)')}</option>
+                  <option value="TEACHER">{t('TEACHER (معلم)')}</option>
+                  <option value="ONLINE_STUDENT">{t('ONLINE_STUDENT (طالب أونلاين)')}</option>
+                  <option value="CENTER_STUDENT">{t('CENTER_STUDENT (طالب سنتر)')}</option>
+                  <option value="PARENT">{t('PARENT (ولي أمر)')}</option>
                 </select>
                 {validationErrors.role && <p className="text-red-500 text-xs mt-1.5">{validationErrors.role}</p>}
               </div>
@@ -656,12 +668,12 @@ export default function AdminUsersPage() {
                 <div className="pt-4 border-t border-gray-100 dark:border-gray-700 mt-2 bg-gray-50/50 dark:bg-gray-900/50 p-4 rounded-xl">
                   <h3 className="text-sm font-bold text-purple-700 dark:text-purple-300 mb-4 flex items-center gap-2">
                     <span className="w-1.5 h-4 bg-purple-600 rounded-full"></span>
-                    الملف الأكاديمي للطالب
+                    {t('الملف الأكاديمي للطالب')}
                   </h3>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                        البلد <span className="text-red-500">*</span>
+                        {t('البلد')} <span className="text-red-500">*</span>
                       </label>
                       <select
                         disabled={isSaving}
@@ -678,7 +690,7 @@ export default function AdminUsersPage() {
                     {formData.country && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          المرحلة الدراسية <span className="text-red-500">*</span>
+                          {t('المرحلة الدراسية')} <span className="text-red-500">*</span>
                         </label>
                         <select
                           disabled={isSaving}
@@ -686,7 +698,7 @@ export default function AdminUsersPage() {
                           onChange={(e) => setFormData({...formData, educationLevel: e.target.value, gradeLevel: ''})}
                           className={`w-full px-4 py-2.5 bg-white dark:bg-gray-700 border ${validationErrors.educationLevel ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-gray-600'} text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-purple-500 outline-none`}
                         >
-                          <option value="">اختر المرحلة</option>
+                          <option value="">{t('اختر المرحلة')}</option>
                           {Object.entries((ACADEMIC_CONFIG as any)[formData.country].levels).map(([key, level]: [string, any]) => (
                             <option key={key} value={key}>{level.label}</option>
                           ))}
@@ -697,7 +709,7 @@ export default function AdminUsersPage() {
                     {formData.country && formData.educationLevel && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          الصف الدراسي <span className="text-red-500">*</span>
+                          {t('الصف الدراسي')} <span className="text-red-500">*</span>
                         </label>
                         <select
                           disabled={isSaving}
@@ -705,7 +717,7 @@ export default function AdminUsersPage() {
                           onChange={(e) => setFormData({...formData, gradeLevel: e.target.value})}
                           className={`w-full px-4 py-2.5 bg-white dark:bg-gray-700 border ${validationErrors.gradeLevel ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-gray-600'} text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-purple-500 outline-none`}
                         >
-                          <option value="">اختر الصف</option>
+                          <option value="">{t('اختر الصف')}</option>
                           {Object.entries((ACADEMIC_CONFIG as any)[formData.country].levels[formData.educationLevel].grades).map(([key, label]: [string, any]) => (
                             <option key={key} value={key}>{label}</option>
                           ))}
@@ -723,15 +735,13 @@ export default function AdminUsersPage() {
                   disabled={isSaving}
                   className={`flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  {isSaving ? 'جاري الحفظ...' : 'حفظ البيانات'}
+                  {isSaving ? t('جاري الحفظ...') : t('حفظ البيانات')}
                 </button>
                 <button
                   onClick={() => setShowModal(false)}
                   disabled={isSaving}
                   className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-3 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
-                >
-                  إلغاء
-                </button>
+                >{t('cancel')}</button>
               </div>
             </div>
           </div>

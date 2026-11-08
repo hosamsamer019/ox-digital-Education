@@ -1,9 +1,11 @@
+import { useLanguage, t } from '../../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Key, User, ShieldCheck, Menu, X, ArrowLeft, GraduationCap, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function InstitutionalNav() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { theme, toggleTheme, isDark } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -76,7 +78,7 @@ export default function InstitutionalNav() {
           <Link
             to="/"
             className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e1b1b] rounded-lg p-1"
-            aria-label="منصة أو إكس الرقمية التعليمية - الصفحة الرئيسية"
+            aria-label={t('منصة أو إكس الرقمية التعليمية - الصفحة الرئيسية')}
           >
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-white p-1 border border-slate-300 dark:border-slate-700/60 shadow-sm flex items-center justify-center overflow-hidden flex-shrink-0 group-hover:border-[#9e1b1b] transition-colors">
               <img
@@ -92,7 +94,7 @@ export default function InstitutionalNav() {
                 OX-DIGITAL Education
               </span>
               <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium block leading-normal whitespace-nowrap">
-                منصة التعليم الذكي المتكاملة
+                {t('منصة التعليم الذكي المتكاملة')}
               </span>
             </div>
           </Link>
@@ -100,7 +102,7 @@ export default function InstitutionalNav() {
           {/* Desktop Navigation Links */}
           <nav
             className="hidden lg:flex items-center gap-7"
-            aria-label="التنقل الرئيسي للمنصة"
+            aria-label={t('التنقل الرئيسي للمنصة')}
           >
             {navLinks.map((link) => (
               <a
@@ -138,10 +140,10 @@ export default function InstitutionalNav() {
             <button
               onClick={() => navigate('/external-exam')}
               className="hidden sm:flex items-center gap-1.5 text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg bg-amber-50 hover:bg-amber-100/80 text-amber-900 border border-amber-300 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 dark:text-amber-300 dark:border-amber-500/30 transition-all hover:border-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 cursor-pointer shadow-sm"
-              title="دخول امتحان مباشر باستخدام كود الاختبار"
+              title={t('دخول امتحان مباشر باستخدام كود الاختبار')}
             >
               <Key className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-              <span>دخول امتحان بكود</span>
+              <span>{t('دخول امتحان بكود')}</span>
             </button>
 
             {/* Teacher / Admin Portal Gateway (Desktop) */}
@@ -150,7 +152,7 @@ export default function InstitutionalNav() {
               className="hidden md:inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium px-3.5 py-2 rounded-lg text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-slate-300 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/60 dark:border-slate-700/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 cursor-pointer"
             >
               <GraduationCap className="w-4 h-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
-              <span>بوابة المعلم</span>
+              <span>{t('بوابة المعلم')}</span>
             </button>
 
             {/* Primary Student Login Button */}
@@ -159,7 +161,7 @@ export default function InstitutionalNav() {
               className="flex items-center gap-1.5 text-xs sm:text-sm font-bold px-3 sm:px-5 py-2 rounded-lg bg-[#9e1b1b] hover:bg-[#b91c1c] text-white shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e1b1b] cursor-pointer whitespace-nowrap"
             >
               <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-              <span>تسجيل الدخول</span>
+              <span>{t('تسجيل الدخول')}</span>
             </button>
 
             {/* Mobile & Tablet Drawer Trigger Button (Always visible on mobile/tablet) */}
@@ -177,7 +179,7 @@ export default function InstitutionalNav() {
 
       {/* Mobile & Tablet Slide-Over Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="قائمة التنقل">
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label={t('قائمة التنقل')}>
           {/* Backdrop overlay */}
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
@@ -199,7 +201,7 @@ export default function InstitutionalNav() {
                   </div>
                   <div>
                     <span className="font-bold text-slate-900 dark:text-white text-sm block">OX-DIGITAL</span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">منصة التعليم الذكي</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{t('منصة التعليم الذكي')}</span>
                   </div>
                 </div>
 
@@ -214,7 +216,7 @@ export default function InstitutionalNav() {
                   <button
                     onClick={() => setMobileMenuOpen(false)}
                     className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-                    aria-label="إغلاق القائمة"
+                    aria-label={t('إغلاق القائمة')}
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -222,7 +224,7 @@ export default function InstitutionalNav() {
               </div>
 
               {/* Navigation Links */}
-              <nav className="mt-6 flex flex-col space-y-2" aria-label="روابط القائمة">
+              <nav className="mt-6 flex flex-col space-y-2" aria-label={t('روابط القائمة')}>
                 {navLinks.map((link) => (
                   <a
                     key={link.href}
@@ -249,7 +251,7 @@ export default function InstitutionalNav() {
                   className="w-full flex items-center justify-center gap-2 text-sm font-semibold py-3 px-4 rounded-xl bg-amber-50 dark:bg-slate-800 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40"
                 >
                   <Key className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  <span>دخول امتحان بكود</span>
+                  <span>{t('دخول امتحان بكود')}</span>
                 </button>
                 <button
                   onClick={() => {
@@ -259,7 +261,7 @@ export default function InstitutionalNav() {
                   className="w-full flex items-center justify-center gap-2 text-sm font-medium py-3 px-4 rounded-xl text-slate-800 dark:text-slate-300 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80"
                 >
                   <GraduationCap className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                  <span>بوابة المعلم والمركز</span>
+                  <span>{t('بوابة المعلم والمركز')}</span>
                 </button>
                 <button
                   onClick={() => {
@@ -269,7 +271,7 @@ export default function InstitutionalNav() {
                   className="w-full flex items-center justify-center gap-2 text-sm font-bold py-3 px-4 rounded-xl bg-[#9e1b1b] text-white shadow-md hover:bg-[#b91c1c] transition-colors"
                 >
                   <User className="w-4 h-4" />
-                  <span>تسجيل الدخول للمنصة</span>
+                  <span>{t('تسجيل الدخول للمنصة')}</span>
                 </button>
               </div>
             </div>
@@ -277,7 +279,7 @@ export default function InstitutionalNav() {
             {/* Drawer Footer Status */}
             <div className="pt-6 border-t border-slate-200 dark:border-slate-800/80 text-[11px] text-slate-500 flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
-              <span>منظومة أكاديمية محمية ومشفرة</span>
+              <span>{t('منظومة أكاديمية محمية ومشفرة')}</span>
             </div>
           </div>
         </div>

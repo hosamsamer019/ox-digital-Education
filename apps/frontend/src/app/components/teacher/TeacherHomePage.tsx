@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -12,8 +13,10 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { analyticsService } from '../../services/analytics.service';
 import { LoadingState } from '../ui/LoadingState';
+import { DashboardHomeSkeleton } from '../ui/skeleton';
 
 export default function TeacherHomePage() {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -24,10 +27,10 @@ export default function TeacherHomePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const cardBg = isDark ? 'bg-[#0f131d] border-slate-800/90' : 'bg-white border-slate-200/90 shadow-xs';
-  const wellBg = isDark ? 'bg-[#161c28]/70 border-slate-800/60' : 'bg-slate-50/80 border-slate-200/80';
-  const textPrimary = isDark ? 'text-slate-100' : 'text-slate-900';
-  const textSecondary = isDark ? 'text-slate-400' : 'text-slate-500';
+  const cardBg = 'bg-card border-border shadow-xs text-card-foreground';
+  const wellBg = 'bg-muted/60 border-border text-foreground';
+  const textPrimary = 'text-foreground';
+  const textSecondary = 'text-muted-foreground';
 
   const fetchOverview = useCallback(async (isManual = false) => {
     if (!user?.id) return;
@@ -46,7 +49,7 @@ export default function TeacherHomePage() {
       setAtRiskStudents(risks);
     } catch (err: any) {
       console.error('Failed to fetch teacher overview:', err);
-      setError('تعذر تحميل بيانات لوحة المعلم. يرجى إعادة المحاولة.');
+      setError(t('تعذر تحميل بيانات لوحة المعلم. يرجى إعادة المحاولة.'));
     } finally {
       setLoading(false);
       if (isManual) setRefreshing(false);
@@ -58,7 +61,7 @@ export default function TeacherHomePage() {
   }, [fetchOverview]);
 
   if (loading) {
-    return <LoadingState message="جاري تحميل لوحة المؤشرات التعليمية للمعلم..." />;
+    return <DashboardHomeSkeleton message={t('جاري تحميل لوحة المؤشرات التعليمية للمعلم...')} portalTitle={t('لوحة مؤشرات المعلم')} />;
   }
 
   const currentDateStr = new Intl.DateTimeFormat('ar-EG', {
@@ -70,7 +73,7 @@ export default function TeacherHomePage() {
 
   return (
     <div
-      className={`p-4 sm:p-6 lg:p-8 ${isDark ? 'bg-[#090b10]' : 'bg-slate-50'} min-h-full font-['Cairo'] font-sans`}
+      className="p-4 sm:p-6 lg:p-8 bg-background text-foreground min-h-full font-['Cairo'] font-sans"
       dir="rtl"
     >
       {/* Header Banner */}
@@ -78,15 +81,15 @@ export default function TeacherHomePage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#9e1b1b]/10 text-[#9e1b1b] border border-[#9e1b1b]/20">
-              بوابة المعلم
+              {t('بوابة المعلم')}
             </span>
-            <span className="text-xs text-slate-400">منظومة الإشراف الأكاديمي والتدريس</span>
+            <span className="text-xs text-slate-400">{t('منظومة الإشراف الأكاديمي والتدريس')}</span>
           </div>
           <h1 className={`text-2xl sm:text-3xl font-extrabold ${textPrimary}`}>
-            مرحباً، أ. {user?.name || 'المعلم'}
+            {t('مرحباً، أ.')} {user?.name || 'المعلم'}
           </h1>
           <p className={`text-xs sm:text-sm mt-0.5 ${textSecondary}`}>
-            {currentDateStr} • نظرة شاملة على مستويات الطلاب والأنشطة الأكاديمية
+            {currentDateStr} {t('• نظرة شاملة على مستويات الطلاب والأنشطة الأكاديمية')}
           </p>
         </div>
 
@@ -100,7 +103,7 @@ export default function TeacherHomePage() {
           }`}
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-[#9e1b1b]' : 'text-slate-400'}`} />
-          <span>تحديث البيانات</span>
+          <span>{t('تحديث البيانات')}</span>
         </button>
       </div>
 
@@ -114,7 +117,7 @@ export default function TeacherHomePage() {
               onClick={() => fetchOverview(true)}
               className="mt-1.5 underline font-bold cursor-pointer hover:text-amber-400"
             >
-              إعادة المحاولة
+              {t('إعادة المحاولة')}
             </button>
           </div>
         </div>
@@ -126,10 +129,10 @@ export default function TeacherHomePage() {
         <div className={`${cardBg} border rounded-2xl p-5 relative overflow-hidden group hover:border-[#9e1b1b]/40 transition-all`}>
           <div className="flex items-start justify-between">
             <div>
-              <p className={`text-xs font-semibold ${textSecondary}`}>إجمالي الطلاب المسجلين</p>
+              <p className={`text-xs font-semibold ${textSecondary}`}>{t('إجمالي الطلاب المسجلين')}</p>
               <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1.5 ${textPrimary}`}>
                 {overview?.totalStudents != null ? overview.totalStudents : '—'}
-                <span className="text-xs font-normal text-slate-400 ms-1.5">طالب</span>
+                <span className="text-xs font-normal text-slate-400 ms-1.5">{t('طالب')}</span>
               </h3>
             </div>
             <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
@@ -137,7 +140,7 @@ export default function TeacherHomePage() {
             </div>
           </div>
           <p className="text-[11px] text-slate-400 mt-3 pt-2.5 border-t border-slate-200/50 dark:border-slate-800/50 truncate">
-            إجمالي الطلاب في مقرراتك الدراسية
+            {t('إجمالي الطلاب في مقرراتك الدراسية')}
           </p>
         </div>
 
@@ -145,10 +148,10 @@ export default function TeacherHomePage() {
         <div className={`${cardBg} border rounded-2xl p-5 relative overflow-hidden group hover:border-[#9e1b1b]/40 transition-all`}>
           <div className="flex items-start justify-between">
             <div>
-              <p className={`text-xs font-semibold ${textSecondary}`}>المقررات الدراسية النشطة</p>
+              <p className={`text-xs font-semibold ${textSecondary}`}>{t('المقررات الدراسية النشطة')}</p>
               <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1.5 ${textPrimary}`}>
                 {overview?.totalCourses != null ? overview.totalCourses : '—'}
-                <span className="text-xs font-normal text-slate-400 ms-1.5">مقرر</span>
+                <span className="text-xs font-normal text-slate-400 ms-1.5">{t('مقرر')}</span>
               </h3>
             </div>
             <div className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center flex-shrink-0 border border-teal-500/20">
@@ -156,7 +159,7 @@ export default function TeacherHomePage() {
             </div>
           </div>
           <p className="text-[11px] text-slate-400 mt-3 pt-2.5 border-t border-slate-200/50 dark:border-slate-800/50 truncate">
-            دورات ومناهج تعليمية منشورة
+            {t('دورات ومناهج تعليمية منشورة')}
           </p>
         </div>
 
@@ -164,7 +167,7 @@ export default function TeacherHomePage() {
         <div className={`${cardBg} border rounded-2xl p-5 relative overflow-hidden group hover:border-[#9e1b1b]/40 transition-all`}>
           <div className="flex items-start justify-between">
             <div>
-              <p className={`text-xs font-semibold ${textSecondary}`}>متوسط درجات التقييمات</p>
+              <p className={`text-xs font-semibold ${textSecondary}`}>{t('متوسط درجات التقييمات')}</p>
               <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1.5 ${textPrimary}`}>
                 {overview?.averageScore != null ? overview.averageScore : '—'}
               </h3>
@@ -184,12 +187,12 @@ export default function TeacherHomePage() {
         <div className={`${cardBg} border rounded-2xl p-5 relative overflow-hidden group hover:border-[#9e1b1b]/40 transition-all`}>
           <div className="flex items-start justify-between">
             <div>
-              <p className={`text-xs font-semibold ${textSecondary}`}>طلاب بحاجة لمتابعة</p>
+              <p className={`text-xs font-semibold ${textSecondary}`}>{t('طلاب بحاجة لمتابعة')}</p>
               <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1.5 ${
                 overview?.strugglingStudents > 0 ? 'text-amber-500' : textPrimary
               }`}>
                 {overview?.strugglingStudents ?? 0}
-                <span className="text-xs font-normal text-slate-400 ms-1.5">طالب</span>
+                <span className="text-xs font-normal text-slate-400 ms-1.5">{t('طالب')}</span>
               </h3>
             </div>
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0 border border-amber-500/20">
@@ -197,7 +200,7 @@ export default function TeacherHomePage() {
             </div>
           </div>
           <p className="text-[11px] text-slate-400 mt-3 pt-2.5 border-t border-slate-200/50 dark:border-slate-800/50 truncate">
-            طلاب متوسط درجاتهم أقل من ٥٠٪
+            {t('طلاب متوسط درجاتهم أقل من ٥٠٪')}
           </p>
         </div>
       </div>
@@ -212,8 +215,8 @@ export default function TeacherHomePage() {
             <Calendar className="w-4 h-4" />
           </div>
           <div>
-            <h4 className={`text-xs font-bold ${textPrimary}`}>تسجيل الحضور</h4>
-            <p className="text-[10px] text-slate-400">سجل حضور اليوم</p>
+            <h4 className={`text-xs font-bold ${textPrimary}`}>{t('تسجيل الحضور')}</h4>
+            <p className="text-[10px] text-slate-400">{t('سجل حضور اليوم')}</p>
           </div>
         </button>
 
@@ -225,8 +228,8 @@ export default function TeacherHomePage() {
             <PlusCircle className="w-4 h-4" />
           </div>
           <div>
-            <h4 className={`text-xs font-bold ${textPrimary}`}>إنشاء تقييم</h4>
-            <p className="text-[10px] text-slate-400">اختبار أو واجب</p>
+            <h4 className={`text-xs font-bold ${textPrimary}`}>{t('إنشاء تقييم')}</h4>
+            <p className="text-[10px] text-slate-400">{t('اختبار أو واجب')}</p>
           </div>
         </button>
 
@@ -238,8 +241,8 @@ export default function TeacherHomePage() {
             <BookOpen className="w-4 h-4" />
           </div>
           <div>
-            <h4 className={`text-xs font-bold ${textPrimary}`}>إدارة المقررات</h4>
-            <p className="text-[10px] text-slate-400">الدروس والوسائط</p>
+            <h4 className={`text-xs font-bold ${textPrimary}`}>{t('إدارة المقررات')}</h4>
+            <p className="text-[10px] text-slate-400">{t('الدروس والوسائط')}</p>
           </div>
         </button>
 
@@ -251,8 +254,8 @@ export default function TeacherHomePage() {
             <Users className="w-4 h-4" />
           </div>
           <div>
-            <h4 className={`text-xs font-bold ${textPrimary}`}>قائمة الطلاب</h4>
-            <p className="text-[10px] text-slate-400">متابعة الأداء والتقارير</p>
+            <h4 className={`text-xs font-bold ${textPrimary}`}>{t('قائمة الطلاب')}</h4>
+            <p className="text-[10px] text-slate-400">{t('متابعة الأداء والتقارير')}</p>
           </div>
         </button>
       </div>
@@ -264,10 +267,10 @@ export default function TeacherHomePage() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className={`font-bold text-base sm:text-lg ${textPrimary}`}>
-                متوسط درجات الطلاب حسب المقرر الدراسي
+                {t('متوسط درجات الطلاب حسب المقرر الدراسي')}
               </h2>
               <p className={`text-xs ${textSecondary}`}>
-                بيانات فعلية محسوبة من نتائج اختبارات الطلاب في كل مقرر
+                {t('بيانات فعلية محسوبة من نتائج اختبارات الطلاب في كل مقرر')}
               </p>
             </div>
           </div>
@@ -286,12 +289,12 @@ export default function TeacherHomePage() {
                   }}
                   formatter={(val: any) => [`${val}`, 'متوسط الدرجات']}
                 />
-                <Bar dataKey="avg" fill="#9e1b1b" radius={[0, 6, 6, 0]} name="المتوسط" />
+                <Bar dataKey="avg" fill="#9e1b1b" radius={[0, 6, 6, 0]} name={t('المتوسط')} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="text-center py-12 text-slate-400 text-xs sm:text-sm">
-              لا توجد درجات مقررات مسجلة حتى الآن.
+              {t('لا توجد درجات مقررات مسجلة حتى الآن.')}
             </div>
           )}
         </div>
@@ -299,10 +302,10 @@ export default function TeacherHomePage() {
         {/* Real Student Academic Level Distribution */}
         <div className={`${cardBg} border rounded-2xl p-5 sm:p-6`}>
           <h2 className={`font-bold text-base sm:text-lg ${textPrimary} mb-1`}>
-            توزيع المستويات الأكاديمية
+            {t('توزيع المستويات الأكاديمية')}
           </h2>
           <p className={`text-xs ${textSecondary} mb-4`}>
-            تصنيف الطلاب بناءً على نتائج الاختبارات
+            {t('تصنيف الطلاب بناءً على نتائج الاختبارات')}
           </p>
 
           {overview?.distributionData && overview.distributionData.some((d: any) => d.value > 0) ? (
@@ -338,14 +341,14 @@ export default function TeacherHomePage() {
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                       <span className={textSecondary}>{item.name}</span>
                     </div>
-                    <span className={`font-bold ${textPrimary}`}>{item.value} طالب</span>
+                    <span className={`font-bold ${textPrimary}`}>{item.value} {t('طالب')}</span>
                   </div>
                 ))}
               </div>
             </>
           ) : (
             <div className="text-center py-10 text-slate-400 text-xs sm:text-sm">
-              لا توجد تقييمات مكتملة لتوزيع المستويات بعد.
+              {t('لا توجد تقييمات مكتملة لتوزيع المستويات بعد.')}
             </div>
           )}
         </div>
@@ -360,10 +363,10 @@ export default function TeacherHomePage() {
             </div>
             <div>
               <h2 className={`font-bold text-base sm:text-lg ${textPrimary}`}>
-                طلاب بحاجة لمتابعة ودعم أكاديمي
+                {t('طلاب بحاجة لمتابعة ودعم أكاديمي')}
               </h2>
               <p className={`text-xs ${textSecondary}`}>
-                تحليل تلقائي لمؤشرات ضعف التحصيل أو تكرار الغياب
+                {t('تحليل تلقائي لمؤشرات ضعف التحصيل أو تكرار الغياب')}
               </p>
             </div>
           </div>
@@ -372,7 +375,7 @@ export default function TeacherHomePage() {
             onClick={() => navigate('/teacher/students')}
             className="text-xs sm:text-sm font-bold text-[#9e1b1b] hover:underline flex items-center gap-1 cursor-pointer"
           >
-            <span>كافة الطلاب</span>
+            <span>{t('كافة الطلاب')}</span>
             <ArrowUpRight className="w-4 h-4" />
           </button>
         </div>
@@ -380,8 +383,8 @@ export default function TeacherHomePage() {
         {atRiskStudents.length === 0 ? (
           <div className="text-center py-10 text-slate-400 text-xs sm:text-sm">
             <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-60" />
-            <p className="font-semibold">لا يوجد طلاب مسجلين بحالة تعثر حالياً.</p>
-            <p className="text-xs text-slate-500 mt-0.5">كافة الطلاب في المقررات يؤدون بمستوى مستقر.</p>
+            <p className="font-semibold">{t('لا يوجد طلاب مسجلين بحالة تعثر حالياً.')}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{t('كافة الطلاب في المقررات يؤدون بمستوى مستقر.')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -421,7 +424,7 @@ export default function TeacherHomePage() {
                   <div className="text-xs text-slate-400 mb-2 flex items-center justify-between">
                     <span>{student.reasons?.[0] || 'بحاجة لدعم دراسي'}</span>
                     <span className="font-bold text-slate-700 dark:text-slate-300">
-                      متوسط: {student.avg != null ? student.avg : '—'}
+                      {t('متوسط:')} {student.avg != null ? student.avg : '—'}
                     </span>
                   </div>
 
@@ -430,7 +433,7 @@ export default function TeacherHomePage() {
                     className="w-full text-xs font-semibold text-[#9e1b1b] hover:bg-[#9e1b1b]/10 py-1.5 rounded-lg border border-[#9e1b1b]/30 transition-colors flex items-center justify-center gap-1 cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    <span>عرض تقرير الطالب</span>
+                    <span>{t('عرض تقرير الطالب')}</span>
                   </button>
                 </div>
               );

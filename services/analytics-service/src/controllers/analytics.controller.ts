@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../../../../packages/database/src/index.js';
 import { AuthRequest } from '../middlewares/auth.middleware.js';
+import { getStudentAcademicAssessment, calculateAcademicAssessment } from '../services/academicAssessment.service.js';
 
 export const getAdminAnalytics = async (req: AuthRequest, res: Response) => {
   try {
@@ -26,10 +27,39 @@ export const getAdminAnalytics = async (req: AuthRequest, res: Response) => {
     const totalEnrollments = await db.courseEnrollment.count();
 
     const totalSubmissions = await db.submission.count();
-    const examAttempts = await db.examAttempt.findMany({ select: { score: true } });
-    const averageExamScore = examAttempts.length > 0 ? Math.round(examAttempts.reduce((acc, a) => acc + a.score, 0) / examAttempts.length) : 0;
+    const examAttempts = await db.examAttempt.findMany({
+      where: {
+        OR: [
+          { status: 'GRADED', isGraded: true },
+          { status: 'STARTED', isGraded: false, submittedAt: null, score: { gt: 0 } }
+        ]
+      },
+      select: { score: true, percentage: true, totalPoints: true, status: true, isGraded: true, exam: { select: { totalPoints: true } } }
+    });
+    let verifiedCount = 0;
+    let verifiedScoreSum = 0;
+    let verifiedPassCount = 0;
+    let legacyAwaitingCount = 0;
+
+    for (const a of examAttempts) {
+      if (a.status === 'GRADED' && a.isGraded === true) {
+        const maxPts = a.totalPoints ?? (a as any).exam?.totalPoints;
+        if (typeof maxPts === 'number' && maxPts > 0) {
+          const pct = a.percentage ?? Math.round(((a.score / maxPts) * 100) * 10) / 10;
+          verifiedCount++;
+          verifiedScoreSum += pct;
+          if (pct >= 50) verifiedPassCount++;
+        }
+      } else if (a.status === 'STARTED' && a.isGraded === false) {
+        legacyAwaitingCount++;
+      }
+    }
+
+    const averageExamScore = verifiedCount > 0
+      ? Math.round(verifiedScoreSum / verifiedCount)
+      : (legacyAwaitingCount > 0 ? null : 0);
     const passCount = examAttempts.filter(a => a.score >= 50).length;
-    const passRate = examAttempts.length > 0 ? Math.round((passCount / examAttempts.length) * 100) : 0;
+    const passRate = verifiedCount > 0 ? Math.round((verifiedPassCount / verifiedCount) * 100) : (legacyAwaitingCount > 0 ? null : 0);
     
     // Completion rate for Homeworks: (Total Submissions / Total Expected Submissions)
     // Expected submissions = enrollments * homeworks per course. This is tricky to calculate quickly without grouping, so we simplify:
@@ -38,7 +68,15 @@ export const getAdminAnalytics = async (req: AuthRequest, res: Response) => {
     const atRiskStudents = await db.user.count({
       where: {
         role: { in: ['ONLINE_STUDENT', 'CENTER_STUDENT'] },
-        examAttempts: { some: { score: { lt: 50 } } }
+        examAttempts: {
+          some: {
+            score: { lt: 50 },
+            OR: [
+              { status: 'GRADED', isGraded: true },
+              { status: 'STARTED', isGraded: false, submittedAt: null, score: { gt: 0 } }
+            ]
+          }
+        }
       }
     });
 
@@ -359,11 +397,21 @@ export const getStudentOverview = async (req: AuthRequest, res: Response) => {
     const presentCount = attendances.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length;
     const attendanceRate = attendances.length > 0 ? Math.round((presentCount / attendances.length) * 100) : 0;
 
+    // OD-01 & OD-02: Authoritative Academic Assessment
+    const { startDate, endDate, term } = req.query as { startDate?: string; endDate?: string; term?: string };
+    const academic = await getStudentAcademicAssessment(studentId, {
+      startDate: startDate || null,
+      endDate: endDate || null,
+      assessmentPeriod: term || null
+    });
+
     res.json({
       gpa,
       attendanceRate,
       completedAssignments: totalAssignments,
-      rank: 1 // Rank is hard to calculate accurately across all students without heavy DB load, so default 1.
+      rank: null,
+      rankStatus: 'INSUFFICIENT_DATA',
+      academic
     });
   } catch (error: any) {
     res.status(500).json({ message: 'Error fetching student overview', error: error.message });
@@ -545,13 +593,15 @@ export const getRiskAnalytics = async (req: AuthRequest, res: Response) => {
       let riskScore = 0;
       const reasons: string[] = [];
 
-      // Logic 1: Low average exam score
-      const examAttempts = student.examAttempts;
-      const examAvg = examAttempts.length > 0
-        ? Math.round(examAttempts.reduce((acc, a) => acc + a.score, 0) / examAttempts.length)
-        : null;
+      // OD-01 & OD-02: Authoritative Academic Assessment
+      const academicAssessment = calculateAcademicAssessment(student.examAttempts);
+      const examAvg = academicAssessment.average;
 
-      if (examAvg !== null) {
+
+
+
+
+      if (academicAssessment.status === 'AVAILABLE' && examAvg !== null) {
         if (examAvg < 50) {
           riskScore += 50;
           reasons.push('درجات الامتحانات منخفضة جداً');
@@ -562,7 +612,7 @@ export const getRiskAnalytics = async (req: AuthRequest, res: Response) => {
       }
 
       // Logic 2: Failed exams count
-      const failedExams = examAttempts.filter(a => a.score < 50).length;
+      const failedExams = student.examAttempts.filter((a: any) => ((a.status === 'GRADED' && a.isGraded === true) || (a.status === 'STARTED' && a.isGraded === false && a.submittedAt === null && a.score > 0)) && a.score < 50).length;
       if (failedExams >= 3) {
         riskScore += 30;
         reasons.push(`رسوب في ${failedExams} امتحانات`);
@@ -589,7 +639,13 @@ export const getRiskAnalytics = async (req: AuthRequest, res: Response) => {
           riskScore: Math.min(riskScore, 100),
           reasons,
           lastActivity: new Date(student.updatedAt).toLocaleDateString('ar-EG'),
-          trend: -1 * Math.floor(riskScore / 10)
+          trend: -1 * Math.floor(riskScore / 10),
+          academic: {
+            status: academicAssessment.status,
+            average: academicAssessment.average,
+            eligibleAssessmentCount: academicAssessment.eligibleAssessmentCount,
+            minimumRequired: academicAssessment.minimumRequired
+          }
         });
 
         // Add to subject map
@@ -655,5 +711,44 @@ export const getAIStats = async (req: AuthRequest, res: Response) => {
     });
   } catch (error: any) {
     res.status(500).json({ message: 'Error fetching AI stats', error: error.message });
+  }
+};
+
+/**
+ * OD-01 & OD-02 Controller Endpoint:
+ * GET /api/analytics/academic
+ * GET /api/analytics/academic/:studentId
+ * Exposes authoritative Academic Assessment with minimum evidence check (>=3) and simple average.
+ */
+export const getAcademicAssessmentController = async (req: AuthRequest, res: Response) => {
+  try {
+    const requesterRole = (req.user?.role || '').toUpperCase();
+    const requesterId = req.user?.userId;
+    if (!requesterId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const targetStudentId = req.params.studentId || (req.query.studentId as string) || requesterId;
+
+    if (targetStudentId !== requesterId) {
+      if (requesterRole !== 'ADMIN' && requesterRole !== 'TEACHER') {
+        if (requesterRole === 'PARENT') {
+          const child = await db.user.findFirst({ where: { id: targetStudentId, parentId: requesterId } });
+          if (!child) {
+            return res.status(403).json({ message: 'Forbidden: Student is not linked to parent' });
+          }
+        } else {
+          return res.status(403).json({ message: 'Forbidden' });
+        }
+      }
+    }
+
+    const { startDate, endDate, term } = req.query as { startDate?: string; endDate?: string; term?: string };
+    const academic = await getStudentAcademicAssessment(targetStudentId, {
+      startDate: startDate || null,
+      endDate: endDate || null,
+      assessmentPeriod: term || null
+    });
+    res.json({ academic });
+  } catch (error: any) {
+    res.status(500).json({ message: 'Error fetching academic assessment', error: error.message });
   }
 };

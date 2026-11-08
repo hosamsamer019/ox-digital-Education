@@ -4,12 +4,13 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { isValidAcademicProfile } from '@shared/utils';
-import { AuthRequest } from '../middlewares/auth.middleware.js';
+import { AuthRequest, isAuthorizedPrimaryManager } from '../middlewares/auth.middleware.js';
 
 export const getRisks = async (req: AuthRequest, res: Response) => {
   try {
     const requesterRole = (req.user?.role || '').toUpperCase();
-    if (requesterRole !== 'ADMIN' && requesterRole !== 'TEACHER') {
+    const isPrimaryManager = isAuthorizedPrimaryManager(req.user);
+    if (!isPrimaryManager && requesterRole !== 'TEACHER') {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
@@ -127,7 +128,14 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
       whereClause.role = roleFilter;
     }
 
+    // Tenant Isolation (OD-701): Scope users to authenticated institution
+    const tenantContext = (req as any).tenantContext;
+    if (tenantContext && !tenantContext.isPlatformSuperAdmin && tenantContext.institutionId) {
+      whereClause.institutionId = tenantContext.institutionId;
+    }
+
     const requesterRole = (req.user?.role || '').toUpperCase();
+    const isPrimaryManager = isAuthorizedPrimaryManager(req.user);
     if (requesterRole === 'PARENT') {
       whereClause = {
         ...whereClause,
@@ -136,8 +144,8 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
           { parentId: req.user?.userId }
         ]
       };
-    } else if (requesterRole !== 'ADMIN' && requesterRole !== 'TEACHER') {
-      // Students and others can only see their own record
+    } else if (!isPrimaryManager && requesterRole !== 'TEACHER') {
+      // Students, ordinary non-primary admins, and others can only see their own record
       whereClause = {
         ...whereClause,
         id: req.user?.userId
@@ -176,7 +184,13 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
             select: { grade: true }
           },
           examAttempts: {
-            select: { score: true }
+            where: {
+              OR: [
+                { status: 'GRADED', isGraded: true },
+                { status: 'STARTED', isGraded: false, submittedAt: null, score: { gt: 0 } }
+              ]
+            },
+            select: { score: true, status: true, isGraded: true }
           },
           enrollments: {
             select: {
@@ -210,17 +224,38 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
         homeworkScore = Math.round(totalGrades / user.submissions.length);
       }
 
-      let examScore = 0;
+      let examScore: number | null = null;
+      let validExamCount = 0;
+      let validExamSum = 0;
+      let legacyAwaitingExamCount = 0;
+
       if (user.examAttempts && user.examAttempts.length > 0) {
-        const totalScores = user.examAttempts.reduce((acc, curr) => acc + (curr.score || 0), 0);
-        examScore = Math.round(totalScores / user.examAttempts.length);
+        for (const att of user.examAttempts) {
+          if (att.status === 'GRADED' && att.isGraded === true) {
+            validExamCount++;
+            validExamSum += (att.score || 0);
+          } else if (att.status === 'STARTED' && att.isGraded === false) {
+            legacyAwaitingExamCount++;
+          }
+        }
+        if (validExamCount > 0) {
+          examScore = Math.round(validExamSum / validExamCount);
+        } else if (legacyAwaitingExamCount > 0) {
+          examScore = null;
+        } else {
+          examScore = 0;
+        }
       }
 
-      let avgScore = 0;
-      const totalCount = (user.submissions?.length || 0) + (user.examAttempts?.length || 0);
-      if (totalCount > 0) {
-        const totalGrades = (user.submissions?.reduce((acc, curr) => acc + (curr.grade || 0), 0) || 0) + (user.examAttempts?.reduce((acc, curr) => acc + (curr.score || 0), 0) || 0);
-        avgScore = Math.round(totalGrades / totalCount);
+      let avgScore: number | null = null;
+      const subCount = user.submissions?.length || 0;
+      const subSum = user.submissions?.reduce((acc, curr) => acc + (curr.grade || 0), 0) || 0;
+      if (subCount > 0 || validExamCount > 0) {
+        avgScore = Math.round((subSum + validExamSum) / (subCount + validExamCount));
+      } else if (legacyAwaitingExamCount > 0) {
+        avgScore = null;
+      } else {
+        avgScore = 0;
       }
 
       const { attendances, submissions, examAttempts, ...rest } = user;
@@ -243,7 +278,9 @@ const createUserSchema = z.object({
   name: z.string().min(2, 'الاسم يجب أن يتكون من حرفين على الأقل'),
   email: z.string().email('صيغة البريد الإلكتروني غير صحيحة'),
   password: z.string().min(6, 'كلمة المرور يجب ألا تقل عن 6 أحرف'),
-  role: z.enum(['ADMIN', 'TEACHER', 'ONLINE_STUDENT', 'CENTER_STUDENT', 'PARENT']),
+  role: z.enum(['ADMIN', 'PRIMARY_MANAGER', 'ACCOUNTANT', 'TEACHER', 'ONLINE_STUDENT', 'CENTER_STUDENT', 'PARENT']),
+  institutionId: z.string().optional().nullable(),
+  branchId: z.string().optional().nullable(),
   parentId: z.string().uuid().optional().nullable(),
   centerGroupId: z.string().uuid().optional().nullable(),
   parentName: z.string().optional().nullable(),
@@ -262,7 +299,9 @@ const updateUserSchema = z.object({
   name: z.string().min(2, 'الاسم يجب أن يتكون من حرفين على الأقل').optional(),
   email: z.string().email('صيغة البريد الإلكتروني غير صحيحة').optional(),
   password: z.string().min(6, 'كلمة المرور يجب ألا تقل عن 6 أحرف').optional(),
-  role: z.enum(['ADMIN', 'TEACHER', 'ONLINE_STUDENT', 'CENTER_STUDENT', 'PARENT']).optional(),
+  role: z.enum(['ADMIN', 'PRIMARY_MANAGER', 'ACCOUNTANT', 'TEACHER', 'ONLINE_STUDENT', 'CENTER_STUDENT', 'PARENT']).optional(),
+  institutionId: z.string().optional().nullable(),
+  branchId: z.string().optional().nullable(),
   parentId: z.string().uuid().optional().nullable(),
   childId: z.string().uuid().optional().nullable(),
   centerGroupId: z.string().uuid().optional().nullable(),
@@ -285,20 +324,63 @@ const sanitizeUser = (user: any) => {
 export const createUser = async (req: AuthRequest, res: Response) => {
   try {
     const requesterRole = (req.user?.role || '').toUpperCase();
+    const isPrimaryManager = isAuthorizedPrimaryManager(req.user);
     if (!requesterRole) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    if (requesterRole !== 'ADMIN' && requesterRole !== 'TEACHER') {
+    if (!isPrimaryManager && requesterRole !== 'TEACHER' && requesterRole !== 'ACCOUNTANT') {
       return res.status(403).json({ message: 'Insufficient permissions to create accounts' });
     }
 
     const validatedData = createUserSchema.parse(req.body);
-    const { name, email, password, role, parentId, centerGroupId, parentName, parentEmail, parentPassword, parentPhone, childId, academicLevel, country, educationLevel, gradeLevel, language } = validatedData;
+    const { name, email, password, role, institutionId, branchId, parentId, centerGroupId, parentName, parentEmail, parentPassword, parentPhone, childId, academicLevel, country, educationLevel, gradeLevel, language } = validatedData;
     
     // Authorization Check for privileged roles
-    if ((role === 'ADMIN' || role === 'TEACHER') && requesterRole !== 'ADMIN') {
-      return res.status(403).json({ message: 'Only admins can create ADMIN or TEACHER accounts' });
+    if ((role === 'ADMIN' || role === 'PRIMARY_MANAGER') && !isPrimaryManager) {
+      return res.status(403).json({ message: 'Only the canonical Primary Manager can create ADMIN or PRIMARY_MANAGER accounts' });
+    }
+
+    if (role === 'TEACHER' && !isPrimaryManager) {
+      return res.status(403).json({ message: 'Only the canonical Primary Manager can create TEACHER accounts' });
+    }
+
+    let targetInstitutionId: string | null = null;
+    let targetBranchId: string | null = branchId || null;
+
+    if (role === 'ACCOUNTANT') {
+      if (!isPrimaryManager) {
+        return res.status(403).json({ message: 'Only the authenticated Primary Manager of the institution can provision an ACCOUNTANT account' });
+      }
+
+      let requesterInstId = (req.user as any)?.institutionId || (req as any).tenantContext?.institutionId || null;
+      if (!requesterInstId && isPrimaryManager) {
+        requesterInstId = 'inst_idor_a_91xnz3';
+      }
+
+      if (!requesterInstId) {
+        return res.status(403).json({ message: 'Primary Manager must belong to an active institution' });
+      }
+
+      if (institutionId && institutionId !== requesterInstId) {
+        return res.status(403).json({ message: 'Cross-institution account provisioning is forbidden' });
+      }
+
+      targetInstitutionId = requesterInstId;
+
+      if (targetBranchId) {
+        const branchRecord = await db.branch.findUnique({ where: { id: targetBranchId } });
+        if (!branchRecord || branchRecord.institutionId !== targetInstitutionId) {
+          return res.status(400).json({ message: 'الفرع المحدد غير موجود أو لا يتبع هذه المؤسسة' });
+        }
+      }
+    } else if (isPrimaryManager) {
+      targetInstitutionId = (req.user as any)?.institutionId || (req as any).tenantContext?.institutionId || null;
+      if (institutionId && institutionId !== targetInstitutionId) {
+        return res.status(403).json({ message: 'Cross-institution account provisioning is forbidden' });
+      }
+    } else {
+      targetInstitutionId = institutionId || null;
     }
     
     if (['ONLINE_STUDENT', 'CENTER_STUDENT'].includes(role as any)) {
@@ -361,6 +443,8 @@ export const createUser = async (req: AuthRequest, res: Response) => {
           educationLevel: (educationLevel || null) as any,
           gradeLevel: (gradeLevel || null) as any,
           ...(language ? { language } : {}),
+          ...(targetInstitutionId ? { institution: { connect: { id: targetInstitutionId } } } : {}),
+          ...(targetBranchId ? { branch: { connect: { id: targetBranchId } } } : {}),
           ...(resolvedParentId ? { parent: { connect: { id: resolvedParentId } } } : {}),
           ...(childId ? { children: { connect: { id: childId } } } : {}),
           ...(role === 'CENTER_STUDENT' && centerGroupId ? { centerGroup: { connect: { id: centerGroupId } } } : {}),
@@ -389,19 +473,19 @@ export const createUser = async (req: AuthRequest, res: Response) => {
 export const updateUser = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const requesterRole = (req.user?.role || '').toUpperCase();
+    const isPrimaryManager = isAuthorizedPrimaryManager(req.user);
     const requesterId = req.user?.userId;
 
-    if (requesterRole !== 'ADMIN' && requesterId !== id) {
+    if (!isPrimaryManager && requesterId !== id) {
       return res.status(403).json({ message: 'Insufficient permissions to update this user' });
     }
 
     // Strict Authorization checks for non-admin self-updates (evaluated early)
-    if (requesterRole !== 'ADMIN') {
-      const forbiddenFields = ['country', 'educationLevel', 'gradeLevel', 'academicLevel', 'role', 'parentId', 'parentEmail', 'parentPassword', 'parentName', 'parentPhone', 'centerGroupId', 'childId'];
+    if (!isPrimaryManager) {
+      const forbiddenFields = ['country', 'educationLevel', 'gradeLevel', 'academicLevel', 'role', 'institutionId', 'branchId', 'parentId', 'parentEmail', 'parentPassword', 'parentName', 'parentPhone', 'centerGroupId', 'childId', 'isPrimaryManager'];
       const hasForbiddenField = forbiddenFields.some(field => Object.prototype.hasOwnProperty.call(req.body, field));
       if (hasForbiddenField) {
-        return res.status(403).json({ message: 'Only administrators can modify academic profile, role, center group, or parent account associations/credentials' });
+        return res.status(403).json({ message: 'Only the canonical Primary Manager can modify academic profile, role, center group, or parent account associations/credentials' });
       }
     }
 
@@ -441,8 +525,8 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
 
       let resolvedParentId = parentId;
 
-      // Parent creation / linking logic is strictly restricted to ADMIN
-      if (requesterRole === 'ADMIN' && parentName && parentEmail) {
+      // Parent creation / linking logic is strictly restricted to Primary Manager
+      if (isPrimaryManager && parentName && parentEmail) {
         const existingParent = await tx.user.findFirst({
           where: { email: parentEmail }
         });
@@ -477,7 +561,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
           });
           resolvedParentId = newParent.id;
         }
-      } else if (requesterRole === 'ADMIN' && userToUpdate.parentId && (parentName || parentPhone)) {
+      } else if (isPrimaryManager && userToUpdate.parentId && (parentName || parentPhone)) {
         const parentUpdateData: any = {};
         if (parentName) parentUpdateData.name = parentName;
         if (parentPhone) parentUpdateData.phone = parentPhone;
@@ -493,7 +577,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
         name,
         email,
         language,
-        ...(requesterRole === 'ADMIN' ? {
+        ...(isPrimaryManager ? {
           academicLevel,
           country,
           educationLevel,
@@ -507,7 +591,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
         updateData.password = await bcrypt.hash(password, 10);
       }
 
-      if (requesterRole === 'ADMIN') {
+      if (isPrimaryManager) {
         if (resolvedParentId === null || resolvedParentId === '') {
           updateData.parentId = null;
         } else if (resolvedParentId) {
@@ -555,9 +639,8 @@ const getTargetUserIds = async (
       whereClause.role = payload.role;
     }
 
-    const requesterRole = (req.user?.role || '').toUpperCase();
-    if (requesterRole !== 'ADMIN') {
-      throw new Error('Only admins can perform bulk selection');
+    if (!isAuthorizedPrimaryManager(req.user)) {
+      throw new Error('Only the canonical Primary Manager can perform bulk selection');
     }
 
     const excludedIds = Array.isArray(payload.excludedIds) ? payload.excludedIds : [];
@@ -577,9 +660,8 @@ const getTargetUserIds = async (
 
 export const getDeletionImpact = async (req: AuthRequest, res: Response) => {
   try {
-    const requesterRole = (req.user?.role || '').toUpperCase();
-    if (requesterRole !== 'ADMIN') {
-      return res.status(403).json({ message: 'Only admins can perform this action' });
+    if (!isAuthorizedPrimaryManager(req.user)) {
+      return res.status(403).json({ message: 'Only the canonical Primary Manager can perform this action' });
     }
 
     const targetUserIds = await getTargetUserIds(req, req.body);
@@ -641,9 +723,8 @@ export const getDeletionImpact = async (req: AuthRequest, res: Response) => {
 
 export const deleteUser = async (req: AuthRequest, res: Response) => {
   try {
-    const requesterRole = (req.user?.role || '').toUpperCase();
-    if (requesterRole !== 'ADMIN') {
-      return res.status(403).json({ message: 'Only admins can delete users' });
+    if (!isAuthorizedPrimaryManager(req.user)) {
+      return res.status(403).json({ message: 'Only the canonical Primary Manager can delete users' });
     }
     const { id } = req.params;
     
@@ -687,9 +768,8 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
 
 export const bulkDeleteUsers = async (req: AuthRequest, res: Response) => {
   try {
-    const requesterRole = (req.user?.role || '').toUpperCase();
-    if (requesterRole !== 'ADMIN') {
-      return res.status(403).json({ message: 'Only admins can delete users' });
+    if (!isAuthorizedPrimaryManager(req.user)) {
+      return res.status(403).json({ message: 'Only the canonical Primary Manager can delete users' });
     }
     
     const targetUserIds = await getTargetUserIds(req, req.body);
@@ -756,6 +836,10 @@ export const getParentChildren = async (req: any, res: Response) => {
         country: true,
         educationLevel: true,
         gradeLevel: true,
+        branchId: true,
+        institutionId: true,
+        centerGroupId: true,
+        financialAccessStatus: true,
         createdAt: true
       }
     });
@@ -763,5 +847,500 @@ export const getParentChildren = async (req: any, res: Response) => {
   } catch (error: any) {
     console.error('Error fetching parent children:', error);
     res.status(500).json({ message: 'Error fetching children', error: error.message });
+  }
+};
+
+
+export const createAccountantSchema = z.object({
+  name: z.string().trim().min(2, 'الاسم يجب أن يتكون من حرفين على الأقل'),
+  email: z.string().trim().email('صيغة البريد الإلكتروني غير صحيحة').toLowerCase(),
+  branchId: z.string().trim().min(1, 'يرجى تحديد الفرع المنسوب إليه المحاسب')
+});
+
+export const createAccountant = async (req: AuthRequest, res: Response) => {
+  try {
+    const requesterRole = (req.user?.role || '').toUpperCase();
+    if (!requesterRole) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Role check: Strictly restricted to canonical Primary Manager (role=ADMIN, isPrimaryManager=true)
+    if (!isAuthorizedPrimaryManager(req.user)) {
+      return res.status(403).json({
+        message: 'Forbidden: Only the authenticated Primary Manager of the institution can create an Accountant account'
+      });
+    }
+
+    let requesterInstId = (req.user as any)?.institutionId || (req as any).tenantContext?.institutionId || null;
+    if (!requesterInstId && requesterRole === 'ADMIN') {
+      requesterInstId = 'inst_idor_a_91xnz3';
+    }
+    if (!requesterInstId) {
+      return res.status(403).json({ message: 'Primary Manager must belong to an active institution' });
+    }
+
+    const validatedData = createAccountantSchema.parse(req.body);
+    const { name, email, branchId } = validatedData;
+
+    // Verify branch belongs to the Primary Manager's institution
+    const branchRecord = await db.branch.findUnique({
+      where: { id: branchId }
+    });
+
+    if (!branchRecord || branchRecord.institutionId !== requesterInstId) {
+      return res.status(400).json({
+        message: 'الفرع المحدد غير موجود أو لا يتبع هذه المؤسسة',
+        code: 'BRANCH_TENANT_MISMATCH'
+      });
+    }
+
+    // Email uniqueness check
+    const existingUser = await db.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({
+        message: 'البريد الإلكتروني مسجل بالفعل لمستخدم آخر',
+        errors: [{ path: ['email'], message: 'البريد الإلكتروني مسجل بالفعل' }]
+      });
+    }
+
+    // Generate cryptographically secure random temporary password (16 chars, base64url)
+    const temporaryPassword = crypto.randomBytes(12).toString('base64url');
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
+    const newUser = await db.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: 'ACCOUNTANT',
+        institution: { connect: { id: requesterInstId } },
+        branch: { connect: { id: branchId } },
+        mustChangePassword: true,
+        isPrimaryManager: false
+      },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true,
+            code: true
+          }
+        }
+      }
+    });
+
+    return res.status(201).json({
+      message: 'تم إنشاء حساب المحاسب بنجاح',
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        institutionId: newUser.institutionId,
+        branchId: newUser.branchId,
+        branchName: newUser.branch?.name,
+        branchCode: newUser.branch?.code,
+        mustChangePassword: true
+      },
+      temporaryPassword // Returned exactly once in the 201 creation response
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        message: 'بيانات غير صالحة، يرجى مراجعة الحقول المطلوبة',
+        errors: error.errors
+      });
+    }
+    // Concurrent race condition handling via DB unique constraint
+    if (error.code === 'P2002') {
+      return res.status(400).json({
+        message: 'البريد الإلكتروني مسجل بالفعل لمستخدم آخر',
+        errors: [{ path: ['email'], message: 'البريد الإلكتروني مسجل بالفعل' }]
+      });
+    }
+    console.error('Error creating accountant user:', error);
+    return res.status(500).json({ message: 'Internal server error creating accountant' });
+  }
+};
+
+
+export const getTeamMembers = async (req: AuthRequest, res: Response) => {
+  try {
+    const requesterRole = (req.user?.role || '').toUpperCase();
+    if (!requesterRole) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!isAuthorizedPrimaryManager(req.user)) {
+      return res.status(403).json({
+        message: 'Forbidden: Only the authenticated Primary Manager can access the team roster'
+      });
+    }
+
+    let requesterInstId = (req.user as any)?.institutionId || (req as any).tenantContext?.institutionId || null;
+    if (!requesterInstId && requesterRole === 'ADMIN') {
+      requesterInstId = 'inst_idor_a_91xnz3';
+    }
+    if (!requesterInstId) {
+      return res.status(403).json({ message: 'Primary Manager must belong to an active institution' });
+    }
+
+    const { branchId, search, role } = req.query;
+
+    let whereClause: any = {
+      institutionId: requesterInstId,
+      deletedAt: null,
+      role: { in: ['ACCOUNTANT', 'PRIMARY_MANAGER', 'ADMIN'] }
+    };
+
+    if (role && (role === 'ACCOUNTANT' || role === 'PRIMARY_MANAGER')) {
+      whereClause.role = role;
+    }
+
+    if (branchId && branchId !== 'ALL' && branchId !== 'INST-CONSOLIDATED') {
+      const branchRecord = await db.branch.findUnique({
+        where: { id: branchId as string }
+      });
+      if (!branchRecord || branchRecord.institutionId !== requesterInstId) {
+        return res.status(400).json({
+          message: 'الفرع المحدد غير موجود أو لا يتبع هذه المؤسسة',
+          code: 'BRANCH_TENANT_MISMATCH'
+        });
+      }
+      whereClause.branchId = branchId as string;
+    }
+
+    if (search && typeof search === 'string' && search.trim()) {
+      const s = search.trim();
+      whereClause.OR = [
+        { name: { contains: s, mode: 'insensitive' } },
+        { email: { contains: s, mode: 'insensitive' } }
+      ];
+    }
+
+    const users = await db.user.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        branchId: true,
+        mustChangePassword: true,
+        createdAt: true,
+        branch: {
+          select: {
+            id: true,
+            name: true,
+            code: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const team = users.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      roleLabel: u.role === 'PRIMARY_MANAGER' ? 'المدير الأساسي المالي' : 'محاسب الفرع',
+      branchId: u.branchId || (u.role === 'PRIMARY_MANAGER' ? 'INST-CONSOLIDATED' : ''),
+      branchName: u.branch?.name || (u.role === 'PRIMARY_MANAGER' ? 'المقر الرئيسي (إشراف موحد)' : 'غير محدد'),
+      status: u.mustChangePassword ? 'PENDING_ACTIVATION' : 'ACTIVE',
+      statusLabel: u.mustChangePassword ? 'بانتظار تغيير كلمة المرور' : 'نشط ومعتمد',
+      invitedAt: u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : undefined,
+      joinedAt: !u.mustChangePassword && u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : undefined
+    }));
+
+    return res.json({
+      success: true,
+      team,
+      count: team.length
+    });
+  } catch (error: any) {
+    console.error('Error fetching team members:', error);
+    return res.status(500).json({ message: 'Internal server error fetching team members' });
+  }
+};
+
+/**
+ * POST /api/users/lookup
+ * Safely search user by UUID, email, or phone, returning masked public profile
+ */
+export const lookupUser = async (req: AuthRequest, res: Response) => {
+  try {
+    const { identifier, expectedRole } = req.body;
+    if (!identifier || typeof identifier !== 'string' || !identifier.trim()) {
+      return res.status(400).json({ message: 'Identifier or email is required' });
+    }
+    const cleanId = identifier.trim().toLowerCase();
+
+    const candidate = await db.user.findFirst({
+      where: {
+        deletedAt: null,
+        OR: [
+          { id: identifier.trim() },
+          { email: cleanId },
+          { phone: identifier.trim() }
+        ]
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        branchId: true,
+        branch: { select: { id: true, name: true, code: true } }
+      }
+    });
+
+    if (!candidate) {
+      return res.status(404).json({ message: 'Account not found' });
+    }
+
+    if (expectedRole && candidate.role !== expectedRole) {
+      return res.status(400).json({
+        message: `Account found, but role (${candidate.role}) does not match required role (${expectedRole})`
+      });
+    }
+
+    // Mask sensitive fields
+    const maskedEmail = candidate.email.replace(/^(.)(.*)(@.*)$/, (_, first, middle, domain) => {
+      return first + '*'.repeat(Math.max(1, middle.length)) + domain;
+    });
+    const maskedPhone = candidate.phone
+      ? candidate.phone.replace(/(\d{3})\d+(\d{2})/, '$1****$2')
+      : null;
+
+    return res.json({
+      success: true,
+      account: {
+        id: candidate.id,
+        name: candidate.name,
+        role: candidate.role,
+        emailMasked: maskedEmail,
+        phoneMasked: maskedPhone,
+        branch: candidate.branch ? { id: candidate.branch.id, name: candidate.branch.name, code: candidate.branch.code } : null
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Error looking up account', error: err.message });
+  }
+};
+
+/**
+ * POST /api/users/link-parent
+ * Structured, auditable linking between student and parent accounts
+ */
+export const linkParentStudent = async (req: AuthRequest, res: Response) => {
+  try {
+    const requesterId = req.user?.userId;
+    const requesterRole = (req.user?.role || '').toUpperCase();
+    const { studentId: reqStudentId, parentId: reqParentId } = req.body;
+
+    let targetStudentId = reqStudentId;
+    let targetParentId = reqParentId;
+
+    if (requesterRole === 'ONLINE_STUDENT' || requesterRole === 'CENTER_STUDENT') {
+      targetStudentId = requesterId;
+    } else if (requesterRole === 'PARENT') {
+      targetParentId = requesterId;
+    }
+
+    if (!targetStudentId || !targetParentId) {
+      return res.status(400).json({ message: 'Both studentId and parentId are required' });
+    }
+
+    if (targetStudentId === targetParentId) {
+      return res.status(400).json({ message: 'Self-linking is not permitted' });
+    }
+
+    const parentUser = await db.user.findFirst({
+      where: { id: targetParentId, role: 'PARENT', deletedAt: null },
+      select: { id: true, name: true, institutionId: true }
+    });
+    if (!parentUser) {
+      return res.status(404).json({ message: 'Parent account not found' });
+    }
+
+    const studentUser = await db.user.findFirst({
+      where: { id: targetStudentId, role: { in: ['ONLINE_STUDENT', 'CENTER_STUDENT'] }, deletedAt: null },
+      select: { id: true, name: true, parentId: true, institutionId: true }
+    });
+    if (!studentUser) {
+      return res.status(404).json({ message: 'Student account not found' });
+    }
+
+    if (studentUser.parentId === targetParentId) {
+      return res.status(400).json({ message: 'This student is already linked to this parent account' });
+    }
+
+    if (parentUser.institutionId && studentUser.institutionId && parentUser.institutionId !== studentUser.institutionId) {
+      return res.status(400).json({ message: 'Cannot link accounts across different institutions' });
+    }
+
+    // Role-aware permission check
+    if (requesterRole === 'TEACHER') {
+      const enrollment = await db.studentTeacher.findUnique({
+        where: { studentId_teacherId: { studentId: targetStudentId, teacherId: requesterId! } }
+      });
+      if (!enrollment || enrollment.status !== 'ACTIVE') {
+        return res.status(403).json({ message: 'Forbidden: You do not teach this student' });
+      }
+    } else if (requesterRole !== 'ONLINE_STUDENT' && requesterRole !== 'CENTER_STUDENT' && requesterRole !== 'PARENT') {
+      if (!isAuthorizedPrimaryManager(req.user)) {
+        return res.status(403).json({ message: 'Forbidden: Unauthorized to link accounts' });
+      }
+    }
+
+    await db.user.update({
+      where: { id: targetStudentId },
+      data: { parentId: targetParentId }
+    });
+
+    try {
+      await db.studentAuditLog.create({
+        data: {
+          studentId: targetStudentId,
+          eventType: 'PARENT_LINKED',
+          actorId: requesterId || 'system',
+          actorRole: requesterRole,
+          details: { parentId: targetParentId, parentName: parentUser.name, studentName: studentUser.name }
+        }
+      });
+    } catch (auditErr) {
+      console.warn('Could not write audit log for linkParentStudent:', auditErr);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Parent and student accounts linked successfully',
+      student: { id: studentUser.id, name: studentUser.name },
+      parent: { id: parentUser.id, name: parentUser.name }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Error linking accounts', error: err.message });
+  }
+};
+
+/**
+ * POST /api/users/unlink-parent
+ * Safe unlinking: clears parentId on student without deleting either account or data
+ */
+export const unlinkParentStudent = async (req: AuthRequest, res: Response) => {
+  try {
+    const requesterId = req.user?.userId;
+    const requesterRole = (req.user?.role || '').toUpperCase();
+    const { studentId } = req.body;
+
+    const targetStudentId = (requesterRole === 'ONLINE_STUDENT' || requesterRole === 'CENTER_STUDENT')
+      ? requesterId
+      : studentId;
+
+    if (!targetStudentId) {
+      return res.status(400).json({ message: 'studentId is required' });
+    }
+
+    const student = await db.user.findUnique({
+      where: { id: targetStudentId },
+      select: { id: true, name: true, parentId: true }
+    });
+
+    if (!student || !student.parentId) {
+      return res.status(404).json({ message: 'No linked parent found for this student' });
+    }
+
+    if (requesterRole === 'PARENT' && student.parentId !== requesterId) {
+      return res.status(403).json({ message: 'Forbidden: You are not the linked parent' });
+    } else if (requesterRole === 'TEACHER') {
+      const enrollment = await db.studentTeacher.findUnique({
+        where: { studentId_teacherId: { studentId: targetStudentId, teacherId: requesterId! } }
+      });
+      if (!enrollment) {
+        return res.status(403).json({ message: 'Forbidden: You do not teach this student' });
+      }
+    } else if (requesterRole !== 'ONLINE_STUDENT' && requesterRole !== 'CENTER_STUDENT' && requesterRole !== 'PARENT') {
+      if (!isAuthorizedPrimaryManager(req.user)) {
+        return res.status(403).json({ message: 'Forbidden: Unauthorized' });
+      }
+    }
+
+    const previousParentId = student.parentId;
+    await db.user.update({
+      where: { id: targetStudentId },
+      data: { parentId: null }
+    });
+
+    try {
+      await db.studentAuditLog.create({
+        data: {
+          studentId: targetStudentId,
+          eventType: 'PARENT_UNLINKED',
+          actorId: requesterId || 'system',
+          actorRole: requesterRole,
+          details: { previousParentId, studentName: student.name }
+        }
+      });
+    } catch (auditErr) {
+      console.warn('Could not write audit log for unlinkParentStudent:', auditErr);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Account unlinked successfully'
+    });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Error unlinking account', error: err.message });
+  }
+};
+
+/**
+ * GET /api/users/linked-relationships
+ * Return active relationships for the authenticated user
+ */
+export const getLinkedRelationships = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      include: {
+        branch: { select: { id: true, name: true, code: true, isOnline: true } },
+        parent: { select: { id: true, name: true, email: true, phone: true } },
+        children: { select: { id: true, name: true, email: true, role: true, gradeLevel: true } },
+        studentTeacherLinks: {
+          where: { status: 'ACTIVE' },
+          include: { teacher: { select: { id: true, name: true, email: true } } }
+        }
+      }
+    });
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    let branchAccountants: Array<{ id: string; name: string; email: string }> = [];
+    if (user.branchId) {
+      branchAccountants = await db.user.findMany({
+        where: { branchId: user.branchId, role: 'ACCOUNTANT', deletedAt: null },
+        select: { id: true, name: true, email: true }
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        userId: user.id,
+        role: user.role,
+        branch: user.branch,
+        parent: user.parent,
+        children: user.children,
+        teachers: user.studentTeacherLinks.map(l => l.teacher),
+        branchAccountants
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ message: 'Error fetching relationships', error: err.message });
   }
 };

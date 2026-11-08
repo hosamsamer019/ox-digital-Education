@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardCheck, Clock, CheckCircle, AlertCircle, Camera, AlertTriangle, ShieldAlert, ChevronRight, ChevronLeft, Send } from 'lucide-react';
@@ -11,6 +12,7 @@ import { normalizeAssessmentResult } from '../../utils/assessmentResultNormalize
 import { getMediaUrl } from '../../utils/mediaUrl';
 
 export default function ExamsPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [examState, setExamState] = useState<'list' | 'setup' | 'running' | 'submitting' | 'submitted' | 'disqualified'>('list');
@@ -47,7 +49,7 @@ export default function ExamsPage() {
   const handleDisqualification = useCallback(() => {
     cleanupExam();
     setExamState('disqualified');
-    toast.error('تم إنهاء الامتحان بسبب مخالفة قواعد الامتحان.');
+    toast.error(t('تم إنهاء الامتحان بسبب مخالفة قواعد الامتحان.'));
   }, []);
 
   const { violationCount, showMultiTabWarning } = useExamAntiCheat({
@@ -77,9 +79,9 @@ export default function ExamsPage() {
     } catch (err: any) {
       console.error('Failed to fetch exams', err);
       if (err.response?.status === 403) {
-        setError('لا يمكنك عرض الامتحانات لأنك لست مسجلاً في أي دورة.');
+        setError(t('لا يمكنك عرض الامتحانات لأنك لست مسجلاً في أي دورة.'));
       } else {
-        setError('فشل في تحميل الامتحانات');
+        setError(t('فشل في تحميل الامتحانات'));
       }
     } finally {
       setLoading(false);
@@ -97,9 +99,9 @@ export default function ExamsPage() {
     } catch (err: any) {
       console.error('Failed to load exam details', err);
       if (err.response?.status === 403) {
-        toast.error('غير مصرح لك بدخول هذا الامتحان.');
+        toast.error(t('غير مصرح لك بدخول هذا الامتحان.'));
       } else {
-        toast.error('فشل تحميل تفاصيل الامتحان');
+        toast.error(t('فشل تحميل تفاصيل الامتحان'));
       }
       setExamState('list');
     } finally {
@@ -116,7 +118,7 @@ export default function ExamsPage() {
       streamRef.current = stream;
       setCameraActive(true);
     } catch (err) {
-      toast.error('يجب السماح بالوصول للكاميرا لبدء الامتحان.');
+      toast.error(t('يجب السماح بالوصول للكاميرا لبدء الامتحان.'));
     }
   };
 
@@ -128,7 +130,7 @@ export default function ExamsPage() {
 
   const beginExam = async () => {
     if (currentExam?.requiresCamera && !cameraActive) {
-      toast.error('يجب تشغيل الكاميرا أولاً!');
+      toast.error(t('يجب تشغيل الكاميرا أولاً!'));
       return;
     }
 
@@ -204,12 +206,12 @@ export default function ExamsPage() {
     } catch (err: any) {
       console.error('API exam start failed:', err);
       const code = err.response?.data?.code;
-      if (code === 'NOT_ENROLLED') toast.error('أنت غير مسجل في هذا الكورس.');
-      else if (code === 'ATTEMPT_ALREADY_FINISHED') toast.warning('لقد قمت بتسليم هذا الامتحان مسبقًا ولا يمكن الدخول إليه مرة أخرى.');
-      else if (code === 'ASSESSMENT_CLOSED') toast.error('انتهى موعد تسليم الامتحان.');
-      else if (code === 'ASSESSMENT_NOT_OPEN') toast.info('لم يبدأ موعد فتح الامتحان بعد.');
-      else if (code === 'STUDENT_ROLE_REQUIRED') toast.error('هذا الحساب لا يمكنه بدء الامتحان.');
-      else toast.error('حدث خطأ أثناء بدء الامتحان.');
+      if (code === 'NOT_ENROLLED') toast.error(t('أنت غير مسجل في هذا الكورس.'));
+      else if (code === 'ATTEMPT_ALREADY_FINISHED') toast.warning(t('لقد قمت بتسليم هذا الامتحان مسبقًا ولا يمكن الدخول إليه مرة أخرى.'));
+      else if (code === 'ASSESSMENT_CLOSED') toast.error(t('انتهى موعد تسليم الامتحان.'));
+      else if (code === 'ASSESSMENT_NOT_OPEN') toast.info(t('لم يبدأ موعد فتح الامتحان بعد.'));
+      else if (code === 'STUDENT_ROLE_REQUIRED') toast.error(t('هذا الحساب لا يمكنه بدء الامتحان.'));
+      else toast.error(t('حدث خطأ أثناء بدء الامتحان.'));
     }
   };
 
@@ -221,7 +223,7 @@ export default function ExamsPage() {
     }));
     examService.syncAttempt(selectedExam, formatted).catch((err: any) => {
       if (err.response?.data?.code === 'EXAM_TIME_EXPIRED') {
-        toast.error('انتهى وقت الامتحان — جاري تسليم الإجابات...');
+        toast.error(t('انتهى وقت الامتحان — جاري تسليم الإجابات...'));
         handleAutoSubmit();
       }
     });
@@ -234,7 +236,7 @@ export default function ExamsPage() {
   };
 
   const handleManualSubmit = () => {
-    if (confirm('هل أنت متأكد من تسليم الامتحان؟')) {
+    if (confirm(t('هل أنت متأكد من تسليم الامتحان؟'))) {
       cleanupExam();
       submitPayload(false);
     }
@@ -268,10 +270,10 @@ export default function ExamsPage() {
     } catch (err: any) {
       const code = err.response?.data?.code;
       if (code === 'ATTEMPT_ALREADY_FINISHED') {
-        toast.info('تم تسليم هذا الامتحان مسبقاً.');
+        toast.info(t('تم تسليم هذا الامتحان مسبقاً.'));
         setExamState('submitted');
       } else {
-        toast.error('خطأ في التسليم!');
+        toast.error(t('خطأ في التسليم!'));
         setExamState('list');
       }
     } finally {
@@ -291,10 +293,10 @@ export default function ExamsPage() {
       <div className="p-8 max-w-2xl mx-auto text-center" dir="rtl">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 p-8">
           <ShieldAlert className="w-24 h-24 text-red-600 dark:text-red-400 mx-auto mb-6" />
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">تم إنهاء الامتحان بسبب مخالفة قواعد الامتحان</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-2">تم تسجيل ثلاث مخالفات، ولذلك تم إنهاء محاولتك تلقائيًا.</p>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400 mb-8">الدرجة: 0</p>
-          <button onClick={() => { setExamState('list'); setAnswers({}); setCurrentQuestionIdx(0); fetchExams(); }} className="mt-2 bg-indigo-600 dark:bg-indigo-500 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600">العودة للرئيسية</button>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{t('تم إنهاء الامتحان بسبب مخالفة قواعد الامتحان')}</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-2">{t('تم تسجيل ثلاث مخالفات، ولذلك تم إنهاء محاولتك تلقائيًا.')}</p>
+          <p className="text-2xl font-bold text-red-600 dark:text-red-400 mb-8">{t('الدرجة: 0')}</p>
+          <button onClick={() => { setExamState('list'); setAnswers({}); setCurrentQuestionIdx(0); fetchExams(); }} className="mt-2 bg-indigo-600 dark:bg-indigo-500 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600">{t('العودة للرئيسية')}</button>
         </div>
       </div>
     );
@@ -304,8 +306,11 @@ export default function ExamsPage() {
   if (examState === 'submitting') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4" dir="rtl">
-        <div className="w-14 h-14 border-4 border-indigo-600 dark:border-indigo-400 border-t-transparent rounded-full animate-spin mb-4" />
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">جاري تسليم الامتحان...</h2>
+        <div className="relative flex items-center justify-center mb-4" role="status">
+          <div className="w-12 h-12 border-4 border-border border-t-[#9e1b1b] rounded-full animate-spin motion-reduce:animate-none" />
+          <span className="sr-only">{t('جاري تسليم الامتحان...')}</span>
+        </div>
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{t('جاري تسليم الامتحان...')}</h2>
       </div>
     );
   }
@@ -318,8 +323,8 @@ export default function ExamsPage() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 p-8 text-center">
             <ClipboardCheck className="w-16 h-16 mx-auto text-indigo-600 dark:text-indigo-400 mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{currentExam?.title}</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">هذا الامتحان لا يتطلب كاميرا. اضغط للبدء.</p>
-            <button onClick={beginExam} className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 font-bold">ابدأ الامتحان</button>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">{t('هذا الامتحان لا يتطلب كاميرا. اضغط للبدء.')}</p>
+            <button onClick={beginExam} className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 font-bold">{t('ابدأ الامتحان')}</button>
           </div>
         </div>
       );
@@ -329,15 +334,15 @@ export default function ExamsPage() {
       <div className="p-8 max-w-2xl mx-auto">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 p-8 text-center">
           <Camera className="w-16 h-16 mx-auto text-indigo-600 dark:text-indigo-400 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">إعداد كاميرا المراقبة</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">يجب تفعيل الكاميرا لضمان نزاهة الامتحان.</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{t('إعداد كاميرا المراقبة')}</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">{t('يجب تفعيل الكاميرا لضمان نزاهة الامتحان.')}</p>
           <div className="bg-gray-100 dark:bg-gray-900 rounded-lg overflow-hidden h-64 mb-6 flex items-center justify-center relative">
             <video ref={videoRef} autoPlay playsInline muted className="h-full object-cover" />
-            {!cameraActive && <p className="absolute text-gray-500 dark:text-gray-400">الكاميرا معطلة</p>}
+            {!cameraActive && <p className="absolute text-gray-500 dark:text-gray-400">{t('الكاميرا معطلة')}</p>}
           </div>
           <div className="flex gap-4 justify-center">
-            <button onClick={startCamera} className="bg-indigo-600 dark:bg-indigo-500 text-white px-6 py-2 rounded hover:bg-indigo-700 dark:hover:bg-indigo-600">تفعيل الكاميرا</button>
-            <button onClick={beginExam} disabled={!cameraActive} className={`px-6 py-2 rounded text-white ${cameraActive ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 dark:bg-gray-700 cursor-not-allowed'}`}>ابدأ الامتحان</button>
+            <button onClick={startCamera} className="bg-indigo-600 dark:bg-indigo-500 text-white px-6 py-2 rounded hover:bg-indigo-700 dark:hover:bg-indigo-600">{t('تفعيل الكاميرا')}</button>
+            <button onClick={beginExam} disabled={!cameraActive} className={`px-6 py-2 rounded text-white ${cameraActive ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 dark:bg-gray-700 cursor-not-allowed'}`}>{t('ابدأ الامتحان')}</button>
           </div>
         </div>
       </div>
@@ -370,14 +375,14 @@ export default function ExamsPage() {
         {showMultiTabWarning && (
           <div className="mb-4 bg-yellow-50 dark:bg-yellow-950/40 border border-yellow-400 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded-lg flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 shrink-0" />
-            <span>تحذير: تم الكشف عن تبويب آخر مفتوح لهذا الامتحان. استخدام أكثر من تبويب قد يُسجَّل كمخالفة.</span>
+            <span>{t('تحذير: تم الكشف عن تبويب آخر مفتوح لهذا الامتحان. استخدام أكثر من تبويب قد يُسجَّل كمخالفة.')}</span>
           </div>
         )}
 
         {/* Violation counter */}
         {violationCount > 0 && (
           <div className="mb-4 bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-2 rounded-lg text-sm font-bold">
-            ⚠️ مخالفات مسجلة: {violationCount} / 3
+            {t('⚠️ مخالفات مسجلة:')} {violationCount} / 3
           </div>
         )}
 
@@ -387,7 +392,7 @@ export default function ExamsPage() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{currentExam.title}</h1>
             {totalQuestions > 0 && (
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                السؤال {currentQuestionIdx + 1} من {totalQuestions} ({answeredCount} مُجاب عليها)
+                {t('السؤال')} {currentQuestionIdx + 1} {t('من')} {totalQuestions} ({answeredCount} {t('مُجاب عليها)')}
               </p>
             )}
           </div>
@@ -398,24 +403,24 @@ export default function ExamsPage() {
             </div>
             <button onClick={handleManualSubmit} className="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 font-bold text-sm transition-colors flex items-center gap-1.5">
               <Send className="w-4 h-4" />
-              إنهاء وتسليم
+              {t('إنهاء وتسليم')}
             </button>
           </div>
         </div>
 
         {/* Single Active Question Card (Only ONE question rendered in DOM) */}
         {totalQuestions === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 p-8 text-center text-gray-500 dark:text-gray-400">لا توجد أسئلة متاحة في هذا الامتحان.</div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 p-8 text-center text-gray-500 dark:text-gray-400">{t('لا توجد أسئلة متاحة في هذا الامتحان.')}</div>
         ) : currentQ ? (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 p-6 sm:p-8 space-y-6" data-testid={`question-container-${currentQ.id || currentQuestionIdx}`}>
             {/* Question Header */}
             <div className="font-bold text-gray-900 dark:text-white flex justify-between items-start gap-4">
               <div>
-                <span className="text-indigo-600 dark:text-indigo-400 ml-2">السؤال {currentQuestionIdx + 1}:</span>
+                <span className="text-indigo-600 dark:text-indigo-400 ml-2">{t('السؤال')} {currentQuestionIdx + 1}:</span>
                 <MathContent content={currentQ.text || ''} className="leading-relaxed inline" />
               </div>
               {currentQ.points && (
-                <span className="bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 text-xs px-2.5 py-1 rounded-full shrink-0 font-medium">{currentQ.points} نقطة</span>
+                <span className="bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 text-xs px-2.5 py-1 rounded-full shrink-0 font-medium">{currentQ.points} {t('نقطة')}</span>
               )}
             </div>
 
@@ -434,7 +439,7 @@ export default function ExamsPage() {
 
             {currentQ.given && currentQ.given.length > 0 && (
               <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
-                <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">المعطيات:</p>
+                <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">{t('المعطيات:')}</p>
                 <ul className="list-disc list-inside space-y-1">
                   {currentQ.given.map((g: string, i: number) => (
                     <li key={i} className="text-gray-800 dark:text-gray-200"><MathRenderer expression={g} /></li>
@@ -451,7 +456,7 @@ export default function ExamsPage() {
 
             {currentQ.required && (
               <div className="bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-100 dark:border-yellow-900/50">
-                <p className="font-medium text-yellow-800 dark:text-yellow-300"><span className="font-bold">المطلوب:</span> {currentQ.required}</p>
+                <p className="font-medium text-yellow-800 dark:text-yellow-300"><span className="font-bold">{t('المطلوب:')}</span> {currentQ.required}</p>
               </div>
             )}
 
@@ -491,12 +496,12 @@ export default function ExamsPage() {
               </div>
             ) : (
               <div className="my-4">
-                <label className="block text-xs font-bold mb-2 text-gray-700 dark:text-gray-300">إجابتك:</label>
+                <label className="block text-xs font-bold mb-2 text-gray-700 dark:text-gray-300">{t('إجابتك:')}</label>
                 <input
                   type="text"
                   value={answers[currentQ.id] || ''}
                   onChange={(e) => setAnswers({ ...answers, [currentQ.id]: e.target.value })}
-                  placeholder="أدخل الإجابة هنا..."
+                  placeholder={t('أدخل الإجابة هنا...')}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
@@ -539,11 +544,11 @@ export default function ExamsPage() {
                   className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-xs sm:text-sm font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <ChevronRight className="w-4 h-4" />
-                  السابق
+                  {t('السابق')}
                 </button>
 
                 <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                  {answeredCount} من {totalQuestions} مُجاب عنها
+                  {answeredCount} {t('من')} {totalQuestions} {t('مُجاب عنها')}
                 </div>
 
                 {currentQuestionIdx < totalQuestions - 1 ? (
@@ -552,7 +557,7 @@ export default function ExamsPage() {
                     onClick={() => setCurrentQuestionIdx(prev => Math.min(totalQuestions - 1, prev + 1))}
                     className="px-5 py-2.5 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition-colors flex items-center gap-1.5"
                   >
-                    التالي
+                    {t('التالي')}
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                 ) : (
@@ -562,7 +567,7 @@ export default function ExamsPage() {
                     className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition-colors flex items-center gap-1.5"
                   >
                     <Send className="w-4 h-4" />
-                    إنهاء الامتحان
+                    {t('إنهاء الامتحان')}
                   </button>
                 )}
               </div>
@@ -582,20 +587,20 @@ export default function ExamsPage() {
           <div className={`w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center ${passed ? 'bg-green-100 dark:bg-green-950/40' : 'bg-red-100 dark:bg-red-950/40'}`}>
             {passed ? <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" /> : <AlertCircle className="w-12 h-12 text-red-600 dark:text-red-400" />}
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">انتهى الامتحان!</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('انتهى الامتحان!')}</h2>
           {wasAutoSubmit && (
-            <p className="text-orange-600 dark:text-orange-400 font-bold mb-4">انتهى وقت الامتحان وتم تسليم إجاباتك تلقائيًا</p>
+            <p className="text-orange-600 dark:text-orange-400 font-bold mb-4">{t('انتهى وقت الامتحان وتم تسليم إجاباتك تلقائيًا')}</p>
           )}
           <div className="text-6xl font-bold text-indigo-600 dark:text-indigo-400 mb-4">{score}%</div>
           <p className="text-gray-600 dark:text-gray-300 mb-8">{passed ? 'مبروك! لقد نجحت' : 'للأسف، لم تنجح'}</p>
           <div className="flex gap-4 justify-center">
-            <button onClick={() => { setExamState('list'); setAnswers({}); setCurrentQuestionIdx(0); setWasAutoSubmit(false); fetchExams(); }} className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-6 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-bold transition-colors">العودة للامتحانات</button>
+            <button onClick={() => { setExamState('list'); setAnswers({}); setCurrentQuestionIdx(0); setWasAutoSubmit(false); fetchExams(); }} className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-6 py-3 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-bold transition-colors">{t('العودة للامتحانات')}</button>
             {attemptId && (
               <button
                 onClick={() => navigate(`/student/online/assessment/${currentExam.id}/review/${attemptId}`)}
                 className="bg-indigo-600 dark:bg-indigo-500 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 font-bold transition-colors shadow-sm"
               >
-                عرض النتيجة التفصيلية
+                {t('عرض النتيجة التفصيلية')}
               </button>
             )}
           </div>
@@ -606,18 +611,24 @@ export default function ExamsPage() {
 
   // ─── EXAM LIST ────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8 font-['Cairo'] font-sans" dir="rtl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">الامتحانات</h1>
-        <p className="text-gray-600 dark:text-gray-400">اختبر معلوماتك من خلال الامتحانات</p>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#9e1b1b]/10 text-[#9e1b1b] border border-[#9e1b1b]/20">
+            {t('الامتحانات الإلكترونية')}
+          </span>
+          <span className="text-xs text-slate-400">{t('نظام التقييم والاختبارات المؤمنة')}</span>
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mb-2">{t('الامتحانات')}</h1>
+        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{t('اختبر استيعابك الدراسي في بيئة تقييم إلكترونية مؤمنة')}</p>
       </div>
 
-      {loading && <div className="text-center py-8 text-gray-500 dark:text-gray-400">جاري تحميل الامتحانات...</div>}
+      {loading && <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('جاري تحميل الامتحانات...')}</div>}
       {error && <div className="text-center py-8 text-red-500 bg-red-50 dark:bg-red-900/20 rounded-xl mb-4">{error}</div>}
 
       {!loading && !error && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {exams.length === 0 && <p className="text-gray-500 dark:text-gray-400 col-span-3 text-center py-8">لا توجد امتحانات متاحة حالياً.</p>}
+          {exams.length === 0 && <p className="text-gray-500 dark:text-gray-400 col-span-3 text-center py-8">{t('لا توجد امتحانات متاحة حالياً.')}</p>}
           {(Array.isArray(exams) ? exams : []).map((exam) => {
             const now = new Date().getTime();
             const isTooEarly = exam.startTime && now < new Date(exam.startTime).getTime();
@@ -629,10 +640,10 @@ export default function ExamsPage() {
             }
 
             return (
-              <div key={exam.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700 p-6 hover:shadow-xl transition-shadow flex flex-col justify-between">
+              <div key={exam.id} className="bg-white dark:bg-[#0f131d] rounded-2xl shadow-xs border border-gray-100 dark:border-slate-800/90 p-6 hover:border-slate-700 hover:shadow-lg transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-start justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${exam.status === 'completed' ? 'bg-green-100 dark:bg-green-950/40' : 'bg-indigo-100 dark:bg-indigo-950/40'}`}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${exam.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-[#9e1b1b]/10 text-[#9e1b1b] border border-[#9e1b1b]/20'}`}>
                       {exam.status === 'completed' ? <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" /> : <ClipboardCheck className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />}
                     </div>
                     {exam.score != null && (
@@ -643,33 +654,33 @@ export default function ExamsPage() {
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                       <Clock className="w-4 h-4" />
-                      <span>{exam.duration} دقيقة</span>
+                      <span>{exam.duration} {t('دقيقة')}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                       <ClipboardCheck className="w-4 h-4" />
-                      <span>{exam.questions?.length || 0} سؤال</span>
+                      <span>{exam.questions?.length || 0} {t('سؤال')}</span>
                     </div>
                     {exam.startTime && (
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                         <Clock className="w-4 h-4" />
-                        <span>يبدأ: {new Date(exam.startTime).toLocaleString('ar')}</span>
+                        <span>{t('يبدأ:')} {new Date(exam.startTime).toLocaleString('ar')}</span>
                       </div>
                     )}
                     {exam.endTime && (
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                         <Clock className="w-4 h-4" />
-                        <span>ينتهي: {new Date(exam.endTime).toLocaleString('ar')}</span>
+                        <span>{t('ينتهي:')} {new Date(exam.endTime).toLocaleString('ar')}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {exam.status === 'completed' ? (
-                  <div className="bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300 px-3 py-2 rounded-lg text-sm text-center">مكتمل - {Math.round(exam.score)}%</div>
+                  <div className="bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-300 px-3 py-2 rounded-lg text-sm text-center">{t('مكتمل -')} {Math.round(exam.score)}%</div>
                 ) : isLocked ? (
-                  <div className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-3 py-2 rounded-lg text-sm text-center">غير متاح حالياً</div>
+                  <div className="bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-3 py-2 rounded-lg text-sm text-center">{t('غير متاح حالياً')}</div>
                 ) : (
-                  <button onClick={() => handleSelectExam(exam.id)} className="w-full bg-indigo-600 dark:bg-indigo-500 text-white py-2 rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 font-bold">ابدأ الامتحان</button>
+                  <button onClick={() => handleSelectExam(exam.id)} className="w-full bg-[#9e1b1b] hover:bg-[#851717] text-white py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-colors cursor-pointer shadow-xs">{t('ابدأ الامتحان')}</button>
                 )}
               </div>
             );

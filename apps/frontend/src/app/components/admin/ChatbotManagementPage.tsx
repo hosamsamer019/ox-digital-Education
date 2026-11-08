@@ -1,8 +1,10 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
 import { Bot, MessageCircle, TrendingUp } from 'lucide-react';
 import { aiService } from '../../services/ai.service';
 
 export default function ChatbotManagementPage() {
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
 
@@ -29,12 +31,12 @@ export default function ChatbotManagementPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">إدارة المساعد الذكي</h1>
-        <p className="text-gray-600 dark:text-gray-400">مراقبة وإدارة المحادثات مع المساعد الذكي</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('إدارة المساعد الذكي')}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{t('مراقبة وإدارة المحادثات مع المساعد الذكي')}</p>
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">جاري تحميل البيانات...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('جاري تحميل البيانات...')}</div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -50,7 +52,7 @@ export default function ChatbotManagementPage() {
         <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-md p-6">
           <div className="flex items-center gap-3 mb-6">
             <MessageCircle className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">المحادثات الأخيرة</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('المحادثات الأخيرة')}</h2>
           </div>
 
           <div className="space-y-4">
@@ -76,7 +78,7 @@ export default function ChatbotManagementPage() {
         <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-md p-6">
           <div className="flex items-center gap-3 mb-6">
             <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">الأسئلة الشائعة</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('الأسئلة الشائعة')}</h2>
           </div>
 
           <div className="space-y-4">
@@ -87,14 +89,14 @@ export default function ChatbotManagementPage() {
                 </div>
                 <div className="mr-4 text-center">
                   <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{q.count}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">مرة</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{t('مرة')}</p>
                 </div>
               </div>
             ))}
           </div>
 
           <button className="w-full mt-6 bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors">
-            إدارة قاعدة المعرفة
+            {t('إدارة قاعدة المعرفة')}
           </button>
         </div>
       </div>

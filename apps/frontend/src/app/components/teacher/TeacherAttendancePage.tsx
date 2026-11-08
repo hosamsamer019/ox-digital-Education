@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Calendar, CheckCircle, Clock, XCircle, Save, Search, Users,
@@ -49,6 +50,7 @@ const GRADE_LABELS: Record<string, string> = {
 };
 
 export default function TeacherAttendancePage() {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
 
   // Selected attendance date (YYYY-MM-DD)
@@ -244,12 +246,12 @@ export default function TeacherAttendancePage() {
         const sRaw = (student.rawGrade || '').toUpperCase();
         const sDisplay = (student.gradeLevel || '').toUpperCase();
 
-        const isSec1 = (g === 'SEC_1' || g === 'SECONDARY_1') && (sRaw === 'SEC_1' || sRaw === 'SECONDARY_1' || sDisplay.includes('الأول الثانوي') || sDisplay.includes('أولى ثانوي'));
-        const isSec2 = (g === 'SEC_2' || g === 'SECONDARY_2') && (sRaw === 'SEC_2' || sRaw === 'SECONDARY_2' || sDisplay.includes('الثاني الثانوي') || sDisplay.includes('تانية ثانوي'));
-        const isSec3 = (g === 'SEC_3' || g === 'SECONDARY_3') && (sRaw === 'SEC_3' || sRaw === 'SECONDARY_3' || sDisplay.includes('الثالث الثانوي') || sDisplay.includes('تالتة ثانوي'));
-        const isPrep1 = (g === 'PREP_1' || g === 'PREPARATORY_1') && (sRaw === 'PREP_1' || sRaw === 'PREPARATORY_1' || sDisplay.includes('الأول الإعدادي') || sDisplay.includes('أولى إعدادي'));
-        const isPrep2 = (g === 'PREP_2' || g === 'PREPARATORY_2') && (sRaw === 'PREP_2' || sRaw === 'PREPARATORY_2' || sDisplay.includes('الثاني الإعدادي') || sDisplay.includes('تانية إعدادي'));
-        const isPrep3 = (g === 'PREP_3' || g === 'PREPARATORY_3') && (sRaw === 'PREP_3' || sRaw === 'PREPARATORY_3' || sDisplay.includes('الثالث الإعدادي') || sDisplay.includes('تالتة إعدادي'));
+        const isSec1 = (g === 'SEC_1' || g === 'SECONDARY_1') && (sRaw === 'SEC_1' || sRaw === 'SECONDARY_1' || sDisplay.includes(t('الأول الثانوي')) || sDisplay.includes(t('أولى ثانوي')));
+        const isSec2 = (g === 'SEC_2' || g === 'SECONDARY_2') && (sRaw === 'SEC_2' || sRaw === 'SECONDARY_2' || sDisplay.includes(t('الثاني الثانوي')) || sDisplay.includes(t('تانية ثانوي')));
+        const isSec3 = (g === 'SEC_3' || g === 'SECONDARY_3') && (sRaw === 'SEC_3' || sRaw === 'SECONDARY_3' || sDisplay.includes(t('الثالث الثانوي')) || sDisplay.includes(t('تالتة ثانوي')));
+        const isPrep1 = (g === 'PREP_1' || g === 'PREPARATORY_1') && (sRaw === 'PREP_1' || sRaw === 'PREPARATORY_1' || sDisplay.includes(t('الأول الإعدادي')) || sDisplay.includes(t('أولى إعدادي')));
+        const isPrep2 = (g === 'PREP_2' || g === 'PREPARATORY_2') && (sRaw === 'PREP_2' || sRaw === 'PREPARATORY_2' || sDisplay.includes(t('الثاني الإعدادي')) || sDisplay.includes(t('تانية إعدادي')));
+        const isPrep3 = (g === 'PREP_3' || g === 'PREPARATORY_3') && (sRaw === 'PREP_3' || sRaw === 'PREPARATORY_3' || sDisplay.includes(t('الثالث الإعدادي')) || sDisplay.includes(t('تالتة إعدادي')));
         const isExact = sRaw === g || sDisplay === g;
 
         if (!isSec1 && !isSec2 && !isSec3 && !isPrep1 && !isPrep2 && !isPrep3 && !isExact) {
@@ -399,7 +401,7 @@ export default function TeacherAttendancePage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#9e1b1b]/10 text-[#9e1b1b] border border-[#9e1b1b]/20">
-              سجل الحضور والانضباط
+              {t('سجل الحضور والانضباط')}
             </span>
             <span className="text-xs text-slate-400">OX-DIGITAL Education</span>
           </div>
@@ -407,10 +409,10 @@ export default function TeacherAttendancePage() {
             <div className="w-10 h-10 rounded-xl bg-[#9e1b1b]/10 text-[#9e1b1b] border border-[#9e1b1b]/20 flex items-center justify-center flex-shrink-0">
               <CheckSquare className="w-5 h-5" />
             </div>
-            <span>سجل الحضور المدرسي</span>
+            <span>{t('سجل الحضور المدرسي')}</span>
           </h1>
           <p className={`text-xs sm:text-sm ${textSecondary} mt-1`}>
-            تسجيل ومتابعة حضور وغياب الطلاب حسب التاريخ والمجموعات الدراسية مع إمكانية الحفظ الجماعي
+            {t('تسجيل ومتابعة حضور وغياب الطلاب حسب التاريخ والمجموعات الدراسية مع إمكانية الحفظ الجماعي')}
           </p>
         </div>
 
@@ -420,7 +422,7 @@ export default function TeacherAttendancePage() {
             isDark ? 'bg-slate-800/80 border-slate-700' : 'bg-white border-slate-200 shadow-xs'
           }`}>
             <Calendar className="w-4 h-4 text-[#9e1b1b]" />
-            <span className={`text-xs font-bold ${textSecondary}`}>تاريخ الحضور:</span>
+            <span className={`text-xs font-bold ${textSecondary}`}>{t('تاريخ الحضور:')}</span>
             <input
               type="date"
               value={selectedDate}
@@ -437,12 +439,12 @@ export default function TeacherAttendancePage() {
             {saving ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                جاري الحفظ...
+                {t('جاري الحفظ...')}
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                حفظ الحضور ({summary.setTotal}/{summary.total})
+                {t('حفظ الحضور (')}{summary.setTotal}/{summary.total})
               </>
             )}
           </button>
@@ -484,7 +486,7 @@ export default function TeacherAttendancePage() {
           <div className="flex items-center justify-between gap-2 mb-3">
             <span className={`text-xs font-bold ${textPrimary} flex items-center gap-1.5`}>
               <BookOpen className="w-4 h-4 text-emerald-600" />
-              تحديد المجموعة / الدورة:
+              {t('تحديد المجموعة / الدورة:')}
             </span>
             <button
               onClick={handleSelectAllCourses}
@@ -524,7 +526,7 @@ export default function TeacherAttendancePage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className={`p-3.5 rounded-2xl border ${cardBg}`}>
           <div className="flex items-center justify-between text-gray-400 mb-1">
-            <span className="text-xs font-medium">إجمالي الطلاب</span>
+            <span className="text-xs font-medium">{t('إجمالي الطلاب')}</span>
             <Users className="w-4 h-4 text-blue-500" />
           </div>
           <p className={`text-xl font-bold ${textPrimary}`}>{summary.total}</p>
@@ -532,7 +534,7 @@ export default function TeacherAttendancePage() {
 
         <div className={`p-3.5 rounded-2xl border ${cardBg}`}>
           <div className="flex items-center justify-between text-green-500 mb-1">
-            <span className="text-xs font-medium">حاضر</span>
+            <span className="text-xs font-medium">{t('حاضر')}</span>
             <CheckCircle className="w-4 h-4" />
           </div>
           <p className="text-xl font-bold text-green-600 dark:text-green-400">{summary.present}</p>
@@ -540,7 +542,7 @@ export default function TeacherAttendancePage() {
 
         <div className={`p-3.5 rounded-2xl border ${cardBg}`}>
           <div className="flex items-center justify-between text-amber-500 mb-1">
-            <span className="text-xs font-medium">متأخر</span>
+            <span className="text-xs font-medium">{t('متأخر')}</span>
             <Clock className="w-4 h-4" />
           </div>
           <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{summary.late}</p>
@@ -548,7 +550,7 @@ export default function TeacherAttendancePage() {
 
         <div className={`p-3.5 rounded-2xl border ${cardBg}`}>
           <div className="flex items-center justify-between text-red-500 mb-1">
-            <span className="text-xs font-medium">غائب</span>
+            <span className="text-xs font-medium">{t('غائب')}</span>
             <XCircle className="w-4 h-4" />
           </div>
           <p className="text-xl font-bold text-red-600 dark:text-red-400">{summary.absent}</p>
@@ -556,7 +558,7 @@ export default function TeacherAttendancePage() {
 
         <div className={`p-3.5 rounded-2xl border ${cardBg}`}>
           <div className="flex items-center justify-between text-gray-400 mb-1">
-            <span className="text-xs font-medium">مكتمل</span>
+            <span className="text-xs font-medium">{t('مكتمل')}</span>
             <CheckSquare className="w-4 h-4 text-emerald-500" />
           </div>
           <p className={`text-xl font-bold ${summary.unset === 0 ? 'text-emerald-600 dark:text-emerald-400' : textPrimary}`}>
@@ -566,7 +568,7 @@ export default function TeacherAttendancePage() {
 
         <div className={`p-3.5 rounded-2xl border ${cardBg}`}>
           <div className="flex items-center justify-between text-gray-400 mb-1">
-            <span className="text-xs font-medium">نسبة الحضور</span>
+            <span className="text-xs font-medium">{t('نسبة الحضور')}</span>
             <span className="text-xs font-bold text-emerald-600">{summary.percentage}%</span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full mt-2 overflow-hidden">
@@ -583,7 +585,7 @@ export default function TeacherAttendancePage() {
         <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-medium">
           <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
           <span>
-            تنبيه: يوجد <strong>{summary.unset}</strong> طالب لم يتم تحديد حالة حضورهم بعد.
+            {t('تنبيه: يوجد')} <strong>{summary.unset}</strong> {t('طالب لم يتم تحديد حالة حضورهم بعد.')}
           </span>
         </div>
       )}
@@ -596,7 +598,7 @@ export default function TeacherAttendancePage() {
             <Search className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="بحث باسم الطالب أو البريد..."
+              placeholder={t('بحث باسم الطالب أو البريد...')}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className={`w-full pr-10 pl-4 py-2 text-sm rounded-xl border outline-none transition-all ${inputBg}`}
@@ -607,17 +609,17 @@ export default function TeacherAttendancePage() {
           <div className="flex items-center gap-2">
             <span className={`text-xs font-bold ${textSecondary} whitespace-nowrap flex items-center gap-1`}>
               <GraduationCap className="w-4 h-4 text-emerald-600" />
-              الصف الدراسي:
+              {t('الصف الدراسي:')}
             </span>
             <select
               value={selectedGradeLevel}
               onChange={e => setSelectedGradeLevel(e.target.value)}
               className={`text-xs font-semibold py-2 px-3 rounded-xl border outline-none transition-all ${inputBg}`}
             >
-              <option value="ALL">كل الصفوف والمراحل</option>
+              <option value="ALL">{t('كل الصفوف والمراحل')}</option>
               {availableGradeLevels.map(grade => (
                 <option key={grade.value} value={grade.value}>
-                  {grade.label}
+                  {t(grade.label)}
                 </option>
               ))}
             </select>
@@ -625,7 +627,7 @@ export default function TeacherAttendancePage() {
 
           {/* Status View Filter */}
           <div className="flex items-center gap-1 overflow-x-auto pb-1 lg:pb-0">
-            <span className={`text-xs font-bold ${textSecondary} ml-1 whitespace-nowrap`}>الحالة:</span>
+            <span className={`text-xs font-bold ${textSecondary} ml-1 whitespace-nowrap`}>{t('الحالة:')}</span>
             {[
               { id: 'ALL', label: 'الكل' },
               { id: 'PRESENT', label: 'حاضر' },
@@ -653,13 +655,13 @@ export default function TeacherAttendancePage() {
         {/* Fast Bulk Status Buttons */}
         <div className="pt-3 border-t border-gray-100 dark:border-gray-700/60 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`text-xs font-bold ${textSecondary} ml-1`}>تحديد سريع للقائمة المعروضة:</span>
+            <span className={`text-xs font-bold ${textSecondary} ml-1`}>{t('تحديد سريع للقائمة المعروضة:')}</span>
             <button
               onClick={() => handleBulkSetStatus('PRESENT')}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-300 hover:bg-green-200 transition-colors border border-green-200 dark:border-green-800/60"
             >
               <CheckCircle className="w-3.5 h-3.5" />
-              حاضر للكل
+              {t('حاضر للكل')}
             </button>
 
             <button
@@ -667,7 +669,7 @@ export default function TeacherAttendancePage() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 hover:bg-amber-200 transition-colors border border-amber-200 dark:border-amber-800/60"
             >
               <Clock className="w-3.5 h-3.5" />
-              متأخر للكل
+              {t('متأخر للكل')}
             </button>
 
             <button
@@ -675,7 +677,7 @@ export default function TeacherAttendancePage() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors border border-red-200 dark:border-red-800/60"
             >
               <XCircle className="w-3.5 h-3.5" />
-              غائب للكل
+              {t('غائب للكل')}
             </button>
           </div>
 
@@ -684,7 +686,7 @@ export default function TeacherAttendancePage() {
             className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            استعادة السجل المحفوظ
+            {t('استعادة السجل المحفوظ')}
           </button>
         </div>
       </div>
@@ -692,14 +694,14 @@ export default function TeacherAttendancePage() {
       {/* Student Attendance Sheet */}
       {loadingData || loadingAttendance ? (
         <div className={`p-12 rounded-2xl border ${cardBg} text-center space-y-3`}>
-          <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mx-auto" />
-          <p className={`text-sm font-medium ${textSecondary}`}>جاري تحميل بيانات الحضور والطلاب...</p>
+          <RefreshCw className="w-8 h-8 text-[#9e1b1b] animate-spin motion-reduce:animate-none mx-auto" />
+          <p className={`text-sm font-medium ${textSecondary}`}>{t('جاري تحميل بيانات الحضور والطلاب...')}</p>
         </div>
       ) : visibleStudents.length === 0 ? (
         <div className={`p-12 rounded-2xl border ${cardBg} text-center space-y-3`}>
           <Users className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto" />
-          <p className={`text-base font-bold ${textPrimary}`}>لا يوجد طلاب يطابقون معايير البحث أو الصف الدراسي المحدد</p>
-          <p className={`text-xs ${textSecondary}`}>جرب تغيير فلتر المجموعات، الصف الدراسي، أو مسح نص البحث</p>
+          <p className={`text-base font-bold ${textPrimary}`}>{t('لا يوجد طلاب يطابقون معايير البحث أو الصف الدراسي المحدد')}</p>
+          <p className={`text-xs ${textSecondary}`}>{t('جرب تغيير فلتر المجموعات، الصف الدراسي، أو مسح نص البحث')}</p>
         </div>
       ) : (
         <div className={`rounded-2xl border overflow-hidden ${cardBg}`}>
@@ -709,10 +711,10 @@ export default function TeacherAttendancePage() {
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-750 text-xs font-bold text-gray-500 dark:text-gray-400">
                   <th className="py-3.5 px-4 w-12 text-center">#</th>
-                  <th className="py-3.5 px-6">اسم الطالب</th>
-                  <th className="py-3.5 px-4">نوع الطالب</th>
-                  <th className="py-3.5 px-6">الصف / المرحلة الدراسية</th>
-                  <th className="py-3.5 px-6 text-center w-80">تسجيل الحالة</th>
+                  <th className="py-3.5 px-6">{t('اسم الطالب')}</th>
+                  <th className="py-3.5 px-4">{t('نوع الطالب')}</th>
+                  <th className="py-3.5 px-6">{t('الصف / المرحلة الدراسية')}</th>
+                  <th className="py-3.5 px-6 text-center w-80">{t('تسجيل الحالة')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60">
@@ -747,11 +749,11 @@ export default function TeacherAttendancePage() {
                               : 'bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
                           }`}
                         >
-                          {student.type}
+                          {t(student.type)}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                        {student.gradeLevel || 'غير محدد'}
+                        {t(student.gradeLevel || 'غير محدد')}
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-750 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
@@ -765,7 +767,7 @@ export default function TeacherAttendancePage() {
                             }`}
                           >
                             <CheckCircle className="w-3.5 h-3.5" />
-                            حاضر
+                            {t('حاضر')}
                           </button>
 
                           <button
@@ -778,7 +780,7 @@ export default function TeacherAttendancePage() {
                             }`}
                           >
                             <Clock className="w-3.5 h-3.5" />
-                            متأخر
+                            {t('متأخر')}
                           </button>
 
                           <button
@@ -791,7 +793,7 @@ export default function TeacherAttendancePage() {
                             }`}
                           >
                             <XCircle className="w-3.5 h-3.5" />
-                            غائب
+                            {t('غائب')}
                           </button>
                         </div>
                       </td>
@@ -816,7 +818,7 @@ export default function TeacherAttendancePage() {
                       <div>
                         <p className={`text-sm font-bold ${textPrimary}`}>{student.name}</p>
                         <p className="text-[11px] text-gray-400">
-                          {student.gradeLevel || 'غير محدد'}
+                          {t(student.gradeLevel || 'غير محدد')}
                         </p>
                       </div>
                     </div>
@@ -843,7 +845,7 @@ export default function TeacherAttendancePage() {
                       }`}
                     >
                       <CheckCircle className="w-3.5 h-3.5" />
-                      حاضر
+                      {t('حاضر')}
                     </button>
 
                     <button
@@ -856,7 +858,7 @@ export default function TeacherAttendancePage() {
                       }`}
                     >
                       <Clock className="w-3.5 h-3.5" />
-                      متأخر
+                      {t('متأخر')}
                     </button>
 
                     <button
@@ -869,7 +871,7 @@ export default function TeacherAttendancePage() {
                       }`}
                     >
                       <XCircle className="w-3.5 h-3.5" />
-                      غائب
+                      {t('غائب')}
                     </button>
                   </div>
                 </div>
@@ -884,12 +886,12 @@ export default function TeacherAttendancePage() {
         <div className={`p-4 rounded-2xl border ${cardBg} flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-4 shadow-xl`}>
           <div className="flex items-center gap-3">
             <div className="text-xs">
-              <span className={`font-bold ${textPrimary}`}>ملخص التحديد: </span>
-              <span className="text-green-600 font-bold">{summary.present} حاضر</span>
+              <span className={`font-bold ${textPrimary}`}>{t('ملخص التحديد:')} </span>
+              <span className="text-green-600 font-bold">{summary.present} {t('حاضر')}</span>
               <span className="mx-1.5 text-gray-400">•</span>
-              <span className="text-amber-500 font-bold">{summary.late} متأخر</span>
+              <span className="text-amber-500 font-bold">{summary.late} {t('متأخر')}</span>
               <span className="mx-1.5 text-gray-400">•</span>
-              <span className="text-red-600 font-bold">{summary.absent} غائب</span>
+              <span className="text-red-600 font-bold">{summary.absent} {t('غائب')}</span>
             </div>
           </div>
 
@@ -902,12 +904,12 @@ export default function TeacherAttendancePage() {
               {saving ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  جاري حفظ السجلات...
+                  {t('جاري حفظ السجلات...')}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  حفظ سجلات الحضور ({summary.setTotal} طالب)
+                  {t('حفظ سجلات الحضور (')}{summary.setTotal} {t('طالب)')}
                 </>
               )}
             </button>

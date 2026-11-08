@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Bell, CheckCheck, Clock, AlertCircle, RefreshCw } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -5,6 +6,7 @@ import { notificationService, Notification } from '../../services/notification.s
 import { LoadingState } from '../ui/LoadingState';
 
 export const ParentNotificationsPage: React.FC = () => {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ export const ParentNotificationsPage: React.FC = () => {
       setNotifications(list);
     } catch (err: any) {
       console.error('Failed to fetch parent notifications:', err);
-      setError('تعذر تحميل التنبيهات والإشعارات. يرجى التحقق من اتصال الشبكة.');
+      setError(t('تعذر تحميل التنبيهات والإشعارات. يرجى التحقق من اتصال الشبكة.'));
     } finally {
       setLoading(false);
       if (isManual) setRefreshing(false);
@@ -65,7 +67,7 @@ export const ParentNotificationsPage: React.FC = () => {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   if (loading) {
-    return <LoadingState message="جاري تحميل سجل التنبيهات والإشعارات..." />;
+    return <LoadingState message={t('جاري تحميل سجل التنبيهات والإشعارات...')} />;
   }
 
   return (
@@ -79,17 +81,17 @@ export const ParentNotificationsPage: React.FC = () => {
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#9e1b1b]/10 text-[#9e1b1b] border border-[#9e1b1b]/20">
               <Bell className="w-3.5 h-3.5" />
-              سجل التنبيهات المدرسية
+              {t('سجل التنبيهات المدرسية')}
             </span>
             {unreadCount > 0 && (
               <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                {unreadCount} غير مقروء
+                {unreadCount} {t('غير مقروء')}
               </span>
             )}
           </div>
-          <h1 className={`text-2xl font-extrabold ${textPrimary}`}>التنبيهات والإشعارات</h1>
+          <h1 className={`text-2xl font-extrabold ${textPrimary}`}>{t('التنبيهات والإشعارات')}</h1>
           <p className={`text-xs sm:text-sm mt-0.5 ${textSecondary}`}>
-            متابعة الإشعارات الرسمية وتنبيهات أداء الأبناء الواردة من إدارة المنظومة والمعلمين
+            {t('متابعة الإشعارات الرسمية وتنبيهات أداء الأبناء الواردة من إدارة المنظومة والمعلمين')}
           </p>
         </div>
 
@@ -100,7 +102,7 @@ export const ParentNotificationsPage: React.FC = () => {
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all cursor-pointer"
             >
               <CheckCheck className="w-4 h-4" />
-              <span>تحديد الكل كمقروء</span>
+              <span>{t('تحديد الكل كمقروء')}</span>
             </button>
           )}
 
@@ -114,7 +116,7 @@ export const ParentNotificationsPage: React.FC = () => {
             }`}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-[#9e1b1b]' : 'text-slate-400'}`} />
-            <span>تحديث</span>
+            <span>{t('تحديث')}</span>
           </button>
         </div>
       </div>
@@ -129,7 +131,7 @@ export const ParentNotificationsPage: React.FC = () => {
               onClick={() => fetchNotifications(true)}
               className="mt-1.5 underline font-bold cursor-pointer hover:text-amber-400"
             >
-              إعادة المحاولة
+              {t('إعادة المحاولة')}
             </button>
           </div>
         </div>
@@ -147,7 +149,7 @@ export const ParentNotificationsPage: React.FC = () => {
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
           }`}
         >
-          كافة التنبيهات ({notifications.length})
+          {t('كافة التنبيهات (')}{notifications.length})
         </button>
         <button
           onClick={() => setFilter('unread')}
@@ -159,7 +161,7 @@ export const ParentNotificationsPage: React.FC = () => {
               : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
           }`}
         >
-          غير المقروءة ({unreadCount})
+          {t('غير المقروءة (')}{unreadCount})
         </button>
       </div>
 
@@ -168,7 +170,7 @@ export const ParentNotificationsPage: React.FC = () => {
         {filteredNotifications.length === 0 ? (
           <div className={`${cardBg} border rounded-2xl p-10 text-center`}>
             <Bell className="w-10 h-10 text-slate-400 mx-auto mb-3 opacity-40" />
-            <p className={`font-semibold ${textPrimary}`}>لا توجد إشعارات مطابقة</p>
+            <p className={`font-semibold ${textPrimary}`}>{t('لا توجد إشعارات مطابقة')}</p>
             <p className={`text-xs ${textSecondary} mt-1`}>
               {filter === 'unread'
                 ? 'لقد قمت بقراءة جميع الإشعارات الواردة.'
@@ -224,7 +226,7 @@ export const ParentNotificationsPage: React.FC = () => {
                       onClick={() => handleMarkAsRead(n.id)}
                       className="text-xs font-semibold text-[#9e1b1b] hover:underline flex-shrink-0 cursor-pointer pt-1"
                     >
-                      تحديد كمقروء
+                      {t('تحديد كمقروء')}
                     </button>
                   )}
                 </div>

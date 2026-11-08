@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -30,6 +31,7 @@ export function StickyFormHeader({
   children,
   className = ''
 }: StickyFormHeaderProps) {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
 
   return (
@@ -89,7 +91,7 @@ export function StickyFormHeader({
             {isSubmitting ? (
               <>
                 <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                <span>جاري الحفظ...</span>
+                <span>{t('جاري الحفظ...')}</span>
               </>
             ) : (
               <span>{submitLabel}</span>

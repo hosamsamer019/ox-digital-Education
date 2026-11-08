@@ -9,56 +9,257 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model User {
-  id             String              @id @default(uuid())
-  email          String              @unique
-  password       String
-  name           String
-  createdAt      DateTime            @default(now())
-  centerGroupId  String?
-  parentId       String?
-  updatedAt      DateTime            @updatedAt
-  role           Role
-  academicLevel  AcademicLevel?
-  country        CountryCode?
-  educationLevel EducationLevel?
-  gradeLevel     GradeLevel?
-  language       String              @default("ar")
-  phone          String?
-  isGuest        Boolean             @default(false)
-  attendances    Attendance[]
-  chatSessions   ChatSession[]
-  taughtCourses  Course[]            @relation("TeacherCourses")
-  enrollments    CourseEnrollment[]
-  examAttempts   ExamAttempt[]
-  notifications  Notification[]
+model Institution {
+  id               String            @id @default(uuid())
+  name             String
+  code             String            @unique
+  status           InstitutionStatus @default(ACTIVE)
+  primaryManagerId String?           @unique
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+
+  primaryManager User?                      @relation("InstitutionPrimaryManager", fields: [primaryManagerId], references: [id])
+  branches       Branch[]
+  users          User[]                     @relation("InstitutionUsers")
+  centerGroups   CenterGroup[]
+  courses        Course[]
   payments       Payment[]
   questionBank   QuestionBank[]
-  mathSolutions  SavedMathSolution[]
-  submissions    Submission[]
-  centerGroup    CenterGroup?        @relation(fields: [centerGroupId], references: [id])
-  parent         User?               @relation("ParentChildren", fields: [parentId], references: [id])
-  children       User[]              @relation("ParentChildren")
-  sessions       UserSession[]
-  videoProgress  VideoProgress[]
-  videoUploads   VideoUpload[]
+  processedMedia ProcessedMedia[]
+  invitations    PrimaryManagerInvitation[]
+
+  // Financial Accounting Models (Phase 4 Workstream A)
+  cashboxes                  Cashbox[]
+  cashboxTransactions        CashboxTransaction[]
+  cashboxReconciliations     CashboxReconciliation[]
+  studentFinancialAccounts   StudentFinancialAccount[]
+  studentFinancialAgreements StudentFinancialAgreement[]
+  studentObligations         StudentObligation[]
+  collections                Collection[]
+  collectionAllocations      CollectionAllocation[]
+  financialAdjustments       FinancialAdjustment[]
+  groupPricingAgreements     GroupPricingAgreement[]
+  idempotencyRecords         FinancialIdempotencyRecord[]
+  financialAuditEvents       FinancialAuditEvent[]
+  lessonDeliveryEvidences    LessonDeliveryEvidence[]
+  revenueRecognitionEntries  RevenueRecognitionEntry[]
+  bankAccounts               BankAccount[]
+  bankTransactions           BankTransaction[]
+  expenseVouchers            ExpenseVoucher[]
+  teacherSettlements         TeacherSettlement[]
+  monthlyFeePolicies         MonthlyFeePolicy[]
+  monthlyFeePolicyAudits     MonthlyFeePolicyAudit[]
+  restrictionHistories       FinancialRestrictionHistory[]
+}
+
+model Branch {
+  id            String       @id @default(uuid())
+  institutionId String
+  name          String
+  code          String
+  isOnline      Boolean      @default(false)
+  isDefault     Boolean      @default(false)
+  status        BranchStatus @default(ACTIVE)
+  address       String?
+  phone         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  institution  Institution   @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  users        User[]        @relation("BranchUsers")
+  centerGroups CenterGroup[]
+  courses      Course[]
+  payments     Payment[]
+
+  // Financial Accounting Models (Phase 4 Workstream A)
+  cashboxes                  Cashbox[]
+  cashboxTransactions        CashboxTransaction[]
+  cashboxReconciliations     CashboxReconciliation[]
+  studentFinancialAgreements StudentFinancialAgreement[]
+  studentObligations         StudentObligation[]
+  collections                Collection[]
+  collectionAllocations      CollectionAllocation[]
+  financialAdjustments       FinancialAdjustment[]
+  groupPricingAgreements     GroupPricingAgreement[]
+  lessonDeliveryEvidences    LessonDeliveryEvidence[]
+  revenueRecognitionEntries  RevenueRecognitionEntry[]
+  bankAccounts               BankAccount[]
+  expenseVouchers            ExpenseVoucher[]
+  monthlyFeePolicies         MonthlyFeePolicy[]
+  restrictionHistories       FinancialRestrictionHistory[]
+
+  @@unique([institutionId, code])
+  @@index([institutionId])
+  @@index([institutionId, isDefault])
+  @@index([institutionId, isOnline])
+}
+
+model PrimaryManagerInvitation {
+  id               String           @id @default(uuid())
+  institutionId    String
+  email            String
+  tokenHash        String           @unique
+  status           InvitationStatus @default(PENDING)
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  acceptedByUserId String?
+  createdAt        DateTime         @default(now())
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+
+  @@unique([institutionId, email])
+  @@index([tokenHash])
+  @@index([institutionId, status])
+}
+
+model User {
+  id                 String              @id @default(uuid())
+  email              String              @unique
+  password           String
+  name               String
+  createdAt          DateTime            @default(now())
+  centerGroupId      String?
+  parentId           String?
+  institutionId      String?
+  branchId           String?
+  isPrimaryManager   Boolean             @default(false)
+  mustChangePassword Boolean             @default(false)
+  deletedAt          DateTime?
+  updatedAt          DateTime            @updatedAt
+  role               Role
+  academicLevel      AcademicLevel?
+  country            CountryCode?
+  educationLevel     EducationLevel?
+  gradeLevel         GradeLevel?
+  language           String              @default("ar")
+  phone              String?
+  isGuest            Boolean             @default(false)
+  attendances        Attendance[]
+  chatSessions       ChatSession[]
+  taughtCourses      Course[]            @relation("TeacherCourses")
+  enrollments        CourseEnrollment[]
+  examAttempts       ExamAttempt[]
+  notifications      Notification[]
+  payments           Payment[]
+  questionBank       QuestionBank[]
+  mathSolutions      SavedMathSolution[]
+  submissions        Submission[]
+  centerGroup        CenterGroup?        @relation(fields: [centerGroupId], references: [id])
+  parent             User?               @relation("ParentChildren", fields: [parentId], references: [id])
+  children           User[]              @relation("ParentChildren")
+  sessions           UserSession[]
+  videoProgress      VideoProgress[]
+  videoUploads       VideoUpload[]
+  institution        Institution?        @relation("InstitutionUsers", fields: [institutionId], references: [id])
+  branch             Branch?             @relation("BranchUsers", fields: [branchId], references: [id])
+  managedInstitution Institution?        @relation("InstitutionPrimaryManager")
 
   // Unified Assessments
   teacherAssessments Assessment[]        @relation("TeacherAssessments")
   assessmentAttempts AssessmentAttempt[]
+
+  // Financial Accounting Back-Relations (Phase 4 Workstream A)
+  assignedCashboxes                Cashbox[]                   @relation("AssignedCashier")
+  actorCashboxTransactions         CashboxTransaction[]        @relation("ActorCashboxTransactions")
+  reconciledCashboxReconciliations CashboxReconciliation[]     @relation("ReconciledByUser")
+  studentFinancialAccounts         StudentFinancialAccount[]   @relation("StudentFinancialAccounts")
+  studentFinancialAgreements       StudentFinancialAgreement[] @relation("StudentAgreements")
+  studentObligations               StudentObligation[]         @relation("StudentObligations")
+  cashierCollections               Collection[]                @relation("CashierCollections")
+  studentCollections               Collection[]                @relation("StudentCollections")
+  studentAllocations               CollectionAllocation[]      @relation("StudentAllocations")
+  allocatedCollections             CollectionAllocation[]      @relation("AllocatedByCollections")
+  preparedAdjustments              FinancialAdjustment[]       @relation("PreparedAdjustments")
+  approvedAdjustments              FinancialAdjustment[]       @relation("ApprovedAdjustments")
+  studentAdjustments               FinancialAdjustment[]       @relation("StudentAdjustments")
+  financialAuditEvents             FinancialAuditEvent[]       @relation("ActorAuditEvents")
+  teacherLessonEvidences           LessonDeliveryEvidence[]    @relation("TeacherLessonDeliveryEvidence")
+  supervisorLessonEvidences        LessonDeliveryEvidence[]    @relation("SupervisorLessonDeliveryEvidence")
+  studentRevenueRecognitions       RevenueRecognitionEntry[]   @relation("StudentRevenueRecognition")
+  payerCollections                 Collection[]                @relation("PayerCollections")
+  preparedExpenseVouchers          ExpenseVoucher[]            @relation("PreparedExpenseVouchers")
+  approvedExpenseVouchers          ExpenseVoucher[]            @relation("ApprovedExpenseVouchers")
+  disbursedExpenseVouchers         ExpenseVoucher[]            @relation("DisbursedExpenseVouchers")
+  teacherSettlements               TeacherSettlement[]         @relation("TeacherSettlements")
+  preparedTeacherSettlements       TeacherSettlement[]         @relation("PreparedTeacherSettlements")
+  approvedTeacherSettlements       TeacherSettlement[]         @relation("ApprovedTeacherSettlements")
+
+  // Monthly Fee Access Control
+  financialAccessStatus            FinancialAccessStatus       @default(ACTIVE)
+  studentRestrictionHistories      FinancialRestrictionHistory[] @relation("StudentRestrictionHistory")
+  configuredFeePolicies            MonthlyFeePolicy[]          @relation("ConfiguredFeePolicies")
+  feePolicyAudits                  MonthlyFeePolicyAudit[]     @relation("AuditChangedBy")
+
+  // Account Settings (BRD Section 15)
+  theme                            String                      @default("default")
+  profilePictureUrl                String?
+
+  // Teacher Ownership (BRD Phase 1)
+  creatorId                        String?
+  creator                          User?                       @relation("UserCreatedBy", fields: [creatorId], references: [id])
+  createdUsers                     User[]                      @relation("UserCreatedBy")
+
+  responsibleTeacherId             String?
+  responsibleTeacher               User?                       @relation("StudentResponsibleTeacher", fields: [responsibleTeacherId], references: [id])
+  managedStudents                  User[]                      @relation("StudentResponsibleTeacher")
+
+  // Multi-Teacher Enrollments & Subscriptions (BRD Phase 1-4)
+  studentTeacherLinks              StudentTeacher[]            @relation("StudentTeacherStudent")
+  teacherStudentLinks              StudentTeacher[]            @relation("StudentTeacherTeacher")
+
+  transfersFrom                    TeacherTransferHistory[]    @relation("TransferFromTeacher")
+  transfersTo                      TeacherTransferHistory[]    @relation("TransferToTeacher")
+  studentTransfers                 TeacherTransferHistory[]    @relation("TransferStudent")
+
+  teacherSubscriptionSetting       TeacherSubscriptionSetting? @relation("TeacherSettings")
+  teacherGradePricings             TeacherGradePricing[]       @relation("TeacherPricings")
+
+  studentMonthlySubscriptions      StudentMonthlySubscription[] @relation("StudentSubscriptions")
+  teacherMonthlySubscriptions      StudentMonthlySubscription[] @relation("TeacherSubscriptions")
+
+  accountantPayments               SubscriptionPayment[]       @relation("AccountantPayments")
+  studentPayments                  SubscriptionPayment[]       @relation("StudentPayments")
+
+  studentReceipts                  BranchSequentialReceipt[]   @relation("StudentReceipts")
+  teacherReceipts                  BranchSequentialReceipt[]   @relation("TeacherReceipts")
+  accountantReceipts               BranchSequentialReceipt[]   @relation("AccountantReceipts")
+
+  studentAuditLogs                 StudentAuditLog[]           @relation("StudentAudits")
+
+  @@index([institutionId])
+  @@index([institutionId, branchId])
+  @@index([financialAccessStatus])
+  @@index([responsibleTeacherId])
+  @@index([creatorId])
 }
 
 model CenterGroup {
-  id        String   @id @default(uuid())
-  name      String
-  schedule  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  students  User[]
+  id                         String                      @id @default(uuid())
+  institutionId              String?
+  branchId                   String?
+  deletedAt                  DateTime?
+  name                       String
+  schedule                   String
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  students                   User[]
+  studentFinancialAgreements StudentFinancialAgreement[]
+  groupPricingAgreements     GroupPricingAgreement[]
+  lessonDeliveryEvidences    LessonDeliveryEvidence[]
+  institution                Institution?                @relation(fields: [institutionId], references: [id])
+  branch                     Branch?                     @relation(fields: [branchId], references: [id])
+
+  @@index([institutionId])
+  @@index([branchId])
 }
 
 model Course {
   id             String             @id @default(uuid())
+  institutionId  String?
+  branchId       String?
+  deletedAt      DateTime?
   title          String
   description    String?
   createdAt      DateTime           @default(now())
@@ -77,9 +278,14 @@ model Course {
   homeworks      Homework[]
   lessons        Lesson[]
 
-  assessments Assessment[]
+  assessments            Assessment[]
+  groupPricingAgreements GroupPricingAgreement[]
+  institution            Institution?            @relation(fields: [institutionId], references: [id])
+  branch                 Branch?                 @relation(fields: [branchId], references: [id])
 
   @@index([teacherId])
+  @@index([institutionId])
+  @@index([branchId])
 }
 
 model CourseEnrollment {
@@ -105,18 +311,21 @@ model Lesson {
   publishedAt     DateTime?
   courseId        String
   updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
   pdfUrl          String?
   Homework        Homework[]
   course          Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
   quizzes         LessonQuiz[]
   progress        VideoProgress[]
 
-  assessments Assessment[]
+  assessments       Assessment[]
+  deliveryEvidences LessonDeliveryEvidence[]
 
   activeMedia    ProcessedMedia?  @relation("ActiveLessonMedia", fields: [activeMediaId], references: [id], onDelete: SetNull)
   processedMedia ProcessedMedia[] @relation("LessonProcessedMedia")
 
   @@index([courseId])
+  @@index([courseId, deletedAt])
 }
 
 model Exam {
@@ -134,6 +343,7 @@ model Exam {
   startTime      DateTime?
   instantGrading Boolean       @default(true)
   showResult     Boolean       @default(true)
+  totalPoints    Float?
   course         Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
   attempts       ExamAttempt[]
 }
@@ -142,7 +352,13 @@ model ExamAttempt {
   id            String          @id @default(uuid())
   examId        String
   score         Float
+  status        AttemptStatus   @default(STARTED)
+  submittedAt   DateTime?
+  isGraded      Boolean         @default(false)
+  totalPoints   Float?
+  percentage    Float?
   createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @default(now()) @updatedAt
   studentId     String
   answers       Json?
   exam          Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
@@ -204,6 +420,8 @@ model Attendance {
 model Payment {
   id              String        @id @default(uuid())
   userId          String
+  institutionId   String?
+  branchId        String?
   amount          Float
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -214,11 +432,15 @@ model Payment {
   provider        String?
   providerOrderId String?
   status          PaymentStatus @default(PENDING)
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  institution     Institution?  @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch          Branch?       @relation(fields: [branchId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([providerOrderId])
   @@index([createdAt])
+  @@index([institutionId])
+  @@index([branchId])
 }
 
 model VideoProgress {
@@ -442,10 +664,14 @@ model QuestionBank {
   solutionExplanation String? // Concise pedagogical solution narrative
   validationStatus    String? // STRUCTURALLY_VALID | MATHEMATICALLY_VERIFIED | NEEDS_REVIEW | INVALID
   source              String          @default("MANUAL")
+  institutionId       String?
   creatorId           String
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
   creator             User            @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  institution         Institution?    @relation(fields: [institutionId], references: [id])
+
+  @@index([institutionId])
 }
 
 model SavedMathSolution {
@@ -515,10 +741,31 @@ model ExamViolation {
 
 enum Role {
   ADMIN
+  PRIMARY_MANAGER
+  ACCOUNTANT
   TEACHER
   ONLINE_STUDENT
   CENTER_STUDENT
   PARENT
+}
+
+enum InstitutionStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum BranchStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
 }
 
 enum UploadStatus {
@@ -628,6 +875,7 @@ enum ProcessedMediaStatus {
 
 model ProcessedMedia {
   id                 String               @id @default(uuid())
+  institutionId      String?
   lessonId           String?
   mediaGeneration    Int
   sourceType         MediaSourceType
@@ -652,12 +900,997 @@ model ProcessedMedia {
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
 
-  lesson          Lesson? @relation("LessonProcessedMedia", fields: [lessonId], references: [id], onDelete: SetNull)
-  activeForLesson Lesson? @relation("ActiveLessonMedia")
+  lesson          Lesson?      @relation("LessonProcessedMedia", fields: [lessonId], references: [id], onDelete: SetNull)
+  activeForLesson Lesson?      @relation("ActiveLessonMedia")
+  institution     Institution? @relation(fields: [institutionId], references: [id])
 
   @@unique([lessonId, mediaGeneration])
+  @@index([institutionId])
   @@index([sourceUrlHash])
   @@index([status, heartbeatAt])
   @@index([status, supersededAt])
   @@index([status, cleanupHeartbeatAt])
 }
+
+// ============================================================================
+// PHASE 4 WORKSTREAM A: FINANCIAL ACCOUNTING CANONICAL MODELS
+// ============================================================================
+
+model Cashbox {
+  id                String        @id @default(uuid())
+  institutionId     String
+  branchId          String
+  code              String // e.g. CB-01, CB-02, CB-MAIN
+  name              String
+  status            CashboxStatus @default(ACTIVE)
+  currency          String        @default("EGP")
+  currentBalance    Decimal       @default(0) @db.Decimal(12, 2)
+  assignedCashierId String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+
+  institution     Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch          Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  assignedCashier User?       @relation("AssignedCashier", fields: [assignedCashierId], references: [id], onDelete: Restrict)
+
+  transactions    CashboxTransaction[]
+  reconciliations CashboxReconciliation[]
+  collections     Collection[]
+  tenders         CollectionTender[]
+  expenseVouchers ExpenseVoucher[]
+
+  @@unique([institutionId, code])
+  @@index([institutionId])
+  @@index([institutionId, branchId])
+  @@index([status])
+}
+
+model CashboxTransaction {
+  id                       String           @id @default(uuid())
+  institutionId            String
+  branchId                 String
+  cashboxId                String
+  type                     CashMovementType
+  amount                   Decimal          @db.Decimal(12, 2)
+  balanceAfter             Decimal          @db.Decimal(12, 2)
+  businessDate             String // YYYY-MM-DD
+  timestamp                DateTime         @default(now())
+  actorUserId              String
+  actorRole                Role
+  referenceId              String? // References collectionId, expenseId, etc.
+  referenceType            String? // COLLECTION, EXPENSE, TRANSFER, ADJUSTMENT
+  counterpartCashboxId     String? // For transfer operations
+  counterpartTransactionId String? // Links two sides of an atomic transfer
+  notes                    String?
+  status                   MovementStatus   @default(POSTED)
+
+  // Reversal Audit Fields
+  reversedAt     DateTime?
+  reversedBy     String?
+  reversalReason String?
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch      Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  cashbox     Cashbox     @relation(fields: [cashboxId], references: [id], onDelete: Restrict)
+  actor       User        @relation("ActorCashboxTransactions", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([institutionId, cashboxId])
+  @@index([cashboxId, businessDate])
+  @@index([cashboxId, timestamp])
+  @@index([referenceId])
+  @@index([actorUserId])
+  @@index([status])
+}
+
+model CashboxReconciliation {
+  id                          String               @id @default(uuid())
+  institutionId               String
+  branchId                    String
+  cashboxId                   String
+  businessDate                String // YYYY-MM-DD
+  reconciledAt                DateTime             @default(now())
+  reconciledByUserId          String
+  openingBalance              Decimal              @db.Decimal(12, 2)
+  totalCollections            Decimal              @db.Decimal(12, 2)
+  totalIncomingTransfers      Decimal              @db.Decimal(12, 2)
+  totalOutgoingTransfers      Decimal              @db.Decimal(12, 2)
+  totalExpenses               Decimal              @db.Decimal(12, 2)
+  expectedClosingBalance      Decimal              @db.Decimal(12, 2)
+  actualCountedClosingBalance Decimal              @db.Decimal(12, 2)
+  difference                  Decimal              @db.Decimal(12, 2)
+  status                      ReconciliationStatus @default(BALANCED)
+  notes                       String?
+
+  institution  Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch       Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  cashbox      Cashbox     @relation(fields: [cashboxId], references: [id], onDelete: Restrict)
+  reconciledBy User        @relation("ReconciledByUser", fields: [reconciledByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([cashboxId, businessDate])
+  @@index([institutionId, businessDate])
+  @@index([institutionId, status])
+}
+
+model StudentFinancialAccount {
+  id            String                 @id @default(uuid())
+  institutionId String
+  studentId     String
+  accountNumber String // e.g. AR-STU-2026-0001
+  status        FinancialAccountStatus @default(ACTIVE)
+  currency      String                 @default("EGP")
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  student     User        @relation("StudentFinancialAccounts", fields: [studentId], references: [id], onDelete: Restrict)
+
+  agreements  StudentFinancialAgreement[]
+  adjustments FinancialAdjustment[]
+
+  @@unique([institutionId, studentId])
+  @@unique([institutionId, accountNumber])
+  @@index([institutionId, studentId])
+  @@index([status])
+}
+
+model StudentFinancialAgreement {
+  id              String  @id @default(uuid())
+  institutionId   String
+  branchId        String
+  studentId       String
+  accountId       String
+  centerGroupId   String?
+  agreementNumber String // e.g. AGR-2026-0001
+
+  // Hybrid Allocation Breakdown (UP-714)
+  catalogPrice          Decimal @db.Decimal(12, 2)
+  discountAmount        Decimal @default(0) @db.Decimal(12, 2)
+  netAgreedPrice        Decimal @db.Decimal(12, 2)
+  physicalCampusAmount  Decimal @db.Decimal(12, 2)
+  digitalPlatformAmount Decimal @db.Decimal(12, 2)
+
+  totalSessionsCount Int
+  currency           String          @default("EGP")
+  status             AgreementStatus @default(ACTIVE)
+  termsNotes         String?
+
+  // Academic Transfer Continuity Fields
+  priorBranchId      String?
+  priorCenterGroupId String?
+  transferredAt      DateTime?
+
+  createdAt    DateTime  @default(now())
+  activatedAt  DateTime?
+  terminatedAt DateTime?
+  updatedAt    DateTime  @updatedAt
+
+  institution Institution             @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch      Branch                  @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  student     User                    @relation("StudentAgreements", fields: [studentId], references: [id], onDelete: Restrict)
+  account     StudentFinancialAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  centerGroup CenterGroup?            @relation(fields: [centerGroupId], references: [id], onDelete: SetNull)
+
+  obligations         StudentObligation[]
+  allocations         CollectionAllocation[]
+  adjustments         FinancialAdjustment[]
+  revenueRecognitions RevenueRecognitionEntry[]
+
+  @@unique([institutionId, agreementNumber])
+  @@index([institutionId, studentId])
+  @@index([institutionId, status])
+  @@index([branchId])
+  @@index([centerGroupId])
+}
+
+model StudentObligation {
+  id                 String           @id @default(uuid())
+  institutionId      String
+  branchId           String
+  studentId          String
+  agreementId        String
+  scheduleItemNumber Int
+  dueDate            DateTime
+  amountDue          Decimal          @db.Decimal(12, 2)
+  amountCollected    Decimal          @default(0) @db.Decimal(12, 2)
+  status             ObligationStatus @default(PENDING)
+  title              String?
+  isMonthlyFee       Boolean          @default(false)
+  obligationType     ObligationType   @default(TERM_FEE)
+  billingMonth       String?          // e.g. "2026-10"
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  institution Institution               @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch      Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  student     User                      @relation("StudentObligations", fields: [studentId], references: [id], onDelete: Restrict)
+  agreement   StudentFinancialAgreement @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+
+  allocations          CollectionAllocation[]
+  collections          Collection[]
+  restrictionHistories FinancialRestrictionHistory[]
+
+  @@unique([agreementId, scheduleItemNumber])
+  @@index([institutionId, dueDate])
+  @@index([institutionId, status])
+  @@index([studentId])
+}
+
+model Collection {
+  id                String           @id @default(uuid())
+  institutionId     String
+  branchId          String
+  cashboxId         String?
+  cashierUserId     String
+  studentId         String
+  obligationId      String?
+  receiptNumber     String // Sequential serial e.g. REC-7841
+  amountCollected   Decimal          @db.Decimal(12, 2)
+  allocatedAmount   Decimal          @default(0) @db.Decimal(12, 2)
+  unallocatedAmount Decimal          @db.Decimal(12, 2) // Customer advance prepayment liability
+  paymentMethod     PaymentMethod    @default(CASH)
+  status            CollectionStatus @default(COLLECTED)
+  collectedAt       DateTime         @default(now())
+  notes             String?
+
+  // Reversal details
+  reversedAt       DateTime?
+  reversedByUserId String?
+  reversalReason   String?
+
+  institution Institution        @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch      Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  cashbox     Cashbox?           @relation(fields: [cashboxId], references: [id], onDelete: Restrict)
+  cashier     User               @relation("CashierCollections", fields: [cashierUserId], references: [id], onDelete: Restrict)
+  student     User               @relation("StudentCollections", fields: [studentId], references: [id], onDelete: Restrict)
+  obligation  StudentObligation? @relation(fields: [obligationId], references: [id], onDelete: SetNull)
+  payerUserId String?
+  payerName   String?
+  payerPhone  String?
+  receiptPdfUrl String?
+  payer       User?              @relation("PayerCollections", fields: [payerUserId], references: [id], onDelete: SetNull)
+  tenders     CollectionTender[]
+  allocations CollectionAllocation[]
+
+  @@unique([institutionId, receiptNumber])
+  @@index([institutionId, collectedAt])
+  @@index([cashboxId, collectedAt])
+  @@index([studentId])
+  @@index([cashierUserId])
+  @@index([status])
+}
+
+model CollectionAllocation {
+  id                String           @id @default(uuid())
+  idempotencyKey    String           @unique
+  institutionId     String
+  branchId          String
+  studentId         String
+  agreementId       String
+  collectionId      String
+  obligationId      String
+  amount            Decimal          @db.Decimal(12, 2)
+  allocatedAt       DateTime         @default(now())
+  allocatedByUserId String
+  status            AllocationStatus @default(ACTIVE)
+  notes             String?
+
+  // Reversal details
+  reversedAt       DateTime?
+  reversedByUserId String?
+  reversalReason   String?
+
+  institution Institution               @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch      Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  student     User                      @relation("StudentAllocations", fields: [studentId], references: [id], onDelete: Restrict)
+  agreement   StudentFinancialAgreement @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+  collection  Collection                @relation(fields: [collectionId], references: [id], onDelete: Restrict)
+  obligation  StudentObligation         @relation(fields: [obligationId], references: [id], onDelete: Restrict)
+  allocatedBy User                      @relation("AllocatedByCollections", fields: [allocatedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([collectionId])
+  @@index([obligationId])
+  @@index([agreementId])
+  @@index([institutionId, allocatedAt])
+  @@index([status])
+}
+
+model FinancialAdjustment {
+  id               String           @id @default(uuid())
+  institutionId    String
+  branchId         String
+  accountId        String
+  studentId        String
+  agreementId      String?
+  adjustmentNumber String // e.g. ADJ-2026-0001
+  type             AdjustmentType
+  amount           Decimal          @db.Decimal(12, 2)
+  reason           String
+  status           AdjustmentStatus @default(DRAFT)
+  preparedById     String
+  approvedById     String?
+  createdAt        DateTime         @default(now())
+  approvedAt       DateTime?
+  updatedAt        DateTime         @updatedAt
+
+  institution Institution                @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch      Branch                     @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  account     StudentFinancialAccount    @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  student     User                       @relation("StudentAdjustments", fields: [studentId], references: [id], onDelete: Restrict)
+  agreement   StudentFinancialAgreement? @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+  preparedBy  User                       @relation("PreparedAdjustments", fields: [preparedById], references: [id], onDelete: Restrict)
+  approvedBy  User?                      @relation("ApprovedAdjustments", fields: [approvedById], references: [id], onDelete: Restrict)
+
+  @@unique([institutionId, adjustmentNumber])
+  @@index([institutionId, status])
+  @@index([accountId])
+  @@index([studentId])
+}
+
+model GroupPricingAgreement {
+  id             String    @id @default(uuid())
+  institutionId  String
+  branchId       String?
+  centerGroupId  String?
+  courseId       String?
+  code           String // e.g. GRP-PRICE-DOKKI-2026
+  name           String
+  standardPrice  Decimal   @db.Decimal(12, 2)
+  discountAmount Decimal   @default(0) @db.Decimal(12, 2)
+  effectivePrice Decimal   @db.Decimal(12, 2)
+  currency       String    @default("EGP")
+  startDate      DateTime
+  endDate        DateTime?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  institution Institution  @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch      Branch?      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  centerGroup CenterGroup? @relation(fields: [centerGroupId], references: [id], onDelete: SetNull)
+  course      Course?      @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@unique([institutionId, code])
+  @@index([institutionId, isActive])
+  @@index([centerGroupId])
+  @@index([courseId])
+}
+
+model FinancialIdempotencyRecord {
+  id              String   @id @default(uuid())
+  institutionId   String
+  idempotencyKey  String
+  requestHash     String // SHA-256 of request parameters
+  operationType   String // COLLECTION_INTAKE, REVENUE_RECOGNITION, TRANSFER_EXECUTE
+  responsePayload Json
+  statusCode      Int      @default(200)
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+
+  @@unique([institutionId, idempotencyKey])
+  @@index([expiresAt])
+  @@index([operationType])
+}
+
+model FinancialAuditEvent {
+  id             String   @id @default(uuid())
+  institutionId  String
+  branchId       String?
+  eventType      String // AGREEMENT_ACTIVATED, COLLECTION_RECORDED, etc.
+  actorUserId    String
+  actorRole      String
+  targetEntity   String // StudentFinancialAgreement, Collection, Cashbox, etc.
+  targetEntityId String
+  oldState       Json?
+  newState       Json?
+  metadata       Json?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  actor       User        @relation("ActorAuditEvents", fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([institutionId, createdAt])
+  @@index([targetEntity, targetEntityId])
+  @@index([actorUserId])
+}
+
+model LessonDeliveryEvidence {
+  id               String         @id @default(uuid())
+  institutionId    String
+  branchId         String
+  lessonId         String
+  centerGroupId    String
+  teacherUserId    String
+  supervisorUserId String
+  sessionNumber    Int
+  deliveredAt      DateTime
+  certifiedAt      DateTime
+  status           EvidenceStatus @default(CERTIFIED)
+  attendanceCount  Int            @default(0)
+  supervisorNotes  String?
+  digitalSignature String // Cryptographic certification signature
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch      Branch      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  lesson      Lesson      @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  centerGroup CenterGroup @relation(fields: [centerGroupId], references: [id], onDelete: Restrict)
+  teacher     User        @relation("TeacherLessonDeliveryEvidence", fields: [teacherUserId], references: [id], onDelete: Restrict)
+  supervisor  User        @relation("SupervisorLessonDeliveryEvidence", fields: [supervisorUserId], references: [id], onDelete: Restrict)
+
+  revenueEntries RevenueRecognitionEntry[]
+
+  @@unique([lessonId, centerGroupId, deliveredAt])
+  @@index([institutionId, branchId])
+  @@index([institutionId, deliveredAt])
+  @@index([status])
+}
+
+model RevenueRecognitionEntry {
+  id               String            @id @default(uuid())
+  idempotencyKey   String            @unique // Format: REV_REC_${institutionId}_${agreementId}_${evidenceId}_${studentId}
+  institutionId    String
+  branchId         String
+  agreementId      String
+  studentId        String
+  evidenceId       String
+  unitIndex        Int // 1-based session unit index
+  amountRecognized Decimal           @db.Decimal(12, 2)
+  currency         String            @default("EGP")
+  status           RecognitionStatus @default(POSTED)
+  recognizedAt     DateTime          @default(now())
+
+  // Reversal details
+  reversedAt       DateTime?
+  reversedByUserId String?
+  reversalReason   String?
+
+  institution Institution               @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch      Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  agreement   StudentFinancialAgreement @relation(fields: [agreementId], references: [id], onDelete: Restrict)
+  student     User                      @relation("StudentRevenueRecognition", fields: [studentId], references: [id], onDelete: Restrict)
+  evidence    LessonDeliveryEvidence    @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
+
+  @@unique([institutionId, evidenceId, studentId])
+  @@index([agreementId, recognizedAt])
+  @@index([institutionId, studentId])
+  @@index([evidenceId])
+  @@index([status])
+}
+
+// ============================================================================
+// PHASE 4 WORKSTREAM A: FINANCIAL ENUMS
+// ============================================================================
+
+enum CashboxStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum CashMovementType {
+  COLLECTION
+  EXPENSE
+  TRANSFER_IN
+  TRANSFER_OUT
+  COLLECTION_REVERSED
+  EXPENSE_REVERSED
+  TRANSFER_REVERSED
+}
+
+enum MovementStatus {
+  POSTED
+  REVERSED
+}
+
+enum ReconciliationStatus {
+  BALANCED
+  DISCREPANCY_PENDING_INVESTIGATION
+  DISCREPANCY_RESOLVED
+}
+
+enum FinancialAccountStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum AgreementStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  TERMINATED
+  TRANSFERRED
+}
+
+enum ObligationStatus {
+  PENDING
+  PARTIALLY_PAID
+  FULFILLED
+  OVERDUE
+  WAIVED
+}
+
+enum PaymentMethod {
+  CASH
+  POS_CARD
+  BANK_TRANSFER
+  CHEQUE
+  OTHER
+}
+
+enum CollectionStatus {
+  COLLECTED
+  DEPOSITED
+  REVERSED
+}
+
+enum AllocationStatus {
+  ACTIVE
+  REVERSED
+}
+
+enum AdjustmentType {
+  CREDIT_NOTE
+  DEBIT_NOTE
+  FEE_WAIVER
+  REFUND_REQUEST
+  DISPUTE_ADJUSTMENT
+}
+
+enum AdjustmentStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  APPLIED
+  REVERSED
+}
+
+enum EvidenceStatus {
+  PENDING
+  CERTIFIED
+  REJECTED
+  REVOKED
+}
+
+enum RecognitionStatus {
+  POSTED
+  REVERSED
+}
+
+// ============================================================================
+// PHASE 5.4 EXTENDED INSTITUTIONAL ACCOUNTING MODELS
+// ============================================================================
+
+model CollectionTender {
+  id                  String        @id @default(uuid())
+  collectionId        String
+  tenderType          PaymentMethod
+  amount              Decimal       @db.Decimal(12, 2)
+  cashboxId           String?
+  posTerminalId       String?
+  posAuthCode         String?
+  cardLastFour        String?
+  bankReferenceNumber String?
+  createdAt           DateTime      @default(now())
+
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Restrict)
+  cashbox    Cashbox?   @relation(fields: [cashboxId], references: [id], onDelete: Restrict)
+
+  @@index([collectionId])
+  @@index([cashboxId])
+}
+
+model BankAccount {
+  id             String   @id @default(uuid())
+  institutionId  String
+  branchId       String?
+  bankName       String
+  accountNumber  String
+  accountHolder  String?
+  iban           String?
+  currency       String   @default("EGP")
+  currentBalance Decimal  @default(0) @db.Decimal(12, 2)
+  status         String   @default("ACTIVE")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  institution      Institution       @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch           Branch?           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  bankTransactions BankTransaction[]
+  expenseVouchers  ExpenseVoucher[]
+
+  @@unique([institutionId, accountNumber])
+  @@index([institutionId])
+  @@index([branchId])
+}
+
+model BankTransaction {
+  id                  String    @id @default(uuid())
+  institutionId       String
+  bankAccountId       String
+  referenceNumber     String
+  transactionDate     DateTime
+  amount              Decimal   @db.Decimal(12, 2)
+  direction           String    @default("CREDIT") // CREDIT (IN), DEBIT (OUT)
+  status              String    @default("UNMATCHED") // UNMATCHED, MATCHED, RECONCILED
+  matchedCollectionId String?
+  matchedExpenseId    String?
+  rawDescription      String?
+  matchedAt           DateTime?
+  matchedByUserId     String?
+  createdAt           DateTime  @default(now())
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  bankAccount BankAccount @relation(fields: [bankAccountId], references: [id], onDelete: Restrict)
+
+  @@unique([bankAccountId, referenceNumber])
+  @@index([institutionId, status])
+}
+
+model ExpenseVoucher {
+  id                   String           @id @default(uuid())
+  institutionId        String
+  branchId             String
+  voucherNumber        String
+  category             String // e.g. OFFICE_SUPPLIES, MAINTENANCE, UTILITIES, EMERGENCY
+  payeeName            String
+  amount               Decimal          @db.Decimal(12, 2)
+  description          String
+  paymentSource        String           @default("CASHBOX") // CASHBOX, BANK_ACCOUNT
+  cashboxId            String?
+  bankAccountId        String?
+  status               AdjustmentStatus @default(DRAFT) // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, DISBURSED, REVERSED
+  preparedById         String
+  approvedById         String?
+  disbursedById        String?
+  receiptAttachmentUrl String?
+  notes                String?
+  createdAt            DateTime         @default(now())
+  approvedAt           DateTime?
+  disbursedAt          DateTime?
+  updatedAt            DateTime         @updatedAt
+
+  institution Institution  @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch      Branch       @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  cashbox     Cashbox?     @relation(fields: [cashboxId], references: [id], onDelete: Restrict)
+  bankAccount BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: Restrict)
+  preparedBy  User         @relation("PreparedExpenseVouchers", fields: [preparedById], references: [id], onDelete: Restrict)
+  approvedBy  User?        @relation("ApprovedExpenseVouchers", fields: [approvedById], references: [id], onDelete: Restrict)
+  disbursedBy User?        @relation("DisbursedExpenseVouchers", fields: [disbursedById], references: [id], onDelete: Restrict)
+
+  @@unique([institutionId, voucherNumber])
+  @@index([institutionId, branchId])
+  @@index([status])
+  @@index([preparedById])
+}
+
+model TeacherSettlement {
+  id                      String    @id @default(uuid())
+  institutionId           String
+  teacherUserId           String
+  settlementNumber        String
+  periodMonth             Int
+  periodYear              Int
+  totalCollectedTuition   Decimal   @db.Decimal(12, 2)
+  totalDeliveredSessions  Int       @default(0)
+  calculatedGrossEarnings Decimal   @db.Decimal(12, 2)
+  totalDeductions         Decimal   @default(0) @db.Decimal(12, 2)
+  netPayable              Decimal   @db.Decimal(12, 2)
+  status                  String    @default("CALCULATED") // CALCULATED, APPROVED, DISBURSED
+  preparedById            String
+  approvedById            String?
+  disbursedAt             DateTime?
+  notes                   String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  institution Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  teacher     User        @relation("TeacherSettlements", fields: [teacherUserId], references: [id], onDelete: Restrict)
+  preparedBy  User        @relation("PreparedTeacherSettlements", fields: [preparedById], references: [id], onDelete: Restrict)
+  approvedBy  User?       @relation("ApprovedTeacherSettlements", fields: [approvedById], references: [id], onDelete: Restrict)
+
+  @@unique([institutionId, settlementNumber])
+  @@index([institutionId, teacherUserId])
+  @@index([periodYear, periodMonth])
+}
+
+// ============================================================================
+// PHASE 5.5 MONTHLY FEE FINANCIAL ACCESS CONTROL & GRACE PERIOD POLICY
+// ============================================================================
+
+enum FinancialAccessStatus {
+  ACTIVE
+  GRACE_PERIOD
+  LOCKED
+  RESTRICTED
+}
+
+enum PolicyMode {
+  GLOBAL
+  PER_BRANCH
+}
+
+enum RestrictionAction {
+  RESTRICTED
+  REACTIVATED
+}
+
+enum ObligationType {
+  MONTHLY_FEE
+  SEMESTER_FEE
+  TERM_FEE
+  FULL_PERIOD_FEE
+  ACTIVITY_FEE
+  OTHER
+}
+
+model MonthlyFeePolicy {
+  id              String       @id @default(uuid())
+  institutionId   String
+  branchId        String?      // NULL for Global Policy, or specific branchId for Per-Branch overrides
+  policyMode      PolicyMode   @default(GLOBAL)
+  gracePeriodDays Int          @default(5)
+  isEnabled       Boolean      @default(true)
+  configuredById  String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  institution     Institution  @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch          Branch?      @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  configuredBy    User         @relation("ConfiguredFeePolicies", fields: [configuredById], references: [id], onDelete: Restrict)
+
+  @@unique([institutionId, branchId])
+  @@index([institutionId, policyMode])
+}
+
+model MonthlyFeePolicyAudit {
+  id              String      @id @default(uuid())
+  institutionId   String
+  branchId        String?
+  previousMode    PolicyMode?
+  newMode         PolicyMode
+  previousDays    Int?
+  newDays         Int
+  changedById     String
+  reason          String?
+  createdAt       DateTime    @default(now())
+
+  institution     Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  changedBy       User        @relation("AuditChangedBy", fields: [changedById], references: [id], onDelete: Restrict)
+
+  @@index([institutionId, createdAt])
+}
+
+model FinancialRestrictionHistory {
+  id                String            @id @default(uuid())
+  institutionId     String
+  branchId          String
+  studentId         String
+  obligationId      String?
+  action            RestrictionAction
+  reason            String
+  relevantMonth     String            // e.g. "2026-10"
+  outstandingAmount Decimal           @db.Decimal(12, 2)
+  triggeredBy       String            @default("SYSTEM_EVALUATION")
+  createdAt         DateTime          @default(now())
+
+  institution       Institution        @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  branch            Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  student           User               @relation("StudentRestrictionHistory", fields: [studentId], references: [id], onDelete: Restrict)
+  obligation        StudentObligation? @relation(fields: [obligationId], references: [id], onDelete: SetNull)
+
+  @@index([institutionId, studentId])
+  @@index([institutionId, action])
+  @@index([relevantMonth])
+}
+
+// ============================================================================
+// BRD Realignment: Accounts, Branches & Subscriptions Module (November 6, 2026)
+// ============================================================================
+
+model StudentTeacher {
+  id                   String                 @id @default(uuid())
+  studentId            String
+  teacherId            String
+  creatorId            String
+  status               String                 @default("ACTIVE") // ACTIVE, TRANSFERRED, INACTIVE
+  accessStatus         FinancialAccessStatus  @default(ACTIVE)   // ACTIVE, GRACE_PERIOD, LOCKED
+  exceptionActiveUntil DateTime?
+  exceptionReason      String?
+  exceptionGrantedById String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  student              User                   @relation("StudentTeacherStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher              User                   @relation("StudentTeacherTeacher", fields: [teacherId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, teacherId])
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([accessStatus])
+}
+
+model TeacherTransferHistory {
+  id              String    @id @default(uuid())
+  studentId       String
+  fromTeacherId   String?
+  toTeacherId     String
+  transferredById String
+  reason          String?
+  createdAt       DateTime  @default(now())
+
+  student         User      @relation("TransferStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  fromTeacher     User?     @relation("TransferFromTeacher", fields: [fromTeacherId], references: [id], onDelete: SetNull)
+  toTeacher       User      @relation("TransferToTeacher", fields: [toTeacherId], references: [id], onDelete: Restrict)
+
+  @@index([studentId])
+  @@index([toTeacherId])
+}
+
+model TeacherSubscriptionSetting {
+  teacherId      String   @id
+  lastGraceDay   Int      @default(5)
+  lockDay        Int      @default(6)
+  lockMessageAr  String   @default("تم إيقاف الوصول مؤقتاً لعدم سداد الاشتراك الشهري. يرجى مراجعة إدارة الفرع.")
+  lockMessageEn  String   @default("Access has been temporarily suspended due to unpaid monthly subscription. Please contact branch administration.")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  teacher        User     @relation("TeacherSettings", fields: [teacherId], references: [id], onDelete: Cascade)
+}
+
+model TeacherGradePricing {
+  id             String   @id @default(uuid())
+  teacherId      String
+  grade          String   // e.g. "SECONDARY_1", "SECONDARY_2", "SECONDARY_3", etc.
+  price          Float    // in EGP
+  effectiveMonth String   // "YYYY-MM" e.g. "2026-11"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  teacher        User     @relation("TeacherPricings", fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, grade, effectiveMonth])
+  @@index([teacherId, grade])
+}
+
+model PriceAuditHistory {
+  id             String   @id @default(uuid())
+  teacherId      String
+  grade          String
+  previousPrice  Float
+  newPrice       Float
+  effectiveMonth String
+  changedById    String
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  @@index([teacherId, grade])
+}
+
+model StudentMonthlySubscription {
+  id                      String                     @id @default(uuid())
+  studentId               String
+  teacherId               String
+  branchId                String
+  billingYear             Int                        // e.g. 2026
+  billingMonth            Int                        // 1 - 12
+  amountDue               Float                      // in EGP
+  amountPaid              Float                      @default(0)
+  status                  String                     @default("UNPAID") // UNPAID, PAID, EXEMPT, CANCELLED
+  priceSnapshot           Float                      // price applicable when created
+  discountAmount          Float                      @default(0)
+  discountReason          String?
+  discountAuthorizedById  String?
+  isExempt                Boolean                    @default(false)
+  exemptionReason         String?
+  exemptionAuthorizedById String?
+  paidAt                  DateTime?
+  createdAt               DateTime                   @default(now())
+  updatedAt               DateTime                   @updatedAt
+
+  student                 User                       @relation("StudentSubscriptions", fields: [studentId], references: [id], onDelete: Cascade)
+  teacher                 User                       @relation("TeacherSubscriptions", fields: [teacherId], references: [id], onDelete: Restrict)
+  paymentItems            SubscriptionPaymentItem[]
+
+  @@unique([studentId, teacherId, billingYear, billingMonth])
+  @@index([studentId, teacherId])
+  @@index([branchId])
+  @@index([status])
+}
+
+model SubscriptionPayment {
+  id                 String                     @id @default(uuid())
+  branchId           String
+  studentId          String
+  accountantId       String
+  totalAmount        Float
+  receivingMethod    String                     // CASH, BANK_TRANSFER, WALLET
+  status             String                     @default("CONFIRMED") // CONFIRMED, CANCELLED
+  notes              String?
+  createdAt          DateTime                   @default(now())
+  cancelledAt        DateTime?
+  cancelledById      String?
+  cancellationReason String?
+
+  student            User                       @relation("StudentPayments", fields: [studentId], references: [id], onDelete: Restrict)
+  accountant         User                       @relation("AccountantPayments", fields: [accountantId], references: [id], onDelete: Restrict)
+  items              SubscriptionPaymentItem[]
+  receipt            BranchSequentialReceipt?
+
+  @@index([branchId])
+  @@index([studentId])
+  @@index([accountantId])
+}
+
+model SubscriptionPaymentItem {
+  id             String                     @id @default(uuid())
+  paymentId      String
+  subscriptionId String
+  month          Int
+  year           Int
+  amount         Float
+  createdAt      DateTime                   @default(now())
+
+  payment        SubscriptionPayment        @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  subscription   StudentMonthlySubscription @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+
+  @@index([paymentId])
+  @@index([subscriptionId])
+}
+
+model BranchSequentialReceipt {
+  id              String              @id @default(uuid())
+  branchId        String
+  receiptNumber   String              @unique
+  sequenceNumber  Int
+  paymentId       String              @unique
+  studentId       String
+  teacherId       String
+  accountantId    String
+  amount          Float
+  receivingMethod String
+  monthsCovered   String
+  pdfPath         String?
+  createdAt       DateTime            @default(now())
+
+  payment         SubscriptionPayment @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  student         User                @relation("StudentReceipts", fields: [studentId], references: [id], onDelete: Restrict)
+  teacher         User                @relation("TeacherReceipts", fields: [teacherId], references: [id], onDelete: Restrict)
+  accountant      User                @relation("AccountantReceipts", fields: [accountantId], references: [id], onDelete: Restrict)
+
+  @@unique([branchId, sequenceNumber])
+  @@index([branchId])
+  @@index([studentId])
+  @@index([teacherId])
+}
+
+model BranchReceiptCounter {
+  branchId     String   @id
+  lastSequence Int      @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+model StudentAuditLog {
+  id        String   @id @default(uuid())
+  studentId String
+  eventType String
+  actorId   String
+  actorRole String
+  details   Json
+  createdAt DateTime @default(now())
+
+  student   User     @relation("StudentAudits", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
+

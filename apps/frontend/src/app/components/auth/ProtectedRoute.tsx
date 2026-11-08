@@ -12,6 +12,16 @@ export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
+  // Intercept users with mandatory first-login password change
+  if (user.mustChangePassword) {
+    return <Navigate to="/first-login/change-password" replace />;
+  }
+
+  // Intercept restricted students and redirect them to dedicated restriction screen
+  if (user.role === 'CENTER_STUDENT' && user.financialAccessStatus === 'RESTRICTED') {
+    return <Navigate to="/financial-restricted" replace />;
+  }
+
   if (!allowedRoles.includes(user.role)) {
     // If authenticated but role not allowed, redirect to unauthorized page
     return <Navigate to="/unauthorized" replace />;

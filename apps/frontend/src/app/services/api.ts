@@ -4,17 +4,19 @@ const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.met
 const isLocalhost = typeof window !== 'undefined' ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') : false;
 const useProdPaths = env.PROD || env.NODE_ENV === 'production' || !isLocalhost;
 
-const AUTH_URL = env.VITE_AUTH_API_URL || (useProdPaths ? '/api/auth' : 'http://localhost:4001/api/auth');
-const USER_URL = env.VITE_USER_API_URL || (useProdPaths ? '/api/users' : 'http://localhost:4002/api/users');
-const AI_URL = env.VITE_AI_API_URL || (useProdPaths ? '/api/ai' : 'http://localhost:4003/api/ai');
-const COURSE_URL = env.VITE_COURSE_API_URL || (useProdPaths ? '/api/courses' : 'http://localhost:4004/api/courses');
-const EXAM_URL = env.VITE_EXAM_API_URL || (useProdPaths ? '/api/exams' : 'http://localhost:4004/api/exams');
-const HOMEWORK_URL = env.VITE_HOMEWORK_API_URL || (useProdPaths ? '/api/homework' : 'http://localhost:4004/api/homework');
-const ANALYTICS_URL = env.VITE_ANALYTICS_API_URL || (useProdPaths ? '/api/analytics' : 'http://localhost:4005/api/analytics');
-const NOTIFICATION_URL = env.VITE_NOTIFICATION_API_URL || (useProdPaths ? '/api/notifications' : 'http://localhost:4002/api/notifications');
-const ATTENDANCE_URL = env.VITE_ATTENDANCE_API_URL || (useProdPaths ? '/api/attendance' : 'http://localhost:4002/api/attendance');
-const QUESTION_URL = env.VITE_QUESTION_API_URL || (useProdPaths ? '/api/questions' : 'http://localhost:4004/api/questions');
-const ASSESSMENT_URL = env.VITE_ASSESSMENT_API_URL || (useProdPaths ? '/api/assessments' : 'http://localhost:4004/api/assessments');
+const AUTH_URL = env.VITE_AUTH_API_URL || '/api/auth';
+const USER_URL = env.VITE_USER_API_URL || '/api/users';
+const MANAGER_URL = env.VITE_MANAGER_API_URL || '/api/manager';
+const AI_URL = env.VITE_AI_API_URL || '/api/ai';
+const COURSE_URL = env.VITE_COURSE_API_URL || '/api/courses';
+const EXAM_URL = env.VITE_EXAM_API_URL || '/api/exams';
+const HOMEWORK_URL = env.VITE_HOMEWORK_API_URL || '/api/homework';
+const ANALYTICS_URL = env.VITE_ANALYTICS_API_URL || '/api/analytics';
+const NOTIFICATION_URL = env.VITE_NOTIFICATION_API_URL || '/api/notifications';
+const ATTENDANCE_URL = env.VITE_ATTENDANCE_API_URL || '/api/attendance';
+const QUESTION_URL = env.VITE_QUESTION_API_URL || '/api/questions';
+const ASSESSMENT_URL = env.VITE_ASSESSMENT_API_URL || '/api/assessments';
+const ACCOUNTING_URL = env.VITE_ACCOUNTING_API_URL || '/api/accounting';
 
 export const authApi = axios.create({
   baseURL: AUTH_URL,
@@ -23,6 +25,10 @@ export const authApi = axios.create({
 
 export const userApi = axios.create({
   baseURL: USER_URL,
+});
+
+export const managerApi = axios.create({
+  baseURL: MANAGER_URL,
 });
 
 export const attendanceApi = axios.create({
@@ -61,6 +67,10 @@ export const assessmentApi = axios.create({
   baseURL: ASSESSMENT_URL,
 });
 
+export const accountingApi = axios.create({
+  baseURL: ACCOUNTING_URL,
+});
+
 // Interceptor to add Token to authApi requests
 authApi.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -71,7 +81,7 @@ authApi.interceptors.request.use((config) => {
 });
 
 // Interceptor to add Token to requests and handle 401s
-[userApi, attendanceApi, aiApi, courseApi, examApi, homeworkApi, analyticsApi, notificationApi, questionApi, assessmentApi].forEach(api => {
+[userApi, managerApi, attendanceApi, aiApi, courseApi, examApi, homeworkApi, analyticsApi, notificationApi, questionApi, assessmentApi, accountingApi].forEach(api => {
   api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {

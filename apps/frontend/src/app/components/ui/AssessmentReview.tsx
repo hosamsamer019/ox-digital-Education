@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import React, { useState } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, HelpCircle, FileText, Check } from 'lucide-react';
 import { MathRenderer } from './MathRenderer';
@@ -40,9 +41,10 @@ interface AssessmentReviewProps {
 }
 
 export default function AssessmentReview({ data, isTeacher }: AssessmentReviewProps) {
+  const { t } = useLanguage();
   const { assessment, student, attempt, questions } = data;
 
-  if (!attempt) return <div className="text-center p-8 text-gray-500 dark:text-gray-400">جاري التحميل...</div>;
+  if (!attempt) return <div className="text-center p-8 text-gray-500 dark:text-gray-400">{t('جاري التحميل...')}</div>;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6" dir="rtl">
@@ -50,17 +52,17 @@ export default function AssessmentReview({ data, isTeacher }: AssessmentReviewPr
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-col md:flex-row items-center justify-between gap-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{assessment?.title}</h2>
-          <p className="text-gray-500 dark:text-gray-400">الطالب: {student?.name}</p>
+          <p className="text-gray-500 dark:text-gray-400">{t('الطالب:')} {student?.name}</p>
         </div>
         <div className="flex items-center gap-6">
           <div className="text-center">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">الدرجة</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('الدرجة')}</div>
             <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400" dir="ltr">
               {attempt.score} / {attempt.totalPoints}
             </div>
           </div>
           <div className="text-center border-r border-gray-200 dark:border-gray-700 pr-6">
-            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">النسبة</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('النسبة')}</div>
             <div className="text-3xl font-bold text-gray-900 dark:text-white" dir="ltr">
               {Math.round(attempt.percentage || 0)}%
             </div>
@@ -85,13 +87,13 @@ function QuestionReviewItem({ q, index, isTeacher }: { q: any; index: number; is
   const getValidationBadge = (status: string) => {
     switch (status) {
       case 'MATHEMATICALLY_VERIFIED':
-        return <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 rounded-full text-xs font-bold border border-emerald-200 dark:border-emerald-800"><Check className="w-3.5 h-3.5" /> تم التحقق رياضيًا</div>;
+        return <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 rounded-full text-xs font-bold border border-emerald-200 dark:border-emerald-800"><Check className="w-3.5 h-3.5" /> {t('تم التحقق رياضيًا')}</div>;
       case 'STRUCTURALLY_VALID':
-        return <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 rounded-full text-xs font-bold border border-blue-200 dark:border-blue-800"><div className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400"></div> صحيح هيكليًا</div>;
+        return <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 rounded-full text-xs font-bold border border-blue-200 dark:border-blue-800"><div className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400"></div> {t('صحيح هيكليًا')}</div>;
       case 'NEEDS_REVIEW':
-        return <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 rounded-full text-xs font-bold border border-amber-200 dark:border-amber-800"><AlertTriangle className="w-3.5 h-3.5" /> يحتاج مراجعة المعلم</div>;
+        return <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 rounded-full text-xs font-bold border border-amber-200 dark:border-amber-800"><AlertTriangle className="w-3.5 h-3.5" /> {t('يحتاج مراجعة المعلم')}</div>;
       case 'INVALID':
-        return <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-300 rounded-full text-xs font-bold border border-red-200 dark:border-red-800"><XCircle className="w-3.5 h-3.5" /> السؤال غير صالح</div>;
+        return <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-300 rounded-full text-xs font-bold border border-red-200 dark:border-red-800"><XCircle className="w-3.5 h-3.5" /> {t('السؤال غير صالح')}</div>;
       default:
         return null;
     }
@@ -104,17 +106,17 @@ function QuestionReviewItem({ q, index, isTeacher }: { q: any; index: number; is
       {/* Header */}
       <div className={`px-6 py-3 flex items-center justify-between border-b ${q.isCorrect ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900/40' : 'bg-red-50 dark:bg-red-950/30 border-red-100 dark:border-red-900/40'}`}>
         <div className="flex items-center gap-3">
-          <span className="font-bold text-gray-700 dark:text-gray-200">السؤال {index}</span>
+          <span className="font-bold text-gray-700 dark:text-gray-200">{t('السؤال')} {index}</span>
           {q.isCorrect ? (
-            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-bold text-sm"><CheckCircle className="w-4 h-4" /> إجابة صحيحة</span>
+            <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-300 font-bold text-sm"><CheckCircle className="w-4 h-4" /> {t('إجابة صحيحة')}</span>
           ) : isUnanswered ? (
-            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 font-bold text-sm"><HelpCircle className="w-4 h-4" /> لم يتم الإجابة</span>
+            <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 font-bold text-sm"><HelpCircle className="w-4 h-4" /> {t('لم يتم الإجابة')}</span>
           ) : (
-            <span className="flex items-center gap-1 text-red-700 dark:text-red-300 font-bold text-sm"><XCircle className="w-4 h-4" /> إجابة غير صحيحة</span>
+            <span className="flex items-center gap-1 text-red-700 dark:text-red-300 font-bold text-sm"><XCircle className="w-4 h-4" /> {t('إجابة غير صحيحة')}</span>
           )}
         </div>
         <div className="text-sm font-bold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 px-3 py-1 rounded-full border border-gray-200 dark:border-gray-600">
-          {q.pointsEarned} / {q.points} نقاط
+          {q.pointsEarned} / {q.points} {t('نقاط')}
         </div>
       </div>
 
@@ -153,13 +155,13 @@ function QuestionReviewItem({ q, index, isTeacher }: { q: any; index: number; is
           <div className="mb-6 space-y-2">
             {q.given && (
               <div className="flex items-start gap-2">
-                <span className="font-bold text-gray-700 dark:text-gray-300">المعطيات:</span>
+                <span className="font-bold text-gray-700 dark:text-gray-300">{t('المعطيات:')}</span>
                 <span className="text-gray-600 dark:text-gray-400"><MathRenderer expression={q.given} /></span>
               </div>
             )}
             {q.required && (
               <div className="flex items-start gap-2">
-                <span className="font-bold text-gray-700 dark:text-gray-300">المطلوب:</span>
+                <span className="font-bold text-gray-700 dark:text-gray-300">{t('المطلوب:')}</span>
                 <span className="text-gray-600 dark:text-gray-400"><MathRenderer expression={q.required} /></span>
               </div>
             )}
@@ -169,17 +171,17 @@ function QuestionReviewItem({ q, index, isTeacher }: { q: any; index: number; is
         {/* Answers Comparison */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div className={`p-4 rounded-xl border ${q.isCorrect ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200' : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-900 dark:text-red-200'}`}>
-            <div className="text-xs uppercase tracking-wider font-bold mb-2 opacity-75">إجابتك</div>
+            <div className="text-xs uppercase tracking-wider font-bold mb-2 opacity-75">{t('إجابتك')}</div>
             <div className="font-medium text-lg min-h-[28px]" dir="ltr">
-              {isUnanswered ? <span className="text-gray-400" dir="rtl">لا توجد إجابة</span> : (
+              {isUnanswered ? <span className="text-gray-400" dir="rtl">{t('لا توجد إجابة')}</span> : (
                 resolveOptionText(q.options, q.studentAnswer)
               )}
             </div>
           </div>
           <div className="p-4 rounded-xl border bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white">
-            <div className="text-xs uppercase tracking-wider font-bold mb-2 opacity-75">الإجابة الصحيحة</div>
+            <div className="text-xs uppercase tracking-wider font-bold mb-2 opacity-75">{t('الإجابة الصحيحة')}</div>
             <div className="font-medium text-lg min-h-[28px]" dir="ltr">
-              {resolveOptionText(q.options, q.correctAnswer) || <span className="text-red-500 dark:text-red-400" dir="rtl">غير متوفرة</span>}
+              {resolveOptionText(q.options, q.correctAnswer) || <span className="text-red-500 dark:text-red-400" dir="rtl">{t('غير متوفرة')}</span>}
             </div>
           </div>
         </div>
@@ -210,13 +212,13 @@ function QuestionReviewItem({ q, index, isTeacher }: { q: any; index: number; is
         {/* Solution Panel */}
         {showSolution && (q.solutionExplanation || (q.solutionSteps && q.solutionSteps.length > 0)) && (
           <div className="mt-4 p-5 bg-indigo-50/50 dark:bg-indigo-950/20 rounded-xl border border-indigo-100 dark:border-indigo-900/40">
-            <h4 className="font-bold text-indigo-900 dark:text-indigo-200 mb-3">كيف تم الحل؟</h4>
+            <h4 className="font-bold text-indigo-900 dark:text-indigo-200 mb-3">{t('كيف تم الحل؟')}</h4>
             {q.solutionExplanation && (
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4 whitespace-pre-wrap">{q.solutionExplanation}</p>
             )}
             {q.solutionSteps && q.solutionSteps.length > 0 && (
               <div className="space-y-2">
-                <div className="font-bold text-gray-700 dark:text-gray-300 text-sm mb-2">خطوات الحل:</div>
+                <div className="font-bold text-gray-700 dark:text-gray-300 text-sm mb-2">{t('خطوات الحل:')}</div>
                 {q.solutionSteps.map((step: string, i: number) => (
                   <div key={i} className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/40 shadow-sm overflow-x-auto text-gray-800 dark:text-gray-200" dir="ltr">
                     <MathRenderer expression={step} />
@@ -230,22 +232,22 @@ function QuestionReviewItem({ q, index, isTeacher }: { q: any; index: number; is
         {/* Generation Logic Panel (Teacher Only) */}
         {isTeacher && showGeneration && q.generationLogic && (
           <div className="mt-4 p-5 bg-purple-50/50 dark:bg-purple-950/20 rounded-xl border border-purple-100 dark:border-purple-900/40">
-            <h4 className="font-bold text-purple-900 dark:text-purple-200 mb-4">معلومات التصميم التربوي (للمعلم فقط)</h4>
+            <h4 className="font-bold text-purple-900 dark:text-purple-200 mb-4">{t('معلومات التصميم التربوي (للمعلم فقط)')}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-purple-100 dark:border-purple-900/40 shadow-sm">
-                <div className="text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">سبب تصميم السؤال</div>
+                <div className="text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">{t('سبب تصميم السؤال')}</div>
                 <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{q.generationLogic.questionDesign}</div>
               </div>
               <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-purple-100 dark:border-purple-900/40 shadow-sm">
-                <div className="text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">الطريقة الرياضية</div>
+                <div className="text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">{t('الطريقة الرياضية')}</div>
                 <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{q.generationLogic.mathematicalMethod}</div>
               </div>
               <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-purple-100 dark:border-purple-900/40 shadow-sm">
-                <div className="text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">سبب مستوى الصعوبة</div>
+                <div className="text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">{t('سبب مستوى الصعوبة')}</div>
                 <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{q.generationLogic.difficultyReason}</div>
               </div>
               <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-purple-100 dark:border-purple-900/40 shadow-sm">
-                <div className="text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">الهدف التعليمي</div>
+                <div className="text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">{t('الهدف التعليمي')}</div>
                 <div className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{q.generationLogic.learningObjective}</div>
               </div>
             </div>

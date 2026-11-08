@@ -11,7 +11,12 @@ import {
 } from '../controllers/attendance.controller.js';
 import { verifyToken, checkRole } from '../middlewares/auth.middleware.js';
 
+import { tenantContextMiddleware } from '@shared/utils';
+
 const router = Router();
+
+// Enforce server-side tenant isolation across all attendance routes
+router.use(verifyToken, tenantContextMiddleware());
 
 // Student / Self endpoint
 router.get('/my-attendance', verifyToken, getStudentAttendance);

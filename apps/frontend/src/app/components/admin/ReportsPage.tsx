@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useEffect, useState, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { Download, TrendingUp, Users, Award, BookOpen, Loader2 } from 'lucide-react';
@@ -6,6 +7,7 @@ import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
 export default function ReportsPage() {
+  const { t } = useLanguage();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -45,18 +47,18 @@ export default function ReportsPage() {
       pdf.save(`تقرير_المنصة_${new Date().toLocaleDateString('ar-EG')}.pdf`);
     } catch (err) {
       console.error('PDF Export Error:', err);
-      showToast('فشل تصدير PDF', 'error');
+      showToast(t('فشل تصدير PDF'), 'error');
     } finally {
       setExporting(false);
     }
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">جاري تحميل الإحصائيات...</div>;
+    return <div className="p-8 text-center text-gray-500">{t('جاري تحميل الإحصائيات...')}</div>;
   }
 
   if (!data) {
-    return <div className="p-8 text-center text-red-500">حدث خطأ أثناء جلب البيانات.</div>;
+    return <div className="p-8 text-center text-red-500">{t('حدث خطأ أثناء جلب البيانات.')}</div>;
   }
 
   const { overview, roleDistribution } = data;
@@ -84,8 +86,8 @@ export default function ReportsPage() {
       
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">التقارير والإحصائيات</h1>
-          <p className="text-gray-600 dark:text-gray-400">تحليل شامل لأداء المنصة</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('التقارير والإحصائيات')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('تحليل شامل لأداء المنصة')}</p>
         </div>
         <button 
           onClick={handleExportPDF}
@@ -101,7 +103,7 @@ export default function ReportsPage() {
         <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-md p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">إجمالي المستخدمين</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">{t('إجمالي المستخدمين')}</p>
               <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{overview?.totalUsers || 0}</p>
             </div>
             <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
@@ -113,7 +115,7 @@ export default function ReportsPage() {
         <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-md p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">الدورات النشطة</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">{t('الدورات النشطة')}</p>
               <p className="text-3xl font-bold text-green-600 dark:text-green-400">{overview?.totalCourses || 0}</p>
             </div>
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
@@ -125,7 +127,7 @@ export default function ReportsPage() {
         <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-md p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">عدد الامتحانات</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">{t('عدد الامتحانات')}</p>
               <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{overview?.totalExams || 0}</p>
             </div>
             <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center">
@@ -137,7 +139,7 @@ export default function ReportsPage() {
         <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-md p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">التسليمات</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-1">{t('التسليمات')}</p>
               <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{overview?.totalSubmissions || 0}</p>
             </div>
             <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/40 rounded-full flex items-center justify-center">
@@ -149,7 +151,7 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">توزيع المستخدمين</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t('توزيع المستخدمين')}</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -171,7 +173,7 @@ export default function ReportsPage() {
         </div>
         
         <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">أداء الدورات</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t('أداء الدورات')}</h2>
           {data.performanceData && data.performanceData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={data.performanceData}>
@@ -179,12 +181,12 @@ export default function ReportsPage() {
                 <XAxis dataKey="course" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="average" fill="#10b981" name="متوسط الدرجات" />
+                <Bar dataKey="average" fill="#10b981" name={t('متوسط الدرجات')} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-               <p className="text-gray-500 dark:text-gray-400">لا يوجد بيانات كافية لعرض الأداء</p>
+               <p className="text-gray-500 dark:text-gray-400">{t('لا يوجد بيانات كافية لعرض الأداء')}</p>
             </div>
           )}
         </div>

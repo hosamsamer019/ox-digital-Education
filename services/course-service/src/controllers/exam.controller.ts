@@ -188,6 +188,7 @@ const createExamSchema = z.object({
   endTime: z.string().optional().nullable(),
   randomization: z.boolean().optional(),
   passingScore: z.number().optional(),
+  totalPoints: z.number().positive().optional(),
   allowExternalStudents: z.boolean().optional(),
   allowedIps: z.string().optional().nullable(),
   questions: z.array(z.object({
@@ -218,7 +219,7 @@ export const createExam = async (req: AuthRequest, res: Response) => {
     const requesterId = req.user?.userId;
 
     const validatedData = createExamSchema.parse(req.body);
-    const { title, courseId, duration, questions, requiresCamera, startTime, endTime, randomization, passingScore, allowExternalStudents, allowedIps } = validatedData;
+    const { title, courseId, duration, questions, requiresCamera, startTime, endTime, randomization, passingScore, totalPoints, allowExternalStudents, allowedIps } = validatedData;
     
     const course = await db.course.findUnique({ where: { id: courseId } });
     if (!course) return res.status(404).json({ message: 'Course not found' });
@@ -239,7 +240,8 @@ export const createExam = async (req: AuthRequest, res: Response) => {
         startTime: startTime ? new Date(startTime) : null,
         endTime: endTime ? new Date(endTime) : null,
         randomization: randomization || false,
-        passingScore: passingScore || 50
+        passingScore: passingScore || 50,
+        totalPoints: ((typeof totalPoints === 'number' && totalPoints > 0) ? totalPoints : (Array.isArray(questions) && questions.length > 0 ? (questions.reduce((acc: number, q: any) => acc + (typeof q.points === 'number' && q.points > 0 ? q.points : 0), 0) || null) : null))
       }
     });
 
@@ -428,7 +430,11 @@ export const startAttempt = async (req: AuthRequest, res: Response) => {
       data: {
         studentId: userId,
         examId,
-        score: 0
+        score: 0,
+        status: 'STARTED',
+        isGraded: false,
+        submittedAt: null,
+        totalPoints: (typeof exam.totalPoints === 'number' && exam.totalPoints > 0) ? exam.totalPoints : null
       }
     });
     res.status(201).json(attempt);
@@ -463,58 +469,175 @@ export const submitAttempt = async (req: AuthRequest, res: Response) => {
     let calculatedScore = 0;
     const questions = Array.isArray(exam.questions) ? exam.questions : [];
     
-    if (questions.length > 0 && Array.isArray(answers)) {
-      let correctCount = 0;
-      for (const ans of answers) {
-        const q: any = questions.find((q: any) => q.id === ans.questionId);
-        // Using 'correct' as the answer index key, as expected by the frontend
-        if (q && q.correct !== undefined && ans.selectedOption === q.correct) {
-          correctCount++;
+    // Concurrency protection: wrap entire attempt retrieval, validation, and update in transaction
+    const submissionResult = await db.$transaction(async (tx) => {
+      // 1. Transaction-level serialization for this student & exam
+      // Uses PostgreSQL advisory xact lock to serialize concurrent attempts before row creation
+      try {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'ox_attempt:' + userId + ':' + examId}))`;
+      } catch (lockErr) {
+        // Fallback gracefully in testing / non-PostgreSQL environments
+      }
+
+      // 2. Fetch latest attempt under transaction
+      let existingAttempt = await tx.examAttempt.findFirst({
+        where: { studentId: userId, examId },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      // 3. Row-level lock using SELECT ... FOR UPDATE on the existing attempt row
+      if (existingAttempt) {
+        try {
+          await tx.$executeRaw`SELECT "id" FROM "ExamAttempt" WHERE "id" = ${existingAttempt.id} FOR UPDATE`;
+          // Refetch under the row lock to guarantee seeing the committed state from any preceding concurrent transaction
+          existingAttempt = await tx.examAttempt.findUnique({
+            where: { id: existingAttempt.id }
+          });
+        } catch (rawLockErr) {
+          // Fallback gracefully if row-level locking raw query is unsupported
         }
       }
-      calculatedScore = (correctCount / questions.length) * 100;
-    }
 
-    // Find the latest attempt to update, or create a new one
-    const existingAttempt = await db.examAttempt.findFirst({
-      where: { studentId: userId, examId },
-      orderBy: { createdAt: 'desc' }
+      // 4. Idempotent submission: if already in a terminal state, return existing attempt immediately
+      // Terminal states: GRADED, SUBMITTED, CHEATING, TIME_EXPIRED
+      if (existingAttempt) {
+        if (existingAttempt.status === 'GRADED' || existingAttempt.status === 'SUBMITTED') {
+          return {
+            isAlreadySubmitted: true,
+            statusCode: 200,
+            payload: {
+              success: true,
+              score: existingAttempt.score,
+              percentage: existingAttempt.percentage,
+              totalPoints: existingAttempt.totalPoints,
+              attempt: existingAttempt,
+              idempotent: true
+            }
+          };
+        }
+        if (existingAttempt.status === 'CHEATING') {
+          return {
+            isAlreadySubmitted: true,
+            statusCode: 403,
+            payload: { message: 'Attempt disqualified due to cheating violations', attempt: existingAttempt }
+          };
+        }
+        if (existingAttempt.status === 'TIME_EXPIRED') {
+          return {
+            isAlreadySubmitted: true,
+            statusCode: 400,
+            payload: { message: 'Attempt has expired and cannot be resubmitted', attempt: existingAttempt }
+          };
+        }
+      }
+
+      // Verified maximum points determination (DEF-02)
+      let totalPossiblePoints: number | null = (typeof exam.totalPoints === 'number' && exam.totalPoints > 0)
+        ? exam.totalPoints
+        : null;
+
+      if (!totalPossiblePoints && questions.length > 0) {
+        const sumPoints = questions.reduce((acc: number, q: any) => acc + (typeof q.points === 'number' && q.points > 0 ? q.points : 0), 0);
+        if (sumPoints > 0) totalPossiblePoints = sumPoints;
+      }
+
+      let calculatedScore = 0;
+      if (questions.length > 0 && Array.isArray(answers)) {
+        let earned = 0;
+        let hasSpecificPoints = false;
+        for (const ans of answers) {
+          const q: any = questions.find((q: any) => q.id === ans.questionId);
+          if (q && q.correct !== undefined && ans.selectedOption === q.correct) {
+            if (typeof q.points === 'number' && q.points > 0) {
+              earned += q.points;
+              hasSpecificPoints = true;
+            } else {
+              earned += 1;
+            }
+          }
+        }
+        if (hasSpecificPoints && totalPossiblePoints) {
+          calculatedScore = earned;
+        } else {
+          calculatedScore = totalPossiblePoints ? (earned / questions.length) * totalPossiblePoints : earned;
+        }
+      }
+
+      // Verified percentage calculation: requires verified totalPossiblePoints > 0
+      const percentage = (totalPossiblePoints !== null && totalPossiblePoints > 0)
+        ? Math.round(((calculatedScore / totalPossiblePoints) * 100) * 10) / 10
+        : null;
+
+      // Check time limit
+      if (existingAttempt) {
+        const startedAt = existingAttempt.createdAt;
+        const elapsedMinutes = (now.getTime() - startedAt.getTime()) / 60000;
+        if (elapsedMinutes > exam.duration + 5) {
+          const hasAnswers = Array.isArray(answers) && answers.length > 0;
+          const expiredAttempt = await tx.examAttempt.update({
+            where: { id: existingAttempt.id },
+            data: {
+              status: 'TIME_EXPIRED',
+              score: calculatedScore,
+              percentage,
+              totalPoints: totalPossiblePoints,
+              isGraded: hasAnswers && percentage !== null,
+              submittedAt: now,
+              answers: answers || []
+            }
+          });
+          return {
+            isAlreadySubmitted: true,
+            statusCode: 400,
+            payload: { message: 'Time limit exceeded', attempt: expiredAttempt }
+          };
+        }
+      }
+
+      let attempt;
+      if (existingAttempt) {
+        attempt = await tx.examAttempt.update({
+          where: { id: existingAttempt.id },
+          data: {
+            score: calculatedScore,
+            percentage,
+            totalPoints: totalPossiblePoints,
+            status: 'GRADED',
+            isGraded: percentage !== null,
+            submittedAt: now,
+            answers: answers || []
+          }
+        });
+      } else {
+        attempt = await tx.examAttempt.create({
+          data: {
+            studentId: userId,
+            examId,
+            score: calculatedScore,
+            percentage,
+            totalPoints: totalPossiblePoints,
+            status: 'GRADED',
+            isGraded: percentage !== null,
+            submittedAt: now,
+            answers: answers || []
+          }
+        });
+      }
+
+      return {
+        isAlreadySubmitted: false,
+        statusCode: 200,
+        payload: { success: true, score: calculatedScore, percentage, attempt }
+      };
     });
 
-    if (existingAttempt) {
-      const startedAt = existingAttempt.createdAt;
-      const elapsedMinutes = (now.getTime() - startedAt.getTime()) / 60000;
-      // If they exceeded duration + 5 minutes grace period, cap score or reject
-      if (elapsedMinutes > exam.duration + 5) {
-         return res.status(400).json({ message: 'Time limit exceeded' });
-      }
+    // Notify teacher of submission (outside transaction)
+    if (!submissionResult.isAlreadySubmitted && submissionResult.statusCode === 200) {
+      const { notifyTeacher } = await import('../utils/notification.helper.js');
+      await notifyTeacher(exam.courseId, 'تسليم امتحان', `قام الطالب بتسليم امتحان: ${exam.title}`);
     }
 
-    let attempt;
-    if (existingAttempt) {
-      attempt = await db.examAttempt.update({
-        where: { id: existingAttempt.id },
-        data: {
-          score: calculatedScore,
-          answers: answers || []
-        }
-      });
-    } else {
-      attempt = await db.examAttempt.create({
-        data: {
-          studentId: userId,
-          examId,
-          score: calculatedScore,
-          answers: answers || []
-        }
-      });
-    }
-    
-    // Notify teacher of submission
-    const { notifyTeacher } = await import('../utils/notification.helper.js');
-    await notifyTeacher(exam.courseId, 'تسليم امتحان', `قام الطالب بتسليم امتحان: ${exam.title}`);
-
-    res.json({ success: true, score: calculatedScore, attempt });
+    res.status(submissionResult.statusCode).json(submissionResult.payload);
   } catch (error: any) {
     res.status(400).json({ message: 'Error submitting exam', error: error.message });
   }
@@ -533,14 +656,38 @@ export const syncAttempt = async (req: AuthRequest, res: Response) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    if (existingAttempt) {
-      await db.examAttempt.update({
-        where: { id: existingAttempt.id },
-        data: { answers: answers || [] }
+    if (!existingAttempt) {
+      return res.status(404).json({ message: 'No active attempt found to sync' });
+    }
+
+    // DEF-05: Strict attempt lifecycle immutability
+    const TERMINAL_STATUSES = ['GRADED', 'CHEATING', 'TIME_EXPIRED', 'SUBMITTED'];
+    if (TERMINAL_STATUSES.includes(existingAttempt.status)) {
+      return res.status(403).json({
+        message: `Attempt lifecycle is terminal (${existingAttempt.status}). Answer mutations are prohibited.`,
+        status: existingAttempt.status
       });
     }
 
-    res.json({ success: true });
+    // Only allow mutations for active states: STARTED or IN_PROGRESS
+    if (existingAttempt.status !== 'STARTED' && existingAttempt.status !== 'IN_PROGRESS') {
+      return res.status(403).json({
+        message: `Invalid attempt state for autosave: ${existingAttempt.status}`,
+        status: existingAttempt.status
+      });
+    }
+
+    const updateData: any = { answers: answers || [] };
+    if (existingAttempt.status === 'STARTED') {
+      updateData.status = 'IN_PROGRESS';
+    }
+    
+    await db.examAttempt.update({
+      where: { id: existingAttempt.id },
+      data: updateData
+    });
+
+    res.json({ success: true, status: updateData.status || existingAttempt.status });
   } catch (error: any) {
     res.status(400).json({ message: 'Error syncing exam attempt', error: error.message });
   }
@@ -575,7 +722,11 @@ export const reportViolation = async (req: AuthRequest, res: Response) => {
     if (attempt.ExamViolation.length >= 1) { // They just got their 2nd violation (1 + 1 new)
       await db.examAttempt.update({
         where: { id: attempt.id },
-        data: { score: 0 }
+        data: {
+          score: 0,
+          status: 'CHEATING',
+          isGraded: false
+        }
       });
       return res.status(403).json({ message: 'Disqualified due to multiple violations' });
     }

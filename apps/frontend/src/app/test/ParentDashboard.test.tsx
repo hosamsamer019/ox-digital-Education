@@ -189,7 +189,7 @@ describe('Phase 5.2: Parent Dashboard Redesign & Data Integrity Suite', () => {
     expect(await screen.findByText('أحمد حسام')).toBeInTheDocument();
 
     // Verify 3 valid metric cards exist
-    expect(screen.getByText(/متوسط درجات التقييمات/i)).toBeInTheDocument();
+    expect(await screen.findByText(/متوسط درجات التقييمات/i)).toBeInTheDocument();
     expect(screen.getByText(/الامتحانات المكتملة/i)).toBeInTheDocument();
     expect(screen.getAllByText(/الواجبات والتطبيقات/i)[0]).toBeInTheDocument();
 

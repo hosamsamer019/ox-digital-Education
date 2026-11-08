@@ -1,3 +1,4 @@
+import { tenantContextMiddleware } from '@shared/utils';
 import { Router } from 'express';
 import {
   getCourses,
@@ -27,6 +28,9 @@ import {
 import { verifyToken, checkRole } from '../middlewares/auth.middleware.js';
 
 const router = Router();
+
+// Enforce server-side tenant isolation across all course routes
+router.use(verifyToken, tenantContextMiddleware());
 
 router.get('/', verifyToken, getCourses);
 router.get('/available', verifyToken, getAvailableCourses);

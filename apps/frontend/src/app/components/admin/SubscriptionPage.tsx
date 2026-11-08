@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState } from 'react';
 import { CreditCard, TrendingUp, Users, DollarSign, Check, Download, Filter } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -28,6 +29,7 @@ const recentSubscriptions = [
 ];
 
 export default function SubscriptionPage() {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<'overview' | 'subscribers' | 'plans'>('overview');
 
@@ -40,11 +42,11 @@ export default function SubscriptionPage() {
     <div className={`p-6 lg:p-8 ${isDark ? 'bg-gray-900' : 'bg-gray-50'} min-h-full`}>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className={`text-2xl font-bold ${textPrimary}`}>إدارة الاشتراكات</h1>
-          <p className={textSecondary}>مراقبة الإيرادات والمشتركين وخطط الاشتراك</p>
+          <h1 className={`text-2xl font-bold ${textPrimary}`}>{t('إدارة الاشتراكات')}</h1>
+          <p className={textSecondary}>{t('مراقبة الإيرادات والمشتركين وخطط الاشتراك')}</p>
         </div>
         <button className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm border ${isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-600'} hover:bg-gray-50 dark:hover:bg-gray-700`}>
-          <Download className="w-4 h-4" /> تصدير Excel
+          <Download className="w-4 h-4" /> {t('تصدير Excel')}
         </button>
       </div>
 
@@ -72,7 +74,7 @@ export default function SubscriptionPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Revenue Chart */}
         <div className={`lg:col-span-2 ${cardBg} border rounded-2xl p-6`}>
-          <h2 className={`font-bold ${textPrimary} mb-6`}>الإيرادات الشهرية</h2>
+          <h2 className={`font-bold ${textPrimary} mb-6`}>{t('الإيرادات الشهرية')}</h2>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={revenueData}>
               <defs>
@@ -92,7 +94,7 @@ export default function SubscriptionPage() {
 
         {/* Plan Distribution */}
         <div className={`${cardBg} border rounded-2xl p-6`}>
-          <h2 className={`font-bold ${textPrimary} mb-6`}>توزيع الخطط</h2>
+          <h2 className={`font-bold ${textPrimary} mb-6`}>{t('توزيع الخطط')}</h2>
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>
               <Pie data={planDist} cx="50%" cy="50%" outerRadius={70} dataKey="value">
@@ -110,7 +112,7 @@ export default function SubscriptionPage() {
                   <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: plan.color }} />
                   <span className={`text-sm ${textSecondary}`}>{plan.name}</span>
                 </div>
-                <span className={`text-sm font-bold ${textPrimary}`}>{plan.value}٪</span>
+                <span className={`text-sm font-bold ${textPrimary}`}>{plan.value}{t('٪')}</span>
               </div>
             ))}
           </div>
@@ -119,7 +121,7 @@ export default function SubscriptionPage() {
 
       {/* Recent Subscriptions */}
       <div className={`${cardBg} border rounded-2xl p-6`}>
-        <h2 className={`font-bold ${textPrimary} mb-6`}>أحدث الاشتراكات والمعاملات</h2>
+        <h2 className={`font-bold ${textPrimary} mb-6`}>{t('أحدث الاشتراكات والمعاملات')}</h2>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-100'}`}>

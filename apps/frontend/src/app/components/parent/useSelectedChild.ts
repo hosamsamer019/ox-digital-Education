@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { userService } from '../../services/user.service';
 import { User } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export interface UseSelectedChildResult {
   children: User[];
@@ -14,6 +15,7 @@ export interface UseSelectedChildResult {
 }
 
 export function useSelectedChild(): UseSelectedChildResult {
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const [children, setChildren] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -28,7 +30,7 @@ export function useSelectedChild(): UseSelectedChildResult {
       setChildren(list);
     } catch (err: any) {
       console.error('Failed to fetch parent children:', err);
-      setError('تعذر تحميل بيانات الأبناء. يرجى التحقق من اتصال الشبكة.');
+      setError(t('parentChildrenFetchError', 'تعذر تحميل بيانات الأبناء. يرجى التحقق من اتصال الشبكة.'));
       setChildren([]);
     } finally {
       setLoading(false);

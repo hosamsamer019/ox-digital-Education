@@ -125,6 +125,89 @@
       margin: 0;
     }
 
+
+
+    /* Pre-mount institutional loading fallback (removed automatically upon React hydrate) */
+    .pre-mount-loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+      background: radial-gradient(circle at center, rgba(158, 27, 27, 0.08) 0%, #090b10 70%);
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Cairo", sans-serif;
+      text-align: center;
+      direction: rtl;
+    }
+
+    .pre-mount-logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: #ffffff;
+      padding: 6px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .pre-mount-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .pre-mount-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+      color: #ffffff;
+    }
+
+    .pre-mount-sub {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
+
+    .pre-mount-bar-track {
+      width: 140px;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .pre-mount-bar-indicator {
+      width: 45%;
+      height: 100%;
+      background: #9e1b1b;
+      border-radius: 9999px;
+      animation: premount-pulse 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes premount-pulse {
+      0% {
+        transform: translateX(-100%);
+      }
+      50% {
+        transform: translateX(100%);
+      }
+      100% {
+        transform: translateX(250%);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pre-mount-bar-indicator {
+        animation: none;
+        width: 100%;
+      }
+    }
+
     #root {
       height: 100%;
     }
@@ -132,7 +215,18 @@
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div class="pre-mount-loader" role="status" aria-label="جاري تهيئة منصة أو إكس التعليمية">
+      <div class="pre-mount-logo">
+        <img src="/logo.jpeg" alt="OX-DIGITAL" />
+      </div>
+      <div class="pre-mount-title">OX-DIGITAL Education</div>
+      <div class="pre-mount-sub">منصة التعليم الذكي المتكاملة</div>
+      <div class="pre-mount-bar-track" aria-hidden="true">
+        <div class="pre-mount-bar-indicator"></div>
+      </div>
+    </div>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

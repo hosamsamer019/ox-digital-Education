@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -10,18 +11,21 @@ import {
   AlertCircle,
   RefreshCw,
   ChevronLeft,
-  UserCheck
+  UserCheck,
+  Loader2
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { analyticsService } from '../../services/analytics.service';
 import { userService } from '../../services/user.service';
 import { notificationService, Notification } from '../../services/notification.service';
 import { LoadingState } from '../ui/LoadingState';
+import { DashboardHomeSkeleton } from '../ui/skeleton';
 import { EmptyState } from '../ui/EmptyState';
 import { useSelectedChild } from './useSelectedChild';
 import { ChildSelector } from './ChildSelector';
 
 export const ParentHomePage: React.FC = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { isDark } = useTheme();
 
@@ -41,19 +45,17 @@ export const ParentHomePage: React.FC = () => {
   const [childDetailsError, setChildDetailsError] = useState<string | null>(null);
 
   const [recentNotifications, setRecentNotifications] = useState<Notification[]>([]);
+  const [recentNotificationsLoading, setRecentNotificationsLoading] = useState<boolean>(true);
+  const [recentNotificationsError, setRecentNotificationsError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   // Request race condition prevention ref
   const activeChildIdRef = useRef<string | null>(null);
 
-  const cardBg = isDark
-    ? 'bg-[#0f131d] border-slate-800/90 shadow-lg shadow-black/20'
-    : 'bg-white border-slate-200/90 shadow-sm';
-  const wellBg = isDark
-    ? 'bg-[#161c28]/70 border-slate-800/60'
-    : 'bg-slate-50/80 border-slate-200/80';
-  const textPrimary = isDark ? 'text-slate-100' : 'text-slate-900';
-  const textSecondary = isDark ? 'text-slate-400' : 'text-slate-500';
+  const cardBg = 'bg-card border-border shadow-xs text-card-foreground';
+  const wellBg = 'bg-muted/60 border-border text-foreground';
+  const textPrimary = 'text-foreground';
+  const textSecondary = 'text-muted-foreground';
 
   // Fetch Child Specific Details with stale-response protection
   const fetchChildDetails = useCallback(
@@ -83,7 +85,7 @@ export const ParentHomePage: React.FC = () => {
           setChildData(overviewRes.data);
         } else {
           setChildData(null);
-          setChildDetailsError('تعذر تحميل البيانات الأكاديمية للطالب المحدد.');
+          setChildDetailsError(t('تعذر تحميل البيانات الأكاديمية للطالب المحدد.'));
         }
 
         if (attendanceRes && attendanceRes.summary) {
@@ -94,7 +96,7 @@ export const ParentHomePage: React.FC = () => {
       } catch (err: any) {
         if (activeChildIdRef.current === childId) {
           console.error('Failed to load child overview:', err);
-          setChildDetailsError('حدث خطأ أثناء تحميل بيانات الطالب. يرجى إعادة المحاولة.');
+          setChildDetailsError(t('حدث خطأ أثناء تحميل بيانات الطالب. يرجى إعادة المحاولة.'));
         }
       } finally {
         if (activeChildIdRef.current === childId) {
@@ -107,11 +109,16 @@ export const ParentHomePage: React.FC = () => {
 
   // Fetch recent notifications once
   const fetchRecentNotifications = useCallback(async () => {
+    setRecentNotificationsLoading(true);
+    setRecentNotificationsError(null);
     try {
       const res = await notificationService.getNotifications({ limit: 5 });
       setRecentNotifications(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error('Failed to fetch notifications for parent home:', err);
+    } catch {
+      setRecentNotificationsError(t('تعذر تحميل التنبيهات الأخيرة. تحقق من الاتصال.'));
+      setRecentNotifications([]);
+    } finally {
+      setRecentNotificationsLoading(false);
     }
   }, []);
 
@@ -139,12 +146,12 @@ export const ParentHomePage: React.FC = () => {
   };
 
   if (childrenLoading) {
-    return <LoadingState message="جاري تحميل بيانات لوحة ولي الأمر..." />;
+    return <DashboardHomeSkeleton message={t('جاري تحميل بيانات لوحة ولي الأمر...')} portalTitle={t('لوحة ولي الأمر')} />;
   }
 
   return (
     <div
-      className={`p-4 sm:p-6 lg:p-8 ${isDark ? 'bg-[#090b10]' : 'bg-slate-50'} min-h-full font-sans`}
+      className="p-4 sm:p-6 lg:p-8 bg-background text-foreground min-h-full font-sans"
       dir="rtl"
     >
       {/* Top Header */}
@@ -152,15 +159,15 @@ export const ParentHomePage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#9e1b1b]/10 text-[#9e1b1b] border border-[#9e1b1b]/20">
-              بوابة ولي الأمر
+              {t('بوابة ولي الأمر')}
             </span>
-            <span className="text-xs text-slate-400">نظام المتابعة الأكاديمية الأسرية</span>
+            <span className="text-xs text-slate-400">{t('نظام المتابعة الأكاديمية الأسرية')}</span>
           </div>
           <h1 className={`text-2xl sm:text-3xl font-extrabold ${textPrimary}`}>
-            لوحة المتابعة العامة
+            {t('لوحة المتابعة العامة')}
           </h1>
           <p className={`text-xs sm:text-sm mt-0.5 ${textSecondary}`}>
-            نظرة شاملة ومباشرة على مستوى التحصيل، الحضور والواجبات لأبنائك المسجلين
+            {t('نظرة شاملة ومباشرة على مستوى التحصيل، الحضور والواجبات لأبنائك المسجلين')}
           </p>
         </div>
 
@@ -174,7 +181,7 @@ export const ParentHomePage: React.FC = () => {
           }`}
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-[#9e1b1b]' : 'text-slate-400'}`} />
-          <span>تحديث المؤشرات</span>
+          <span>{t('تحديث المؤشرات')}</span>
         </button>
       </div>
 
@@ -183,12 +190,12 @@ export const ParentHomePage: React.FC = () => {
         <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-500 text-xs sm:text-sm">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="font-semibold">{childrenError}</p>
+            <p className="font-semibold">{t(childrenError)}</p>
             <button
               onClick={() => refetchChildren()}
               className="mt-1.5 underline font-bold cursor-pointer hover:text-amber-400"
             >
-              إعادة تحميل بيانات الأبناء
+              {t('إعادة تحميل بيانات الأبناء')}
             </button>
           </div>
         </div>
@@ -198,8 +205,8 @@ export const ParentHomePage: React.FC = () => {
       {children.length === 0 && !childrenLoading && !childrenError ? (
         <div className="my-8">
           <EmptyState
-            message="لا يوجد أبناء مرتبطين بحسابك حالياً"
-            subMessage="يرجى مراجعة إدارة المنظومة التعليمية لربط الحسابات الأكاديمية لأبنائك برقم هاتفك أو بريدك المسجل."
+            message={t('لا يوجد أبناء مرتبطين بحسابك حالياً')}
+            subMessage={t('يرجى مراجعة إدارة المنظومة التعليمية لربط الحسابات الأكاديمية لأبنائك برقم هاتفك أو بريدك المسجل.')}
           />
         </div>
       ) : (
@@ -222,7 +229,7 @@ export const ParentHomePage: React.FC = () => {
                     onClick={() => fetchChildDetails(selectedChildId)}
                     className="mt-1.5 underline font-bold cursor-pointer hover:text-amber-400"
                   >
-                    إعادة المحاولة للطالب المحدد
+                    {t('إعادة المحاولة للطالب المحدد')}
                   </button>
                 )}
               </div>
@@ -233,7 +240,7 @@ export const ParentHomePage: React.FC = () => {
           {childDetailsLoading ? (
             <div className={`${cardBg} border rounded-2xl p-8 mb-8 text-center`}>
               <RefreshCw className="w-6 h-6 text-[#9e1b1b] animate-spin mx-auto mb-2" />
-              <p className={`text-xs ${textSecondary}`}>جاري تحميل تقرير الطالب...</p>
+              <p className={`text-xs ${textSecondary}`}>{t('جاري تحميل تقرير الطالب...')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -241,7 +248,7 @@ export const ParentHomePage: React.FC = () => {
               <div className={`${cardBg} border rounded-2xl p-5 relative overflow-hidden group hover:border-[#9e1b1b]/40 transition-all`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className={`text-xs font-semibold ${textSecondary}`}>متوسط درجات التقييمات</p>
+                    <p className={`text-xs font-semibold ${textSecondary}`}>{t('متوسط درجات التقييمات')}</p>
                     <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1.5 ${textPrimary}`}>
                       {childData?.overview?.overallRate != null
                         ? childData.overview.overallRate
@@ -263,10 +270,10 @@ export const ParentHomePage: React.FC = () => {
               <div className={`${cardBg} border rounded-2xl p-5 relative overflow-hidden group hover:border-[#9e1b1b]/40 transition-all`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className={`text-xs font-semibold ${textSecondary}`}>الامتحانات المنجزة</p>
+                    <p className={`text-xs font-semibold ${textSecondary}`}>{t('الامتحانات المنجزة')}</p>
                     <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1.5 ${textPrimary}`}>
                       {childData?.overview?.examsCompleted ?? '—'}
-                      <span className="text-xs font-normal text-slate-400 ms-1.5">امتحان</span>
+                      <span className="text-xs font-normal text-slate-400 ms-1.5">{t('امتحان')}</span>
                     </h3>
                   </div>
                   <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
@@ -274,7 +281,7 @@ export const ParentHomePage: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-3 pt-2.5 border-t border-slate-200/50 dark:border-slate-800/50 truncate">
-                  اختبارات تم تقديمها وتقييمها
+                  {t('اختبارات تم تقديمها وتقييمها')}
                 </p>
               </div>
 
@@ -282,10 +289,10 @@ export const ParentHomePage: React.FC = () => {
               <div className={`${cardBg} border rounded-2xl p-5 relative overflow-hidden group hover:border-[#9e1b1b]/40 transition-all`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className={`text-xs font-semibold ${textSecondary}`}>الواجبات والتطبيقات</p>
+                    <p className={`text-xs font-semibold ${textSecondary}`}>{t('الواجبات والتطبيقات')}</p>
                     <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1.5 ${textPrimary}`}>
                       {childData?.overview?.homeworksCompleted ?? '—'}
-                      <span className="text-xs font-normal text-slate-400 ms-1.5">واجب مسلّم</span>
+                      <span className="text-xs font-normal text-slate-400 ms-1.5">{t('واجب مسلّم')}</span>
                     </h3>
                   </div>
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
@@ -303,7 +310,7 @@ export const ParentHomePage: React.FC = () => {
               <div className={`${cardBg} border rounded-2xl p-5 relative overflow-hidden group hover:border-[#9e1b1b]/40 transition-all`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className={`text-xs font-semibold ${textSecondary}`}>نسبة الانضباط والحضور</p>
+                    <p className={`text-xs font-semibold ${textSecondary}`}>{t('نسبة الانضباط والحضور')}</p>
                     <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1.5 ${textPrimary}`}>
                       {attendanceSummary?.percentage != null
                         ? `${attendanceSummary.percentage}٪`
@@ -331,7 +338,7 @@ export const ParentHomePage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <BookOpen className="w-5 h-5 text-[#9e1b1b]" />
                   <h2 className={`font-bold text-base sm:text-lg ${textPrimary}`}>
-                    أحدث النتائج والتقييمات
+                    {t('أحدث النتائج والتقييمات')}
                   </h2>
                 </div>
                 {selectedChildId && (
@@ -339,7 +346,7 @@ export const ParentHomePage: React.FC = () => {
                     onClick={() => navigate(`/parent/reports?child=${selectedChildId}`)}
                     className="text-xs font-bold text-[#9e1b1b] hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <span>عرض كافة التقارير</span>
+                    <span>{t('عرض كافة التقارير')}</span>
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -379,7 +386,7 @@ export const ParentHomePage: React.FC = () => {
 
                         {isPending ? (
                           <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                            قيد التصحيح
+                            {t('قيد التصحيح')}
                           </span>
                         ) : (
                           <div
@@ -399,7 +406,7 @@ export const ParentHomePage: React.FC = () => {
                   })
                 ) : (
                   <div className="text-center py-10 text-slate-400 text-xs sm:text-sm">
-                    لا توجد تقييمات أو نتائج مسجلة لهذا الطالب مؤخراً.
+                    {t('لا توجد تقييمات أو نتائج مسجلة لهذا الطالب مؤخراً.')}
                   </div>
                 )}
               </div>
@@ -411,20 +418,34 @@ export const ParentHomePage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Bell className="w-5 h-5 text-[#9e1b1b]" />
                   <h2 className={`font-bold text-base sm:text-lg ${textPrimary}`}>
-                    التنبيهات المدرسية الأخيرة
+                    {t('التنبيهات المدرسية الأخيرة')}
                   </h2>
                 </div>
                 <button
                   onClick={() => navigate('/parent/notifications')}
                   className="text-xs font-bold text-[#9e1b1b] hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  <span>كافة التنبيهات</span>
+                  <span>{t('كافة التنبيهات')}</span>
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
               </div>
 
               <div className="space-y-3">
-                {recentNotifications.length > 0 ? (
+                {recentNotificationsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-5 h-5 animate-spin text-[#9e1b1b]" />
+                  </div>
+                ) : recentNotificationsError ? (
+                  <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-center space-y-2">
+                    <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold">{recentNotificationsError}</p>
+                    <button
+                      onClick={fetchRecentNotifications}
+                      className="text-xs text-[#9e1b1b] underline font-bold cursor-pointer hover:opacity-80"
+                    >
+                      {t('إعادة المحاولة')}
+                    </button>
+                  </div>
+                ) : recentNotifications.length > 0 ? (
                   recentNotifications.map((notif: any) => {
                     const notifDate = notif.createdAt ? new Date(notif.createdAt) : null;
                     const dateStr =
@@ -466,7 +487,7 @@ export const ParentHomePage: React.FC = () => {
                   })
                 ) : (
                   <div className="text-center py-10 text-slate-400 text-xs sm:text-sm">
-                    لا توجد تنبيهات جديدة في الوقت الحالي.
+                    {t('لا توجد تنبيهات جديدة في الوقت الحالي.')}
                   </div>
                 )}
               </div>

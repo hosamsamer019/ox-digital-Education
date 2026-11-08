@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import React, { useState } from 'react';
 import { MathRenderer } from './MathRenderer';
 import { GeometryDiagram, DiagramData } from './GeometryDiagram';
@@ -124,6 +125,7 @@ export const QuestionPreview: React.FC<QuestionPreviewProps> = ({
   showSolution = true,
   isTeacher = false,
 }) => {
+  const { t } = useLanguage();
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-6" dir="rtl">
 
@@ -147,7 +149,7 @@ export const QuestionPreview: React.FC<QuestionPreviewProps> = ({
         <div className="my-4 flex justify-center">
           <img
             src={getMediaUrl(question.imageUrl)}
-            alt="صورة السؤال"
+            alt={t('صورة السؤال')}
             className="max-h-72 max-w-full rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm object-contain bg-white dark:bg-gray-900 p-1"
           />
         </div>
@@ -159,7 +161,7 @@ export const QuestionPreview: React.FC<QuestionPreviewProps> = ({
       {/* ─── Given (structured mathematical givens) ─── */}
       {question.given && question.given.length > 0 && (
         <div className="mb-4 bg-gray-50 dark:bg-gray-900/60 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
-          <p className="font-semibold text-gray-700 dark:text-gray-300 mb-2 text-sm">المعطيات:</p>
+          <p className="font-semibold text-gray-700 dark:text-gray-300 mb-2 text-sm">{t('المعطيات:')}</p>
           <ul className="list-disc list-inside space-y-1">
             {question.given.map((g, i) => (
               <li key={i} className="text-gray-800 dark:text-gray-200 text-sm">
@@ -181,7 +183,7 @@ export const QuestionPreview: React.FC<QuestionPreviewProps> = ({
       {question.required && (
         <div className="mb-6 bg-yellow-50 dark:bg-yellow-950/30 p-4 rounded-lg border border-yellow-100 dark:border-yellow-900/40">
           <p className="text-yellow-900 dark:text-yellow-300 text-sm">
-            <span className="font-bold">المطلوب: </span>
+            <span className="font-bold">{t('المطلوب:')} </span>
             {question.required}
           </p>
         </div>
@@ -190,7 +192,7 @@ export const QuestionPreview: React.FC<QuestionPreviewProps> = ({
       {/* ─── Options ─── */}
       {question.options && question.options.length > 0 && (
         <div className="mt-6">
-          <p className="font-semibold text-gray-700 dark:text-gray-300 mb-3 text-sm">الخيارات:</p>
+          <p className="font-semibold text-gray-700 dark:text-gray-300 mb-3 text-sm">{t('الخيارات:')}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {question.options.map((opt) => {
               const isCorrect = showSolution && isTeacher && opt.id === question.correctAnswer;
@@ -214,7 +216,7 @@ export const QuestionPreview: React.FC<QuestionPreviewProps> = ({
                     <MathRenderer expression={opt.text} />
                   </div>
                   {isCorrect && (
-                    <span className="text-green-600 dark:text-green-400 text-xs font-bold mr-2 shrink-0">✓ صحيح</span>
+                    <span className="text-green-600 dark:text-green-400 text-xs font-bold mr-2 shrink-0">{t('✓ صحيح')}</span>
                   )}
                 </div>
               );
@@ -230,7 +232,7 @@ export const QuestionPreview: React.FC<QuestionPreviewProps> = ({
           {/* Solution panel */}
           {(question.solutionExplanation || question.solutionSteps?.length || question.explanation) && (
             <ExpandablePanel
-              title="كيف تم حل السؤال؟"
+              title={t('كيف تم حل السؤال؟')}
               defaultOpen={false}
               panelClass="bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800"
               icon={
@@ -251,7 +253,7 @@ export const QuestionPreview: React.FC<QuestionPreviewProps> = ({
                 <div className="space-y-2 text-center overflow-x-auto">
                   {question.solutionSteps.map((step, idx) => (
                     <div key={idx} className="bg-white dark:bg-gray-900 p-2 rounded-lg border border-indigo-100 dark:border-indigo-900/40 text-gray-900 dark:text-white">
-                      <span className="text-xs text-indigo-400 dark:text-indigo-300 block mb-1 text-right">الخطوة {idx + 1}</span>
+                      <span className="text-xs text-indigo-400 dark:text-indigo-300 block mb-1 text-right">{t('الخطوة')} {idx + 1}</span>
                       <MathRenderer expression={step} block />
                     </div>
                   ))}
@@ -268,7 +270,7 @@ export const QuestionPreview: React.FC<QuestionPreviewProps> = ({
           {/* Generation Logic panel — teacher only, never shown to students */}
           {question.generationLogic && (
             <ExpandablePanel
-              title="كيف تم توليد السؤال؟"
+              title={t('كيف تم توليد السؤال؟')}
               defaultOpen={false}
               panelClass="bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800"
               icon={
@@ -279,19 +281,19 @@ export const QuestionPreview: React.FC<QuestionPreviewProps> = ({
             >
               <dl className="space-y-3">
                 <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-purple-100 dark:border-purple-900/40">
-                  <dt className="text-xs text-purple-500 dark:text-purple-400 font-bold mb-1">الهدف التعليمي</dt>
+                  <dt className="text-xs text-purple-500 dark:text-purple-400 font-bold mb-1">{t('الهدف التعليمي')}</dt>
                   <dd className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed">{question.generationLogic.learningObjective}</dd>
                 </div>
                 <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-purple-100 dark:border-purple-900/40">
-                  <dt className="text-xs text-purple-500 dark:text-purple-400 font-bold mb-1">فكرة تصميم السؤال</dt>
+                  <dt className="text-xs text-purple-500 dark:text-purple-400 font-bold mb-1">{t('فكرة تصميم السؤال')}</dt>
                   <dd className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed">{question.generationLogic.questionDesign}</dd>
                 </div>
                 <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-purple-100 dark:border-purple-900/40">
-                  <dt className="text-xs text-purple-500 dark:text-purple-400 font-bold mb-1">المهارة الرياضية المستهدفة</dt>
+                  <dt className="text-xs text-purple-500 dark:text-purple-400 font-bold mb-1">{t('المهارة الرياضية المستهدفة')}</dt>
                   <dd className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed">{question.generationLogic.mathematicalMethod}</dd>
                 </div>
                 <div className="bg-white dark:bg-gray-900 p-3 rounded-lg border border-purple-100 dark:border-purple-900/40">
-                  <dt className="text-xs text-purple-500 dark:text-purple-400 font-bold mb-1">سبب مستوى الصعوبة</dt>
+                  <dt className="text-xs text-purple-500 dark:text-purple-400 font-bold mb-1">{t('سبب مستوى الصعوبة')}</dt>
                   <dd className="text-gray-800 dark:text-gray-200 text-sm leading-relaxed">{question.generationLogic.difficultyReason}</dd>
                 </div>
               </dl>

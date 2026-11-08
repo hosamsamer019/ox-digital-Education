@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect, useCallback } from 'react';
 import { Upload, Video, Youtube, X, RefreshCw, CheckCircle, AlertTriangle, Clock, Loader } from 'lucide-react';
 import { courseService } from '../../services/course.service';
@@ -15,6 +16,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = 
 };
 
 export default function VideosManagementPage() {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploads, setUploads] = useState<any[]>([]);
@@ -47,7 +49,7 @@ export default function VideosManagementPage() {
   }, [fetchUploads]);
 
   const handleUploadSuccess = (url: string) => {
-    showToast('تم رفع الفيديو بنجاح', 'success');
+    showToast(t('تم رفع الفيديو بنجاح'), 'success');
     setUploads(prev => [
       { id: Date.now().toString(), filename: url.split('/').pop(), status: 'COMPLETED', fileSize: 0, createdAt: new Date().toISOString() }, 
       ...prev
@@ -73,21 +75,21 @@ export default function VideosManagementPage() {
 
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className={`text-2xl font-bold ${textPrimary} mb-1`}>إدارة الفيديوهات</h1>
-          <p className={textSecondary}>رفع وإدارة فيديوهات الدروس</p>
+          <h1 className={`text-2xl font-bold ${textPrimary} mb-1`}>{t('إدارة الفيديوهات')}</h1>
+          <p className={textSecondary}>{t('رفع وإدارة فيديوهات الدروس')}</p>
         </div>
         <button
           onClick={() => setShowUploadModal(true)}
           className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-purple-700 text-white px-6 py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg"
         >
           <Upload className="w-5 h-5" />
-          <span>رفع فيديو جديد</span>
+          <span>{t('رفع فيديو جديد')}</span>
         </button>
       </div>
 
       <div className={`${cardBg} border rounded-2xl overflow-hidden`}>
         <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className={`font-bold ${textPrimary}`}>سجل الرفع</h2>
+          <h2 className={`font-bold ${textPrimary}`}>{t('سجل الرفع')}</h2>
           <button onClick={fetchUploads} className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 ${textSecondary}`}>
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -96,22 +98,22 @@ export default function VideosManagementPage() {
         {loading ? (
           <div className="p-12 text-center">
             <Loader className={`w-8 h-8 animate-spin mx-auto mb-3 ${textSecondary}`} />
-            <p className={textSecondary}>جاري التحميل...</p>
+            <p className={textSecondary}>{t('جاري التحميل...')}</p>
           </div>
         ) : uploads.length === 0 ? (
           <div className="p-12 text-center">
             <Video className={`w-12 h-12 mx-auto mb-4 ${textSecondary}`} />
-            <p className={`font-medium ${textPrimary} mb-1`}>لا توجد فيديوهات مرفوعة</p>
+            <p className={`font-medium ${textPrimary} mb-1`}>{t('لا توجد فيديوهات مرفوعة')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className={`border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-                  <th className={`text-right py-3 px-4 font-medium text-sm ${textSecondary}`}>اسم الملف</th>
-                  <th className={`text-right py-3 px-4 font-medium text-sm ${textSecondary}`}>الحجم</th>
-                  <th className={`text-right py-3 px-4 font-medium text-sm ${textSecondary}`}>الحالة</th>
-                  <th className={`text-right py-3 px-4 font-medium text-sm ${textSecondary}`}>التاريخ</th>
+                  <th className={`text-right py-3 px-4 font-medium text-sm ${textSecondary}`}>{t('اسم الملف')}</th>
+                  <th className={`text-right py-3 px-4 font-medium text-sm ${textSecondary}`}>{t('الحجم')}</th>
+                  <th className={`text-right py-3 px-4 font-medium text-sm ${textSecondary}`}>{t('الحالة')}</th>
+                  <th className={`text-right py-3 px-4 font-medium text-sm ${textSecondary}`}>{t('التاريخ')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,7 +144,7 @@ export default function VideosManagementPage() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-xl w-full max-w-lg`}>
             <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className={`text-lg font-bold ${textPrimary}`}>رفع فيديو جديد</h2>
+              <h2 className={`text-lg font-bold ${textPrimary}`}>{t('رفع فيديو جديد')}</h2>
               <button onClick={() => setShowUploadModal(false)} className={`p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 ${textSecondary}`}>
                 <X className="w-5 h-5" />
               </button>
@@ -151,7 +153,7 @@ export default function VideosManagementPage() {
               <SupabaseUploader 
                 bucketName="platform-uploads" 
                 acceptedFileTypes="video/*" 
-                label="اسحب الفيديو هنا أو انقر للاختيار"
+                label={t('اسحب الفيديو هنا أو انقر للاختيار')}
                 maxSizeMB={500}
                 onUploadSuccess={handleUploadSuccess}
                 onUploadError={(err) => showToast(err, 'error')}

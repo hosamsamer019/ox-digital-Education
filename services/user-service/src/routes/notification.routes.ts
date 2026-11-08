@@ -8,7 +8,12 @@ import {
   createNotification
 } from '../controllers/notification.controller.js';
 
+import { tenantContextMiddleware } from '@shared/utils';
+
 const router = Router();
+
+// Enforce server-side tenant isolation across all notification routes
+router.use(verifyToken, tenantContextMiddleware());
 
 router.get('/unread-count', verifyToken, getUnreadCount);
 router.get('/', verifyToken, getNotifications);

@@ -46,12 +46,24 @@ if (!isRedisDisabled && connection) {
   const threeDaysAgo = new Date(Date.now() - 72 * 60 * 60 * 1000);
 
   const enrollments = await db.courseEnrollment.findMany({
-    include: {
+    select: {
+      id: true,
+      studentId: true,
+      courseId: true,
       course: {
-        include: {
+        select: {
+          id: true,
+          status: true,
           lessons: {
             where: {
               publishedAt: { lte: threeDaysAgo }
+            },
+            select: {
+              id: true,
+              title: true,
+              videoUrl: true,
+              publishedAt: true,
+              courseId: true
             }
           }
         }

@@ -9,7 +9,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const verifyToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -26,6 +26,46 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
     }
 
     req.user = decoded;
+
+    // Phase 5.2.3: Authoritative Database Account State Verification (Fail-Closed)
+    const userId = decoded.userId || decoded.id;
+    if (!userId) {
+      return res.status(401).json({
+        message: 'Unauthorized: Invalid token payload, missing user ID',
+        code: 'UNAUTHORIZED_NO_USER_ID'
+      });
+    }
+
+    const { verifyAuthoritativeAccountState } = await import('@smartmath/database');
+    const authResult = await verifyAuthoritativeAccountState(userId);
+
+    if (!authResult.success) {
+      return res.status(authResult.status || 401).json({
+        message: authResult.message,
+        code: authResult.code
+      });
+    }
+
+    const dbUser = authResult.user!;
+    req.user = {
+      ...decoded,
+      userId: dbUser.id,
+      role: dbUser.role,
+      email: dbUser.email,
+      institutionId: dbUser.institutionId,
+      branchId: dbUser.branchId,
+      isPrimaryManager: dbUser.isPrimaryManager,
+      mustChangePassword: dbUser.mustChangePassword
+    };
+
+    // Fail-Closed First-Login Enforcement
+    if (dbUser.mustChangePassword) {
+      return res.status(403).json({
+        message: 'Forbidden: Temporary password must be replaced before accessing application resources.',
+        code: 'PASSWORD_CHANGE_REQUIRED'
+      });
+    }
+
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Invalid or expired token' });

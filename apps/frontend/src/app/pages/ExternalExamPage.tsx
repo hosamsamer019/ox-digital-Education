@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../contexts/LanguageContext';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,6 +25,7 @@ function formatArabicDateTime(dt: string | Date): string {
 }
 
 export default function ExternalExamPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { examCode: routeExamCode } = useParams<{ examCode?: string }>();
@@ -52,7 +54,7 @@ export default function ExternalExamPage() {
     }
 
     if (searchParams.get('expired') === 'true') {
-      toast.info('انتهت جلسة الامتحان. يرجى إعادة الدخول باستخدام كود الامتحان.');
+      toast.info(t('انتهت جلسة الامتحان. يرجى إعادة الدخول باستخدام كود الامتحان.'));
     }
   }, [searchParams, routeExamCode]);
 
@@ -67,22 +69,22 @@ export default function ExternalExamPage() {
     const trimmedPhone = phone.trim();
 
     if (!trimmedCode) {
-      toast.error('يرجى إدخال كود دخول الامتحان');
+      toast.error(t('يرجى إدخال كود دخول الامتحان'));
       return;
     }
 
     if (!trimmedName || trimmedName.length < 2) {
-      toast.error('يرجى إدخال اسم الطالب كاملاً (حرفين على الأقل)');
+      toast.error(t('يرجى إدخال اسم الطالب كاملاً (حرفين على الأقل)'));
       return;
     }
 
     if (trimmedName.length > 100) {
-      toast.error('اسم الطالب طويل جداً');
+      toast.error(t('اسم الطالب طويل جداً'));
       return;
     }
 
     if (trimmedPhone && !/^[0-9+ -]{7,15}$/.test(trimmedPhone)) {
-      toast.error('يرجى إدخال رقم هاتف صحيح');
+      toast.error(t('يرجى إدخال رقم هاتف صحيح'));
       return;
     }
 
@@ -95,18 +97,18 @@ export default function ExternalExamPage() {
       const res = await loginGuest(trimmedName, trimmedPhone, trimmedCode);
 
       if (res.success && res.assessmentId) {
-        toast.success('تم التحقق بنجاح! جاري تحضير الامتحان...');
+        toast.success(t('تم التحقق بنجاح! جاري تحضير الامتحان...'));
         navigate(`/external-exam/take/${res.assessmentId}`);
       } else {
         // Drive UI state from the API error code — no IP messages
         if (res.code === 'ASSESSMENT_NOT_OPEN') {
           setExamState('NOT_STARTED');
           setExamStateDate(res.openAt || null);
-          toast.warning('الامتحان لم يبدأ بعد');
+          toast.warning(t('الامتحان لم يبدأ بعد'));
         } else if (res.code === 'ASSESSMENT_CLOSED') {
           setExamState('CLOSED');
           setExamStateDate(res.closeAt || null);
-          toast.error('انتهى وقت إتاحة هذا الامتحان');
+          toast.error(t('انتهى وقت إتاحة هذا الامتحان'));
         } else {
           const msg = res.message || 'كود الامتحان غير صحيح أو غير متاح للطلاب الخارجيين';
           toast.error(msg);
@@ -114,7 +116,7 @@ export default function ExternalExamPage() {
       }
     } catch (err: any) {
       console.error('External exam login error:', err);
-      toast.error('حدث خطأ أثناء الاتصال بالخادم. يرجى المحاولة لاحقاً.');
+      toast.error(t('حدث خطأ أثناء الاتصال بالخادم. يرجى المحاولة لاحقاً.'));
     } finally {
       setLoading(false);
     }
@@ -127,15 +129,15 @@ export default function ExternalExamPage() {
         <div className="mb-6 p-5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-right" dir="rtl">
           <div className="flex items-center gap-2 mb-2">
             <CalendarClock className="w-5 h-5 text-amber-500 shrink-0" />
-            <span className="font-black text-amber-700 dark:text-amber-300 text-sm">الامتحان لم يبدأ بعد</span>
+            <span className="font-black text-amber-700 dark:text-amber-300 text-sm">{t('الامتحان لم يبدأ بعد')}</span>
           </div>
           {examStateDate && (
             <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
-              موعد بدء الامتحان: <span className="font-bold">{formatArabicDateTime(examStateDate)}</span>
+              {t('موعد بدء الامتحان:')} <span className="font-bold">{formatArabicDateTime(examStateDate)}</span>
             </p>
           )}
           <p className="text-xs text-amber-600/80 dark:text-amber-500 mt-1">
-            يرجى العودة في الموعد المحدد.
+            {t('يرجى العودة في الموعد المحدد.')}
           </p>
         </div>
       );
@@ -146,14 +148,14 @@ export default function ExternalExamPage() {
         <div className="mb-6 p-5 bg-red-500/10 border border-red-500/30 rounded-2xl text-right" dir="rtl">
           <div className="flex items-center gap-2 mb-2">
             <Lock className="w-5 h-5 text-red-500 shrink-0" />
-            <span className="font-black text-red-700 dark:text-red-300 text-sm">انتهى وقت الامتحان</span>
+            <span className="font-black text-red-700 dark:text-red-300 text-sm">{t('انتهى وقت الامتحان')}</span>
           </div>
           <p className="text-xs text-red-600 dark:text-red-400 leading-relaxed">
-            هذا الامتحان لم يعد متاحًا للدخول.
+            {t('هذا الامتحان لم يعد متاحًا للدخول.')}
           </p>
           {examStateDate && (
             <p className="text-xs text-red-600/80 dark:text-red-500 mt-1">
-              انتهى في: <span className="font-bold">{formatArabicDateTime(examStateDate)}</span>
+              {t('انتهى في:')} <span className="font-bold">{formatArabicDateTime(examStateDate)}</span>
             </p>
           )}
         </div>
@@ -175,7 +177,7 @@ export default function ExternalExamPage() {
       return {
         text: 'جارٍ التحقق من بيانات الامتحان...',
         disabled: true,
-        icon: <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        icon: <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin motion-reduce:animate-none" />
       };
     }
     return { text: 'دخول الامتحان', disabled: false, icon: <CheckCircle className="w-4 h-4" /> };
@@ -197,8 +199,8 @@ export default function ExternalExamPage() {
             <BookOpen className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-black tracking-tight text-gray-900 dark:text-white">المنصة التعليمية الذكية</h2>
-            <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold">بوابة الامتحانات الذكية لمادة الرياضيات</p>
+            <h2 className="text-lg font-black tracking-tight text-gray-900 dark:text-white">{t('المنصة التعليمية الذكية')}</h2>
+            <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold">{t('بوابة الامتحانات الذكية لمادة الرياضيات')}</p>
           </div>
         </div>
 
@@ -214,7 +216,7 @@ export default function ExternalExamPage() {
           }`}
         >
           <ArrowLeft className="w-4 h-4" />
-          الرئيسية
+          {t('الرئيسية')}
         </Link>
       </header>
 
@@ -228,9 +230,9 @@ export default function ExternalExamPage() {
             <div className="w-16 h-16 bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-purple-500/25 mb-4">
               <Sparkles className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-black mb-1.5 tracking-tight text-gray-900 dark:text-white">دخول الامتحان الخارجي</h1>
+            <h1 className="text-2xl font-black mb-1.5 tracking-tight text-gray-900 dark:text-white">{t('دخول الامتحان الخارجي')}</h1>
             <p className={`text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-              أدخل كود الامتحان واسمك للبدء فوراً بدون الحاجة إلى إنشاء حساب أو بريد إلكتروني.
+              {t('أدخل كود الامتحان واسمك للبدء فوراً بدون الحاجة إلى إنشاء حساب أو بريد إلكتروني.')}
             </p>
           </div>
 
@@ -241,7 +243,7 @@ export default function ExternalExamPage() {
             {/* Exam Access Code */}
             <div>
               <label className={`block text-xs font-bold mb-1.5 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                كود دخول الامتحان <span className="text-red-500">*</span>
+                {t('كود دخول الامتحان')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 pointer-events-none">
@@ -255,7 +257,7 @@ export default function ExternalExamPage() {
                     // Reset state when user changes the code
                     if (examState !== 'idle') { setExamState('idle'); setExamStateDate(null); }
                   }}
-                  placeholder="مثال: 7TF4-WJ6J-ZGS6"
+                  placeholder={t('مثال: 7TF4-WJ6J-ZGS6')}
                   required
                   className={`w-full pr-10 pl-4 py-3 rounded-xl border text-sm outline-none transition-all font-mono font-bold tracking-wider text-center uppercase ${
                     isDark
@@ -270,7 +272,7 @@ export default function ExternalExamPage() {
             {/* Student Name */}
             <div>
               <label className={`block text-xs font-bold mb-1.5 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                اسم الطالب الكامل <span className="text-red-500">*</span>
+                {t('اسم الطالب الكامل')} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 pointer-events-none">
@@ -281,7 +283,7 @@ export default function ExternalExamPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="أدخل اسمك الثنائي أو الثلاثي"
+                  placeholder={t('أدخل اسمك الثنائي أو الثلاثي')}
                   required
                   className={`w-full pr-10 pl-4 py-3 rounded-xl border text-sm outline-none transition-all ${
                     isDark
@@ -296,9 +298,9 @@ export default function ExternalExamPage() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className={`text-xs font-bold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                  رقم الهاتف
+                  {t('رقم الهاتف')}
                 </label>
-                <span className="text-[11px] text-gray-400 font-normal">اختياري</span>
+                <span className="text-[11px] text-gray-400 font-normal">{t('اختياري')}</span>
               </div>
               <div className="relative">
                 <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 pointer-events-none">
@@ -323,12 +325,13 @@ export default function ExternalExamPage() {
             <button
               type="submit"
               disabled={buttonConfig.disabled}
+              aria-busy={loading ? 'true' : undefined}
               className={`w-full mt-5 font-bold py-3.5 rounded-xl shadow-lg transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm ${
                 examState === 'NOT_STARTED'
                   ? 'bg-amber-500 text-white cursor-not-allowed'
                   : examState === 'CLOSED'
                   ? 'bg-gray-500 text-white cursor-not-allowed'
-                  : 'bg-gradient-to-l from-purple-600 via-indigo-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white shadow-purple-600/25 hover:shadow-purple-600/35'
+                  : 'bg-[#9e1b1b] hover:bg-[#b91c1c] active:bg-[#7f1616] text-white shadow-red-950/25'
               }`}
             >
               {buttonConfig.icon}
@@ -339,14 +342,14 @@ export default function ExternalExamPage() {
           {/* Secure indicator */}
           <div className="mt-6 pt-5 border-t border-gray-200/50 dark:border-gray-800/60 flex items-center justify-center gap-2 text-[11px] text-gray-500 dark:text-gray-400">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            اتصال آمن ومراقب إلكترونياً — لا يتطلب حساباً أو بريداً إلكترونياً
+            {t('اتصال آمن ومراقب إلكترونياً — لا يتطلب حساباً أو بريداً إلكترونياً')}
           </div>
         </div>
       </main>
 
       {/* Footer */}
       <footer className="relative z-10 text-center py-3 text-xs text-gray-400">
-        المنصة التعليمية الذكية لمادة الرياضيات &copy; {new Date().getFullYear()} — جميع الحقوق محفوظة
+        {t('المنصة التعليمية الذكية لمادة الرياضيات &copy;')} {new Date().getFullYear()} {t('— جميع الحقوق محفوظة')}
       </footer>
     </div>
   );

@@ -1,6 +1,25 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Building2, Users, ChevronLeft, Eye, EyeOff, Lock, Mail, ShieldCheck, KeyRound, AlertCircle, ArrowLeft, Sun, Moon } from 'lucide-react';
+import {
+  User,
+  Building2,
+  Users,
+  ChevronLeft,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  ShieldCheck,
+  Shield,
+  KeyRound,
+  AlertCircle,
+  ArrowLeft,
+  Sun,
+  Moon,
+  Receipt,
+  Landmark
+} from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAuth, UserRole, getDefaultRouteForRole } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -19,6 +38,36 @@ interface RoleOption {
 }
 
 const roles: RoleOption[] = [
+  {
+    role: 'PRIMARY_MANAGER',
+    label: 'إدارة المنظومة والسنتر (Administrator & Manager)',
+    badge: 'إدارة عليا وحوكمة',
+    description: 'إدارة فروع المؤسسة، المحاسبين، المعلمين، الأسعار والاشتراكات، والمنظومة الأكاديمية بالكامل',
+    icon: Landmark,
+    accentColor: 'border-red-600/40 text-[#9e1b1b] dark:text-red-400',
+    iconBg: 'bg-red-50 dark:bg-red-950/20 text-[#9e1b1b] dark:text-red-400 border border-red-200 dark:border-red-800/40',
+    path: '/admin/home',
+  },
+  {
+    role: 'TEACHER',
+    label: 'معلم / محاضر (Teacher)',
+    badge: 'منظومة المعلم الأكاديمية',
+    description: 'إدارة طلاب المعلم، تسجيل الطلاب وأولياء الأمور، ومتابعة التحصيلات',
+    icon: Users,
+    accentColor: 'border-indigo-500/40 text-indigo-500 dark:text-indigo-400',
+    iconBg: 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20',
+    path: '/teacher/home',
+  },
+  {
+    role: 'ACCOUNTANT',
+    label: 'محاسب الفرع (Accountant)',
+    badge: 'حسابات وتحصيلات الفرع',
+    description: 'تحصيل الرسوم وإصدار الإيصالات المتسلسلة لطلاب ومعلمي فرع السنتر',
+    icon: Receipt,
+    accentColor: 'border-rose-600/40 text-rose-600 dark:text-rose-400',
+    iconBg: 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/40',
+    path: '/accountant/home',
+  },
   {
     role: 'ONLINE_STUDENT',
     label: 'طالب أونلاين',
@@ -40,38 +89,19 @@ const roles: RoleOption[] = [
     path: '/student/center/home',
   },
   {
-    role: 'TEACHER',
-    label: 'معلم / محاضر',
-    badge: 'إدارة تعليمية',
-    description: 'بناء الاختبارات، إدارة بنك الأسئلة، ومتابعة الطلاب',
-    icon: Users,
-    accentColor: 'border-red-500/40 text-red-500 dark:text-red-400',
-    iconBg: 'bg-red-50 dark:bg-red-500/10 text-[#9e1b1b] dark:text-red-400 border border-red-200 dark:border-red-500/20',
-    path: '/teacher/home',
-  },
-  {
     role: 'PARENT',
     label: 'ولي أمر',
     badge: 'متابعة أسرية',
-    description: 'متابعة تقارير التحصيل الدراسي، الحضور، ومستوى الأبناء',
+    description: 'متابعة تقارير التحصيل الدراسي، الحضور، ومستحقات وإيصالات الأبناء',
     icon: ShieldCheck,
     accentColor: 'border-amber-500/40 text-amber-500 dark:text-amber-400',
     iconBg: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20',
     path: '/parent/home',
   },
-  {
-    role: 'ADMIN',
-    label: 'إدارة المنظومة',
-    badge: 'تحكم عام',
-    description: 'إدارة الحسابات، الصلاحيات، والعمليات المركزية',
-    icon: KeyRound,
-    accentColor: 'border-slate-500/40 text-slate-600 dark:text-slate-300',
-    iconBg: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700',
-    path: '/admin/home',
-  },
 ];
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { user, isAuthenticated, login, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
@@ -90,6 +120,10 @@ export default function LoginPage() {
         logout();
         return;
       }
+      if (user.mustChangePassword) {
+        navigate('/first-login/change-password', { replace: true });
+        return;
+      }
       navigate(getDefaultRouteForRole(user.role), { replace: true });
     }
   }, [isAuthenticated, user, navigate, logout]);
@@ -105,7 +139,7 @@ export default function LoginPage() {
     if (!selectedRole) return;
 
     if (!formData.email || !formData.password) {
-      setError('يرجى إدخال البريد الإلكتروني وكلمة المرور.');
+      setError(t('يرجى إدخال البريد الإلكتروني وكلمة المرور.'));
       return;
     }
 
@@ -113,15 +147,25 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const success = await login(formData.email, formData.password, selectedRole.role);
+      const result = await login(formData.email, formData.password, selectedRole.role);
+      const isOk = typeof result === 'boolean' ? result : Boolean(result?.success);
+      const mustChange = typeof result === 'object' && Boolean(result?.mustChangePassword);
+      const verifiedRole = typeof result === 'object' && result?.user?.role ? result.user.role : selectedRole.role;
 
-      if (success) {
-        navigate(getDefaultRouteForRole(selectedRole.role));
+      if (isOk) {
+        if (mustChange) {
+          navigate('/first-login/change-password');
+        } else {
+          const targetRoute = (verifiedRole === 'ADMIN' || verifiedRole === 'PRIMARY_MANAGER')
+            ? '/admin/home'
+            : getDefaultRouteForRole(verifiedRole);
+          navigate(targetRoute);
+        }
       } else {
-        setError('البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى التحقق من البيانات.');
+        setError(t('البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى التحقق من البيانات.'));
       }
     } catch (err: any) {
-      setError('حدث خطأ أثناء محاولة تسجيل الدخول. يرجى المحاولة لاحقاً.');
+      setError(t('حدث خطأ أثناء محاولة تسجيل الدخول. يرجى المحاولة لاحقاً.'));
     } finally {
       setLoading(false);
     }
@@ -139,10 +183,10 @@ export default function LoginPage() {
         <button
           onClick={() => navigate('/')}
           className="flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all bg-white/90 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl backdrop-blur-md shadow-sm text-xs sm:text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e1b1b] cursor-pointer"
-          aria-label="العودة إلى الصفحة الرئيسية"
+          aria-label={t('العودة إلى الصفحة الرئيسية')}
         >
           <ChevronLeft className="w-4 h-4 rotate-180 text-slate-500 dark:text-slate-400" />
-          <span>الرئيسية</span>
+          <span>{t('الرئيسية')}</span>
         </button>
 
         <button
@@ -175,7 +219,7 @@ export default function LoginPage() {
             OX-DIGITAL Education
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1 font-medium">
-            منصة التعليم الذكي المتكاملة
+            {t('منصة التعليم الذكي المتكاملة')}
           </p>
         </div>
 
@@ -190,10 +234,10 @@ export default function LoginPage() {
             >
               <div className="text-center mb-6">
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mb-1">
-                  بوابة الدخول الموحدة
+                  {t('بوابة الدخول الموحدة')}
                 </h2>
                 <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">
-                  اختر الحساب المناسب للمتابعة إلى لوحة التحكم
+                  {t('اختر الحساب المناسب للمتابعة إلى لوحة التحكم')}
                 </p>
               </div>
 
@@ -228,15 +272,7 @@ export default function LoginPage() {
                 ))}
               </div>
 
-              <div className="mt-6 pt-5 border-t border-slate-200 dark:border-slate-800 text-center">
-                <button
-                  onClick={() => navigate('/admin/login')}
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors py-1 cursor-pointer"
-                >
-                  <span>تسجيل دخول المدير العام للإدارة</span>
-                  <ArrowLeft className="w-3.5 h-3.5 text-[#9e1b1b]" />
-                </button>
-              </div>
+
             </motion.div>
           )}
 
@@ -256,7 +292,7 @@ export default function LoginPage() {
                 className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-xs sm:text-sm mb-5 transition-colors cursor-pointer py-1"
               >
                 <ChevronLeft className="w-4 h-4 rotate-180" />
-                <span>تغيير الحساب</span>
+                <span>{t('تغيير الحساب')}</span>
               </button>
 
               {/* Selected Role Banner */}
@@ -269,7 +305,7 @@ export default function LoginPage() {
                     {selectedRole.label}
                   </h2>
                   <p className="text-slate-500 dark:text-slate-400 text-xs">
-                    أدخل بيانات الحساب للمتابعة
+                    {t('أدخل بيانات الحساب للمتابعة')}
                   </p>
                 </div>
               </div>
@@ -277,7 +313,7 @@ export default function LoginPage() {
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    البريد الإلكتروني
+                    {t('البريد الإلكتروني')}
                   </label>
                   <div className="relative">
                     <Mail className="absolute top-1/2 -translate-y-1/2 right-3.5 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
@@ -296,14 +332,14 @@ export default function LoginPage() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      كلمة المرور
+                      {t('كلمة المرور')}
                     </label>
                     <button
                       type="button"
                       onClick={() => navigate('/forgot-password')}
                       className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
                     >
-                      نسيت كلمة المرور؟
+                      {t('نسيت كلمة المرور؟')}
                     </button>
                   </div>
                   <div className="relative">
@@ -338,15 +374,16 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
+                  aria-busy={loading ? 'true' : undefined}
                   className="w-full py-3.5 rounded-xl font-bold text-sm text-white bg-[#9e1b1b] hover:bg-[#b91c1c] active:bg-[#7f1616] transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-red-950/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 >
                   {loading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>جاري التحقق والدخول...</span>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin motion-reduce:animate-none" />
+                      <span>{t('جاري التحقق والدخول...')}</span>
                     </>
                   ) : (
-                    <span>تسجيل الدخول</span>
+                    <span>{t('تسجيل الدخول')}</span>
                   )}
                 </button>
               </form>
@@ -356,7 +393,7 @@ export default function LoginPage() {
 
         {/* Institutional Trust Footer */}
         <p className="text-center text-slate-500 text-xs mt-6">
-          OX-DIGITAL Education • منصة التعليم الذكي المتكاملة © ٢٠٢٦ • نظام دخول مؤمن ومشفر
+          {t('OX-DIGITAL Education • منصة التعليم الذكي المتكاملة © ٢٠٢٦ • نظام دخول موحد ومشفر')}
         </p>
       </motion.div>
     </div>

@@ -11,7 +11,7 @@ export const registerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(['ONLINE_STUDENT', 'CENTER_STUDENT', 'TEACHER', 'ADMIN', 'PARENT']),
+  role: z.enum(['ONLINE_STUDENT', 'CENTER_STUDENT', 'TEACHER', 'ADMIN', 'PARENT', 'ACCOUNTANT', 'PRIMARY_MANAGER']),
   country: z.string().optional(),
   educationLevel: z.string().optional(),
   gradeLevel: z.string().optional(),
@@ -20,7 +20,7 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
-  role: z.enum(['ONLINE_STUDENT', 'CENTER_STUDENT', 'TEACHER', 'ADMIN', 'PARENT'])
+  role: z.enum(['ONLINE_STUDENT', 'CENTER_STUDENT', 'TEACHER', 'ADMIN', 'PARENT', 'ACCOUNTANT', 'PRIMARY_MANAGER'])
 });
 
 export const changePasswordSchema = z.object({
@@ -39,17 +39,56 @@ export const login = async (req: Request, res: Response) => {
   try {
     const validatedData = req.body as any;
 
-    const user = await db.user.findFirst({
-      where: { 
-        email: validatedData.email,
-        role: validatedData.role as any
-      }
-    });
+    if (!validatedData.email || !validatedData.password || !validatedData.role) {
+      return res.status(401).json({ 
+        message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' 
+      });
+    }
 
+    const email = String(validatedData.email).trim();
+    const requestedRole = validatedData.role;
+
+    let user: any = null;
+
+    if (requestedRole === 'PRIMARY_MANAGER') {
+      // The user selected the Manager option on the portal.
+      // Under the client-approved unified administrator architecture:
+      // - The single canonical center administrator is stored with role: 'ADMIN', isPrimaryManager: true, and valid institutionId.
+      // - Only the verified canonical administrator (role === 'ADMIN', isPrimaryManager === true, and valid institutionId) is authorized.
+      // - Legacy/test accounts with only role === 'PRIMARY_MANAGER' are strictly barred from alternative canonical manager logins.
+      // - Arbitrary ADMIN accounts without isPrimaryManager: true or without institution linkage are also rejected.
+      const candidateUser = await db.user.findFirst({
+        where: { email }
+      });
+
+      if (
+        candidateUser &&
+        candidateUser.role === 'ADMIN' &&
+        candidateUser.isPrimaryManager === true &&
+        Boolean(candidateUser.institutionId)
+      ) {
+        user = candidateUser;
+      } else {
+        return res.status(401).json({ 
+          message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' 
+        });
+      }
+    } else {
+      user = await db.user.findFirst({
+        where: {
+          email,
+          role: requestedRole as any
+        }
+      });
+    }
     if (!user) {
       return res.status(401).json({ 
         message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
       });
+    }
+
+    if ((user as any).deletedAt) {
+      return res.status(401).json({ message: 'الحساب معطل أو محذوف' });
     }
 
     const isPasswordValid = await bcrypt.compare(validatedData.password, user.password);
@@ -63,7 +102,14 @@ export const login = async (req: Request, res: Response) => {
 
     // Short-lived access token (15 minutes)
     const token = jwt.sign(
-      { userId: user.id, role: user.role, email: user.email },
+      { 
+        userId: user.id, 
+        role: user.role, 
+        email: user.email, 
+        institutionId: user.institutionId, 
+        branchId: user.branchId,
+        isPrimaryManager: Boolean(user.isPrimaryManager)
+      },
       process.env.JWT_SECRET,
       { expiresIn: '15m' }
     );
@@ -84,16 +130,23 @@ export const login = async (req: Request, res: Response) => {
 
     res.json({
       token,
+      mustChangePassword: Boolean((user as any).mustChangePassword),
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
+        institutionId: user.institutionId,
+        branchId: user.branchId,
+        isPrimaryManager: Boolean(user.isPrimaryManager),
+        mustChangePassword: Boolean((user as any).mustChangePassword),
+        financialAccessStatus: (user as any).financialAccessStatus || 'ACTIVE',
         academicLevel: user.academicLevel,
         country: user.country,
         educationLevel: user.educationLevel,
         gradeLevel: user.gradeLevel,
-        language: user.language
+        language: user.language,
+        theme: user.theme || 'default'
       }
     });
   } catch (error: any) {
@@ -106,7 +159,7 @@ export const getMe = async (req: any, res: Response) => {
   try {
     const user = await db.user.findUnique({
       where: { id: req.user?.userId },
-      select: { id: true, name: true, email: true, role: true, academicLevel: true, country: true, educationLevel: true, gradeLevel: true, language: true, phone: true }
+      select: { id: true, name: true, email: true, role: true, institutionId: true, branchId: true, isPrimaryManager: true, mustChangePassword: true, financialAccessStatus: true, academicLevel: true, country: true, educationLevel: true, gradeLevel: true, language: true, phone: true, theme: true }
     });
     
     if (!user) {
@@ -115,7 +168,9 @@ export const getMe = async (req: any, res: Response) => {
 
     res.json({
       ...user,
-      role: user.role
+      role: user.role,
+      mustChangePassword: Boolean((user as any).mustChangePassword),
+      financialAccessStatus: (user as any).financialAccessStatus || 'ACTIVE'
     });
   } catch (error) {
     res.status(500).json({ message: 'Internal server error' });
@@ -163,6 +218,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     const user = await db.user.findUnique({ where: { id: decoded.userId } });
     if (!user) return res.status(401).json({ message: 'User not found' });
+    if ((user as any).deletedAt) return res.status(401).json({ message: 'الحساب معطل أو محذوف' });
 
     // Invalidate old JTI upon rotation
     if (decoded.jti) {
@@ -171,8 +227,16 @@ export const refreshToken = async (req: Request, res: Response) => {
     }
 
     const newToken = jwt.sign(
-      { userId: user.id, role: user.role, email: user.email },
-      process.env.JWT_SECRET,
+      {
+        userId: user.id,
+        role: user.role,
+        email: user.email,
+        institutionId: (user as any).institutionId || null,
+        branchId: (user as any).branchId || null,
+        isPrimaryManager: Boolean((user as any).isPrimaryManager),
+        mustChangePassword: Boolean((user as any).mustChangePassword)
+      },
+      process.env.JWT_SECRET as string,
       { expiresIn: '15m' }
     );
 
@@ -190,7 +254,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    res.json({ token: newToken });
+    res.json({ token: newToken, mustChangePassword: Boolean((user as any).mustChangePassword) });
   } catch (error) {
     res.status(401).json({ message: 'Invalid refresh token' });
   }
@@ -381,7 +445,7 @@ export const validateGuestExamCode = async (req: Request, res: Response) => {
         externalSessionId: attempt.accessSessionId,
         role: 'EXTERNAL_STUDENT'
       },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET as string,
       { expiresIn: '3h' }
     );
 
@@ -434,10 +498,27 @@ export const changePassword = async (req: any, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await db.user.update({
+    const updatedUser = await db.user.update({
       where: { id: userId },
-      data: { password: hashedPassword }
+      data: {
+        password: hashedPassword,
+        mustChangePassword: false
+      }
     });
+
+    const freshToken = jwt.sign(
+      {
+        userId: updatedUser.id,
+        role: updatedUser.role,
+        email: updatedUser.email,
+        institutionId: (updatedUser as any).institutionId || null,
+        branchId: (updatedUser as any).branchId || null,
+        isPrimaryManager: Boolean((updatedUser as any).isPrimaryManager),
+        mustChangePassword: false
+      },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '15m' }
+    );
 
     // Invalidate refresh token session in Redis / JTI if present
     try {
@@ -461,7 +542,16 @@ export const changePassword = async (req: any, res: Response) => {
 
     return res.json({
       success: true,
-      message: 'تم تغيير كلمة المرور بنجاح'
+      message: 'تم تغيير كلمة المرور بنجاح',
+      token: freshToken,
+      mustChangePassword: false,
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        mustChangePassword: false
+      }
     });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
@@ -472,3 +562,198 @@ export const changePassword = async (req: any, res: Response) => {
   }
 };
 
+
+export const verifyInvitationSchema = z.object({
+  token: z.string().min(1, 'رمز الدعوة مطلوب')
+});
+
+export const acceptInvitationSchema = z.object({
+  token: z.string().min(1, 'رمز الدعوة مطلوب'),
+  password: z.string().min(8, 'كلمة المرور يجب أن لا تقل عن 8 أحرف'),
+  name: z.string().min(2, 'الاسم مطلوب')
+});
+
+export const verifyInvitation = async (req: Request, res: Response) => {
+  try {
+    const { token } = verifyInvitationSchema.parse(req.body);
+    const tokenHash = crypto.createHash('sha256').update(token.trim()).digest('hex');
+
+    const invitation = await (db as any).primaryManagerInvitation.findUnique({
+      where: { tokenHash },
+      include: {
+        institution: {
+          select: { id: true, name: true, code: true, status: true, primaryManagerId: true }
+        }
+      }
+    });
+
+    if (!invitation) {
+      return res.status(404).json({ message: 'الدعوة غير موجودة أو غير صالحة' });
+    }
+
+    if (invitation.status === 'ACCEPTED') {
+      return res.status(400).json({ message: 'تم استخدام هذه الدعوة مسبقاً' });
+    }
+
+    if (invitation.status === 'REVOKED') {
+      return res.status(400).json({ message: 'تم إلغاء هذه الدعوة' });
+    }
+
+    if (new Date() > new Date(invitation.expiresAt)) {
+      return res.status(400).json({ message: 'انتهت صلاحية هذه الدعوة' });
+    }
+
+    if (invitation.institution?.primaryManagerId) {
+      return res.status(409).json({ message: 'تم تعيين مدير أساسي لهذه المؤسسة مسبقاً' });
+    }
+
+    return res.json({
+      valid: true,
+      email: invitation.email,
+      institution: {
+        id: invitation.institution.id,
+        name: invitation.institution.name,
+        code: invitation.institution.code
+      }
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ errors: error.errors });
+    }
+    console.error('verifyInvitation error:', error);
+    return res.status(500).json({ message: 'حدث خطأ في الخادم أثناء التحقق من الدعوة' });
+  }
+};
+
+export const acceptInvitation = async (req: Request, res: Response) => {
+  try {
+    const { token, password, name } = acceptInvitationSchema.parse(req.body);
+    const tokenHash = crypto.createHash('sha256').update(token.trim()).digest('hex');
+
+    const invitation = await (db as any).primaryManagerInvitation.findUnique({
+      where: { tokenHash },
+      include: {
+        institution: true
+      }
+    });
+
+    if (!invitation) {
+      return res.status(404).json({ message: 'الدعوة غير موجودة أو غير صالحة' });
+    }
+
+    if (invitation.status !== 'PENDING' || new Date() > new Date(invitation.expiresAt)) {
+      return res.status(400).json({ message: 'الدعوة غير صالحة أو منتهية الصلاحية' });
+    }
+
+    if (invitation.institution?.primaryManagerId) {
+      return res.status(409).json({ message: 'تم تعيين مدير أساسي لهذه المؤسسة مسبقاً (OD-701)' });
+    }
+
+    // Safety guard: Super-Admin cannot be assigned as Primary Manager
+    if (invitation.email.toLowerCase() === 'admin@edu.com') {
+      return res.status(400).json({ message: 'حساب admin@edu.com مخصص كمسؤول منصة ولا يمكن تعيينه كمدير مؤسسة' });
+    }
+
+    // Safety guard: Authenticated user cannot claim another person's invitation
+    const callingUser = (req as any).user;
+    if (callingUser && callingUser.email && callingUser.email.toLowerCase() !== invitation.email.toLowerCase()) {
+      return res.status(403).json({
+        message: 'لا يمكنك تفعيل دعوة صادرة لبريد إلكتروني مختلف عن حسابك النشط',
+        code: 'CROSS_ACCOUNT_INVITATION_FORBIDDEN'
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Atomic transaction for invitation acceptance and primary manager binding
+    const result = await db.$transaction(async (tx) => {
+      // Find or create user
+      let user = await tx.user.findUnique({
+        where: { email: invitation.email.toLowerCase().trim() }
+      });
+
+      if (user) {
+        user = await tx.user.update({
+          where: { id: user.id },
+          data: {
+            name,
+            password: hashedPassword,
+            role: 'PRIMARY_MANAGER' as any,
+            isPrimaryManager: true,
+            institutionId: invitation.institutionId
+          }
+        });
+      } else {
+        user = await tx.user.create({
+          data: {
+            email: invitation.email.toLowerCase().trim(),
+            name,
+            password: hashedPassword,
+            role: 'PRIMARY_MANAGER' as any,
+            isPrimaryManager: true,
+            institutionId: invitation.institutionId
+          }
+        });
+      }
+
+      // Bind institution primary manager
+      await (tx as any).institution.update({
+        where: { id: invitation.institutionId },
+        data: {
+          primaryManagerId: user.id
+        }
+      });
+
+      // Mark invitation accepted
+      await (tx as any).primaryManagerInvitation.update({
+        where: { id: invitation.id },
+        data: {
+          status: 'ACCEPTED',
+          acceptedAt: new Date(),
+          acceptedByUserId: user.id
+        }
+      });
+
+      return user;
+    });
+
+    // Generate JWT for newly activated primary manager
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+
+    const authToken = jwt.sign(
+      {
+        userId: result.id,
+        role: result.role,
+        email: result.email,
+        institutionId: invitation.institutionId,
+        branchId: null,
+        isPrimaryManager: true
+      },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '15m' }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'تم تفعيل حساب المدير الأساسي بنجاح',
+      token: authToken,
+      user: {
+        id: result.id,
+        name: result.name,
+        email: result.email,
+        role: result.role,
+        institutionId: invitation.institutionId,
+        isPrimaryManager: true
+      }
+    });
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ errors: error.errors });
+    }
+    console.error('acceptInvitation error:', error);
+    return res.status(500).json({ message: 'حدث خطأ في الخادم أثناء تفعيل الحساب' });
+  }
+};

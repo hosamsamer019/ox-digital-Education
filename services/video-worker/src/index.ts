@@ -1,5 +1,6 @@
 import { Worker, Job, UnrecoverableError } from 'bullmq';
-import { logger, initSentry } from '@shared/utils';
+import sharedUtils from '@shared/utils';
+const { logger, initSentry } = sharedUtils as any;
 import { db } from '@smartmath/database';
 import {
   S3Client,
@@ -19,29 +20,47 @@ import { spawn, ChildProcess } from 'child_process';
 // Initialize Sentry for background worker
 initSentry('video-worker');
 
-const requiredWorkerEnv = [
-  'DATABASE_URL',
-  'REDIS_URL',
+const requiredCoreEnv = ['DATABASE_URL', 'REDIS_URL'];
+export const requiredR2Env = [
   'CLOUDFLARE_R2_ENDPOINT',
   'CLOUDFLARE_R2_ACCESS_KEY_ID',
   'CLOUDFLARE_R2_SECRET_ACCESS_KEY',
   'CLOUDFLARE_R2_BUCKET_NAME',
 ];
 
-const missingWorkerEnv = requiredWorkerEnv.filter((key) => !process.env[key]);
-if (missingWorkerEnv.length > 0) {
-  logger.error(`[FATAL] video-worker missing required environment variables: ${missingWorkerEnv.join(', ')}`);
+export function evaluateStandbyMode(env: Record<string, string | undefined> = process.env): {
+  isStandby: boolean;
+  missingR2Env: string[];
+  reason: string;
+} {
+  const missing = requiredR2Env.filter((key) => !env[key]?.trim());
+  if (env.VIDEO_WORKER_ENABLED === 'false') {
+    return { isStandby: true, missingR2Env: missing, reason: 'VIDEO_WORKER_ENABLED is explicitly false' };
+  }
+  if (missing.length > 0) {
+    return { isStandby: true, missingR2Env: missing, reason: `Missing or unconfigured required R2 variables: ${missing.join(', ')}` };
+  }
+  return { isStandby: false, missingR2Env: [], reason: 'All required R2 variables are present and configured' };
+}
+
+const missingCoreEnv = requiredCoreEnv.filter((key) => !process.env[key]?.trim());
+if (missingCoreEnv.length > 0) {
+  logger.error(`[FATAL] video-worker missing required core environment variables: ${missingCoreEnv.join(', ')}`);
   process.exit(1);
 }
 
-const REDIS_URL = process.env.REDIS_URL!;
-const R2_ENDPOINT = process.env.CLOUDFLARE_R2_ENDPOINT!;
-const R2_ACCESS_KEY = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!;
-const R2_SECRET_KEY = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!;
-const R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME!;
+const standbyEvaluation = evaluateStandbyMode(process.env);
+export const isStandbyMode = standbyEvaluation.isStandby;
+const missingR2Env = standbyEvaluation.missingR2Env;
+
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const R2_ENDPOINT = process.env.CLOUDFLARE_R2_ENDPOINT || '';
+const R2_ACCESS_KEY = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || '';
+const R2_SECRET_KEY = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '';
+const R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET_NAME || '';
 
 // Strict Development Storage Allowlist Guard
-if (process.env.NODE_ENV !== 'production') {
+if (!isStandbyMode && process.env.NODE_ENV !== 'production') {
   const allowedEndpoints = [
     'http://ox-digital-dev-minio:9000',
     'http://127.0.0.1:9100',
@@ -63,15 +82,24 @@ if (process.env.NODE_ENV !== 'production') {
   }
 }
 
-const s3Client = new S3Client({
-  region: 'auto',
-  endpoint: R2_ENDPOINT,
-  credentials: {
-    accessKeyId: R2_ACCESS_KEY,
-    secretAccessKey: R2_SECRET_KEY,
-  },
-  forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
-});
+export const s3Client: S3Client | null = !isStandbyMode
+  ? new S3Client({
+      region: 'auto',
+      endpoint: R2_ENDPOINT,
+      credentials: {
+        accessKeyId: R2_ACCESS_KEY,
+        secretAccessKey: R2_SECRET_KEY,
+      },
+      forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+    })
+  : null;
+
+function getS3(): S3Client {
+  if (!s3Client) {
+    throw new Error('Cloudflare R2 storage client is uninitialized (worker is in IDLE STANDBY mode)');
+  }
+  return s3Client;
+}
 
 interface VideoTranscodeJob {
   uploadId: string;
@@ -360,7 +388,7 @@ function checkDiskSpace(directoryPath: string, sourceSizeBytes: number, duration
  */
 const downloadFromR2 = async (key: string, downloadPath: string): Promise<void> => {
   const command = new GetObjectCommand({ Bucket: R2_BUCKET, Key: key });
-  const response = await s3Client.send(command);
+  const response = await getS3().send(command);
   if (!response.Body) throw new Error('Empty body returned from Cloudflare R2 storage');
 
   const writeStream = fs.createWriteStream(downloadPath);
@@ -378,7 +406,7 @@ const uploadToR2 = async (filePath: string, key: string, contentType: string): P
     Body: fileStream,
     ContentType: contentType,
   });
-  await s3Client.send(command);
+  await getS3().send(command);
 };
 
 /**
@@ -401,7 +429,7 @@ const purgePrefixInR2 = async (prefix: string): Promise<void> => {
         Prefix: prefix,
         ContinuationToken: continuationToken
       });
-      const listResult = await s3Client.send(listCommand);
+      const listResult = await getS3().send(listCommand);
 
       if (listResult.Contents && listResult.Contents.length > 0) {
         const objectsToDelete = listResult.Contents
@@ -416,7 +444,7 @@ const purgePrefixInR2 = async (prefix: string): Promise<void> => {
               Quiet: false
             }
           });
-          const deleteResult = await s3Client.send(deleteCommand);
+          const deleteResult = await getS3().send(deleteCommand);
 
           if (deleteResult.Errors && deleteResult.Errors.length > 0) {
             const sampleErr = deleteResult.Errors[0];
@@ -674,7 +702,7 @@ async function verifyRemoteHlsPackage(
       Prefix: attemptPrefix,
       ContinuationToken: continuationToken
     });
-    const listResult = await s3Client.send(listCommand);
+    const listResult = await getS3().send(listCommand);
 
     if (listResult.Contents) {
       for (const obj of listResult.Contents) {
@@ -712,7 +740,7 @@ async function verifyRemoteHlsPackage(
   }
 
   // 4. Targeted HeadObject verification for master.m3u8 to confirm Content-Type
-  const masterHead = await s3Client.send(new HeadObjectCommand({
+  const masterHead = await getS3().send(new HeadObjectCommand({
     Bucket: R2_BUCKET,
     Key: masterKey
   }));
@@ -1214,6 +1242,9 @@ export const processDriveIngestionJob = async (job: Job): Promise<{ status: stri
  * Main Job Processor
  */
 export const processVideo = async (job: Job<any>): Promise<{ status: string; uploadId?: string; mediaId?: string }> => {
+  if (isStandbyMode) {
+    throw new Error('Video worker is in IDLE STANDBY mode: Cloudflare R2 storage is unconfigured. Video processing is unavailable.');
+  }
   if (job.data?.type === 'DRIVE_INGESTION') {
     return processDriveIngestionJob(job);
   }
@@ -1432,23 +1463,45 @@ export const processVideo = async (job: Job<any>): Promise<{ status: string; upl
 /**
  * BullMQ Worker Registration with Concurrency 1
  */
-const videoWorker = new Worker('video-transcode-queue', processVideo, {
-  connection: {
-    host: new URL(REDIS_URL).hostname,
-    port: parseInt(new URL(REDIS_URL).port || '6379', 10),
-    username: new URL(REDIS_URL).username || undefined,
-    password: new URL(REDIS_URL).password || undefined
-  },
-  concurrency: 1, // Single active transcode to guarantee CPU/RAM stability
-});
+export let videoWorker: Worker | null = null;
+let standbyHeartbeat: NodeJS.Timeout | null = null;
 
-videoWorker.on('completed', (job) => {
-  logger.info(`[BullMQ] Job ${job.id} has completed successfully`);
-});
+if (!isStandbyMode) {
+  videoWorker = new Worker('video-transcode-queue', processVideo, {
+    connection: {
+      host: new URL(REDIS_URL).hostname,
+      port: parseInt(new URL(REDIS_URL).port || '6379', 10),
+      username: new URL(REDIS_URL).username || undefined,
+      password: new URL(REDIS_URL).password || undefined
+    },
+    concurrency: 1, // Single active transcode to guarantee CPU/RAM stability
+  });
 
-videoWorker.on('failed', (job, err) => {
-  logger.error(`[BullMQ] Job ${job?.id} failed with error: ${sanitizeErrorMessage(err.message)}`);
-});
+  videoWorker.on('completed', (job) => {
+    logger.info(`[BullMQ] Job ${job.id} has completed successfully`);
+  });
+
+  videoWorker.on('failed', (job, err) => {
+    logger.error(`[BullMQ] Job ${job?.id} failed with error: ${sanitizeErrorMessage(err.message)}`);
+  });
+} else {
+  logger.warn('================================================================================');
+  logger.warn('[Video Worker] Entering IDLE STANDBY mode.');
+  if (missingR2Env.length > 0) {
+    logger.warn(`[Video Worker] Cloudflare R2 environment variables are missing or unconfigured: ${missingR2Env.join(', ')}`);
+  }
+  if (process.env.VIDEO_WORKER_ENABLED === 'false') {
+    logger.warn('[Video Worker] VIDEO_WORKER_ENABLED is set to "false".');
+  }
+  logger.warn('[Video Worker] Video transcoding & processing is UNAVAILABLE until valid Cloudflare R2 configuration is provided.');
+  logger.warn('[Video Worker] BullMQ queue consumer is NOT started: queued jobs will NOT be consumed or discarded.');
+  logger.warn('[Video Worker] Container will remain running and healthy in IDLE STANDBY mode.');
+  logger.warn('================================================================================');
+
+  standbyHeartbeat = setInterval(() => {
+    logger.info('[Video Worker Standby] Heartbeat: Worker is healthy and idle. Video processing remains unavailable pending Cloudflare R2 configuration.');
+  }, 60000);
+}
 
 export interface StaleSweepOptions {
   tmpRoot?: string;
@@ -1524,7 +1577,7 @@ export function sweepStaleTempDirectories(options: StaleSweepOptions = {}): Stal
   return { swept, preserved };
 }
 
-sweepStaleTempDirectories();
+if (!isStandbyMode) { sweepStaleTempDirectories(); }
 
 /**
  * Graceful Process Shutdown Handling
@@ -1548,10 +1601,18 @@ const handleShutdown = async (signal: string) => {
     currentWorkDir = null;
   }
 
-  try {
-    await videoWorker.close();
-  } catch (err: any) {
-    logger.error('Error closing BullMQ worker:', err.message);
+  if (standbyHeartbeat) {
+    clearInterval(standbyHeartbeat);
+    standbyHeartbeat = null;
+  }
+
+  if (videoWorker) {
+    try {
+      await videoWorker.close();
+    } catch (err: any) {
+      logger.error('Error closing BullMQ worker:', err.message);
+    }
+    videoWorker = null;
   }
 
   process.exit(0);

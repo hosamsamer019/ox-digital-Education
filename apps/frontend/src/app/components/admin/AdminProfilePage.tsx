@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
 import { User as UserIcon, Mail, Activity, Save, Edit2, Key, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -6,6 +7,7 @@ import { analyticsService } from '../../services/analytics.service';
 import { LoadingState } from '../ui/LoadingState';
 
 export default function AdminProfilePage() {
+  const { t } = useLanguage();
   const { user, checkAuth } = useAuth();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -58,23 +60,23 @@ export default function AdminProfilePage() {
     setPasswordSuccess('');
 
     if (!passwordData.currentPassword) {
-      setPasswordError('يرجى إدخال كلمة المرور الحالية');
+      setPasswordError(t('يرجى إدخال كلمة المرور الحالية'));
       return;
     }
     if (!passwordData.newPassword) {
-      setPasswordError('يرجى إدخال كلمة المرور الجديدة');
+      setPasswordError(t('يرجى إدخال كلمة المرور الجديدة'));
       return;
     }
     if (passwordData.newPassword.length < 6) {
-      setPasswordError('كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف');
+      setPasswordError(t('كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف'));
       return;
     }
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError('كلمة المرور الجديدة وتأكيدها غير متطابقين');
+      setPasswordError(t('كلمة المرور الجديدة وتأكيدها غير متطابقين'));
       return;
     }
     if (passwordData.currentPassword === passwordData.newPassword) {
-      setPasswordError('كلمة المرور الجديدة يجب أن تكون مختلفة عن كلمة المرور الحالية');
+      setPasswordError(t('كلمة المرور الجديدة يجب أن تكون مختلفة عن كلمة المرور الحالية'));
       return;
     }
 
@@ -95,17 +97,17 @@ export default function AdminProfilePage() {
     }
   };
 
-  if (!user) return <LoadingState message="جاري تحميل الملف الشخصي..." />;
+  if (!user) return <LoadingState message={t('جاري تحميل الملف الشخصي...')} />;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6" dir="rtl">
       {/* Profile Details Card */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">الملف الشخصي للمسؤول</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('الملف الشخصي للمسؤول')}</h2>
           {!editing ? (
             <button onClick={() => setEditing(true)} className="text-indigo-600 flex items-center gap-2">
-              <Edit2 className="w-4 h-4" /> تعديل
+              <Edit2 className="w-4 h-4" /> {t('تعديل')}
             </button>
           ) : (
             <button onClick={handleSave} disabled={saving} className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
@@ -116,7 +118,7 @@ export default function AdminProfilePage() {
         
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-500 mb-1">الاسم</label>
+            <label className="block text-sm text-gray-500 mb-1">{t('الاسم')}</label>
             {editing ? (
               <input 
                 value={formData.name}
@@ -130,7 +132,7 @@ export default function AdminProfilePage() {
             )}
           </div>
           <div>
-            <label className="block text-sm text-gray-500 mb-1">البريد الإلكتروني</label>
+            <label className="block text-sm text-gray-500 mb-1">{t('البريد الإلكتروني')}</label>
             {editing ? (
               <input 
                 value={formData.email}
@@ -144,7 +146,7 @@ export default function AdminProfilePage() {
             )}
           </div>
           <div>
-            <label className="block text-sm text-gray-500 mb-1">معرف الحساب (Account ID)</label>
+            <label className="block text-sm text-gray-500 mb-1">{t('معرف الحساب (Account ID)')}</label>
             <div className="flex items-center gap-2 text-gray-900 dark:text-white font-mono bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded border border-gray-200 dark:border-gray-600 select-all cursor-text">
               <UserIcon className="w-5 h-5 text-gray-400" /> {user?.id}
             </div>
@@ -156,7 +158,7 @@ export default function AdminProfilePage() {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
         <div className="flex items-center gap-2 mb-6">
           <Key className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">تغيير كلمة المرور</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('تغيير كلمة المرور')}</h2>
         </div>
 
         {passwordSuccess && (
@@ -176,7 +178,7 @@ export default function AdminProfilePage() {
         <form onSubmit={handleChangePassword} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              كلمة المرور الحالية
+              {t('كلمة المرور الحالية')}
             </label>
             <div className="relative">
               <input
@@ -187,7 +189,7 @@ export default function AdminProfilePage() {
                   setPasswordError('');
                 }}
                 disabled={passwordLoading}
-                placeholder="أدخل كلمة المرور الحالية"
+                placeholder={t('أدخل كلمة المرور الحالية')}
                 className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2.5 rounded-lg pr-4 pl-10 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               />
               <button
@@ -203,7 +205,7 @@ export default function AdminProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                كلمة المرور الجديدة
+                {t('كلمة المرور الجديدة')}
               </label>
               <div className="relative">
                 <input
@@ -214,7 +216,7 @@ export default function AdminProfilePage() {
                     setPasswordError('');
                   }}
                   disabled={passwordLoading}
-                  placeholder="6 أحرف على الأقل"
+                  placeholder={t('6 أحرف على الأقل')}
                   className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2.5 rounded-lg pr-4 pl-10 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
                 <button
@@ -229,7 +231,7 @@ export default function AdminProfilePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                تأكيد كلمة المرور الجديدة
+                {t('تأكيد كلمة المرور الجديدة')}
               </label>
               <div className="relative">
                 <input
@@ -240,7 +242,7 @@ export default function AdminProfilePage() {
                     setPasswordError('');
                   }}
                   disabled={passwordLoading}
-                  placeholder="أعد إدخال كلمة المرور الجديدة"
+                  placeholder={t('أعد إدخال كلمة المرور الجديدة')}
                   className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white p-2.5 rounded-lg pr-4 pl-10 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
                 <button
@@ -269,17 +271,17 @@ export default function AdminProfilePage() {
 
       {/* Platform Quick Stats */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">إحصائيات المنصة السريعة</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{t('إحصائيات المنصة السريعة')}</h2>
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg flex flex-col items-center justify-center">
             <Activity className="w-8 h-8 text-indigo-500 mb-2" />
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.overview?.totalUsers || 0}</div>
-            <div className="text-sm text-gray-500">إجمالي المستخدمين</div>
+            <div className="text-sm text-gray-500">{t('إجمالي المستخدمين')}</div>
           </div>
           <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg flex flex-col items-center justify-center">
             <Activity className="w-8 h-8 text-green-500 mb-2" />
             <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.overview?.totalCourses || 0}</div>
-            <div className="text-sm text-gray-500">إجمالي الدورات</div>
+            <div className="text-sm text-gray-500">{t('إجمالي الدورات')}</div>
           </div>
         </div>
       </div>

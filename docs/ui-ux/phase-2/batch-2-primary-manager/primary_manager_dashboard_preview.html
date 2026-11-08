@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OX-DIGITAL Education — لوحة القيادة التنفيذية للمدير الرئيسي (PM-DASH-01) [DEMO DATA]</title>
+  <!-- 
+    NOTICE ON EXTERNAL DEPENDENCIES:
+    This design prototype loads Tailwind CSS and Google Fonts (Cairo & JetBrains Mono) from external CDN endpoints:
+    - https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js
+    - https://fonts.googleapis.com
+    This prototype is intended for interactive design inspection and review. It is NOT fully offline.
+    No application source code or production dependencies have been modified.
+  -->
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #b62626;
+      --primary-hover: #9e1b1b;
+      --primary-foreground: #ffffff;
+      --background: #f8fafc;
+      --card: #ffffff;
+      --foreground: #0f172a;
+      --muted: #f1f5f9;
+      --muted-foreground: #64748b;
+      --border: #e2e8f0;
+      --ring: #b62626;
+    }
+    .dark {
+      --primary: #dc2626;
+      --primary-hover: #ef4444;
+      --primary-foreground: #ffffff;
+      --background: #090b10;
+      --card: #131722;
+      --foreground: #f8fafc;
+      --muted: #1e293b;
+      --muted-foreground: #94a3b8;
+      --border: #1e293b;
+      --ring: #ef4444;
+    }
+    body {
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+    }
+    .font-mono-numbers {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .sidebar-link.active {
+      background-color: #fee2e2;
+      color: #991b1b;
+      font-weight: 700;
+    }
+    .dark .sidebar-link.active {
+      background-color: rgba(185, 28, 28, 0.25);
+      color: #fca5a5;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen p-2 md:p-4 transition-colors duration-200">
+
+  <!-- Persistent Demo Data Warning & Architecture Alignment Notice -->
+  <aside aria-label="Demo Data Notice" class="max-w-[1600px] mx-auto mb-3 bg-amber-50 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2 shadow-xs">
+    <div class="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-medium">
+      <span class="text-sm">⚠️</span>
+      <span><strong>بيانات تجريبية استرشادية (DEMO DATA — NOT REAL):</strong> جميع أرقام الإيرادات، التحصيلات، أرصدة الخزائن، وأسماء الفروع والطلاب في هذه اللوحة هي بيانات نموذجية. النظام يفصل بدقة بين: <strong>العقد المالي ≠ المستحق ≠ التحصيل الفعلي ≠ الإيراد التعليمي المحقق</strong>.</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="font-mono text-[10px] font-bold bg-amber-200/80 dark:bg-amber-900 text-amber-950 dark:text-amber-200 px-2 py-0.5 rounded">BATCH 2 — PRIMARY MANAGER</span>
+    </div>
+  </aside>
+
+  <!-- Prototype Toolbar & Simulation Controls -->
+  <header class="max-w-[1600px] mx-auto mb-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-red-700 text-white flex items-center justify-center font-bold text-lg shadow-inner">
+          OX
+        </div>
+        <div>
+          <h1 class="text-sm md:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            لوحة قيادة المدير الرئيسي (Primary Manager Executive Hub)
+            <span class="text-[10px] md:text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-900">PM-DASH-01</span>
+          </h1>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">حوكمة متعددة الفروع • فصل إيرادات رباعي • اعتماد الصرف (Maker-Checker) • سياسات UP-704 و UP-705 معلقة ومحمية</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <!-- Branch Scope Filter in Toolbar -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+          <span class="px-2 text-slate-500 font-medium">نطاق الفروع:</span>
+          <select id="branch-scope-select" onchange="changeBranchScope(this.value)" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-bold px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-red-600">
+            <option value="ALL">🏢 المركز بالكامل (عرض موحد - الفروع الحضورية)</option>
+            <option value="BR01">📍 فرع الدقي (الرئيسي - حضوري)</option>
+            <option value="BR02">📍 فرع مدينة نصر (حضوري)</option>
+            <option value="ONLINE">🌐 الفرع الأونلاين (مؤجل — خارج النطاق المالي)</option>
+          </select>
+        </div>
+
+        <!-- Viewport Switcher -->
+        <div class="hidden md:flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+          <button onclick="setViewport('100%')" class="px-2 py-1 rounded-lg font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs">كامل الشاشة</button>
+          <button onclick="setViewport('1280px')" class="px-2 py-1 rounded-lg font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900">1280px</button>
+          <button onclick="setViewport('1024px')" class="px-2 py-1 rounded-lg font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900">1024px</button>
+          <button onclick="setViewport('768px')" class="px-2 py-1 rounded-lg font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900">768px</button>
+        </div>
+
+        <!-- Dark Mode Toggle -->
+        <button onclick="toggleDarkMode()" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition" title="تبديل الوضع الليلي">
+          <span id="theme-icon">🌙</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Interactive Sandbox Container (Enforces Viewport Scaling) -->
+  <main id="app-viewport-container" class="max-w-[1600px] mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl transition-all duration-300">
+    
+    <!-- Top Navigation Bar (Batch 1 Reused) -->
+    <div class="h-16 border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 flex items-center justify-between bg-white/95 dark:bg-slate-900/95 sticky top-0 z-30">
+      <!-- Start: Identity & Branch Selector -->
+      <div class="flex items-center gap-3 md:gap-4">
+        <button onclick="toggleSidebarCollapse()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition" title="طي / فتح القائمة الجانبية">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-red-700 text-white font-black flex items-center justify-center text-sm shadow-xs">
+            OX
+          </div>
+          <div class="hidden sm:block">
+            <div class="font-bold text-sm text-slate-900 dark:text-white leading-tight">أكاديمية أوكس التعليمية</div>
+            <div class="text-[10px] text-slate-500 font-mono">INST-01 [DEMO DATA]</div>
+          </div>
+        </div>
+
+        <!-- Branch Selector Pill -->
+        <div class="hidden lg:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="font-medium text-slate-500">الفرع الحالي:</span>
+          <span id="topbar-branch-label" class="font-bold text-slate-900 dark:text-white">المركز بالكامل (عرض موحد)</span>
+        </div>
+      </div>
+
+      <!-- End: Actions, Notifications, User Profile -->
+      <div class="flex items-center gap-2 md:gap-3">
+        <!-- Quick Search Pill -->
+        <div class="hidden md:flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-500">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <span>بحث عن طالب أو خزينة أو سند...</span>
+          <kbd class="font-mono text-[10px] bg-white dark:bg-slate-700 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">Ctrl+K</kbd>
+        </div>
+
+        <!-- Approvals Badge Alert -->
+        <button onclick="switchTab('tab-approvals')" class="relative p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition" title="الاعتمادات والموافقات المعلقة">
+          <svg class="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span class="absolute -top-1 -start-1 w-5 h-5 bg-red-600 text-white rounded-full text-[10px] font-bold flex items-center justify-center font-mono-numbers shadow-xs">3</span>
+        </button>
+
+        <!-- User Profile Menu -->
+        <div class="flex items-center gap-2.5 ps-2 border-s border-slate-200 dark:border-slate-800">
+          <div class="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-bold text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600">
+            م.ر
+          </div>
+          <div class="hidden sm:block text-start">
+            <div class="text-xs font-bold text-slate-900 dark:text-white leading-tight">د. محمد عبد الرحمن</div>
+            <div class="text-[10px] text-red-700 dark:text-red-400 font-semibold">مدير رئيسي (Primary Manager)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Layout (Sidebar + Content Viewport) -->
+    <div class="flex min-h-[calc(100vh-160px)]">
+      
+      <!-- Collapsible Sidebar (Expanded: 260px, Rail: 72px) -->
+      <aside id="main-sidebar" class="w-[260px] border-e border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 p-3 flex flex-col justify-between transition-all duration-200 shrink-0">
+        <div class="space-y-4">
+          
+          <!-- Role Badge -->
+          <div class="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl">
+            <div class="text-[11px] text-red-900 dark:text-red-200 font-bold flex items-center justify-between">
+              <span>الإدارة العليا والتنفيذية</span>
+              <span class="font-mono text-[9px] bg-red-200 dark:bg-red-900 px-1 rounded">PM-ONLY</span>
+            </div>
+            <div class="text-[10px] text-red-700 dark:text-red-400 mt-0.5">صلاحيات كاملة شاملة الفروع</div>
+          </div>
+
+          <!-- Navigation Links -->
+          <nav class="space-y-1 text-xs">
+            <button onclick="switchTab('tab-dashboard')" id="nav-tab-dashboard" class="sidebar-link active w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition text-start">
+              <svg class="w-4 h-4 text-red-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+              <span class="sidebar-text font-medium">لوحة القيادة التنفيذية</span>
+            </button>
+
+            <button onclick="switchTab('tab-branches')" id="nav-tab-branches" class="sidebar-link w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition text-start">
+              <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+              <span class="sidebar-text font-medium">إدارة ومتابعة الفروع (3)</span>
+            </button>
+
+            <button onclick="switchTab('tab-approvals')" id="nav-tab-approvals" class="sidebar-link w-full flex items-center justify-between px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition text-start">
+              <div class="flex items-center gap-2.5">
+                <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="sidebar-text font-medium">مركز الاعتمادات</span>
+              </div>
+              <span class="font-mono-numbers font-bold text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded-full">3</span>
+            </button>
+
+            <button onclick="switchTab('tab-cashboxes')" id="nav-tab-cashboxes" class="sidebar-link w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition text-start">
+              <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span class="sidebar-text font-medium">الخزائن والنقدية</span>
+            </button>
+
+            <button onclick="switchTab('tab-students')" id="nav-tab-students" class="sidebar-link w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition text-start">
+              <svg class="w-4 h-4 text-purple-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+              <span class="sidebar-text font-medium">شؤون الطلاب المالية</span>
+            </button>
+
+            <button onclick="switchTab('tab-teachers')" id="nav-tab-teachers" class="sidebar-link w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition text-start">
+              <svg class="w-4 h-4 text-cyan-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+              <span class="sidebar-text font-medium">مستحقات وأدلة المعلمين</span>
+            </button>
+
+            <button onclick="switchTab('tab-reports')" id="nav-tab-reports" class="sidebar-link w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition text-start">
+              <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              <span class="sidebar-text font-medium">التقارير المالية والتدقيق</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Sidebar Footer -->
+        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-500">
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+            <span>حالة الاتصال غير معروضة في النموذج</span>
+          </div>
+          <div>OX-DIGITAL Edu v2.0B</div>
+        </div>
+      </aside>
+
+      <!-- Main Content Viewport Canvas -->
+      <section class="flex-1 p-4 md:p-6 overflow-y-auto bg-slate-50 dark:bg-slate-950/40">
+        
+        <!-- Breadcrumb & Action Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span>الرئيسية</span>
+            <span>/</span>
+            <span id="breadcrumb-current-tab" class="font-bold text-slate-900 dark:text-white">لوحة القيادة التنفيذية</span>
+            <span class="text-slate-400">•</span>
+            <span id="breadcrumb-scope-badge" class="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-full font-mono text-[10px]">نطاق: شامل الفروع</span>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <button onclick="triggerPrintModal()" class="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+              <span>تصدير ملخص PDF</span>
+            </button>
+            <button onclick="refreshData()" class="px-3 py-1.5 bg-red-700 hover:bg-red-800 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <span>تحديث الأرقام</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 1: EXECUTIVE DASHBOARD (PM-DASH-01) -->
+        <!-- ========================================================================= -->
+        <div id="tab-dashboard" class="tab-content active space-y-6">
+          
+          <!-- 4 Core Financial KPI Tiles -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- KPI 1: Actual Collections -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs relative overflow-hidden">
+              <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
+                <span class="font-bold">إجمالي التحصيلات الفعلية</span>
+                <span class="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600">💵</span>
+              </div>
+              <div class="text-2xl font-black text-slate-900 dark:text-white font-mono-numbers mb-1" id="kpi-collections">
+                110,500.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>
+              </div>
+              <div class="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
+                <span>المقبوض اليوم: 12,400.00 ج.م</span>
+              </div>
+              <div class="text-[9px] text-slate-400 mt-2 font-mono">حركات مقبوضات نقدية فعلية بالفرعين الحضوريين</div>
+            </div>
+
+            <!-- KPI 2: Overdue Receivables -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs relative overflow-hidden">
+              <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
+                <span class="font-bold">المستحقات المتأخرة والواجبة</span>
+                <span class="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600">⚠️</span>
+              </div>
+              <div class="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono-numbers mb-1" id="kpi-overdue">
+                39,700.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>
+              </div>
+              <div class="text-[11px] text-slate-500 flex items-center gap-1 font-medium">
+                <span>متأخرات حرجة (> 30 يوماً): 14,000 ج.م</span>
+              </div>
+              <div class="text-[9px] text-slate-400 mt-2 font-mono">دفعات حلت تواريخ استحقاقها ولم تسدد</div>
+            </div>
+
+            <!-- KPI 3: Cashbox Liquidity -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs relative overflow-hidden">
+              <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
+                <span class="font-bold">رصيد الخزائن النقدية</span>
+                <span class="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600">🏦</span>
+              </div>
+              <div class="text-2xl font-black text-slate-900 dark:text-white font-mono-numbers mb-1" id="kpi-cashbox">
+                86,400.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>
+              </div>
+              <div class="text-[11px] text-blue-600 dark:text-blue-400 flex items-center gap-1 font-medium">
+                <span id="kpi-cashbox-sub">4 خزائن نشطة بفرعين</span>
+              </div>
+              <div class="text-[9px] text-slate-400 mt-2 font-mono">سيولة فعلية داخل تيلز الاستقبال والخزينة</div>
+            </div>
+
+            <!-- KPI 4: Recognized Revenue -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs relative overflow-hidden">
+              <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-2">
+                <span class="font-bold">الإيراد التعليمي المحقق</span>
+                <span class="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600">🎓</span>
+              </div>
+              <div class="text-2xl font-black text-purple-700 dark:text-purple-400 font-mono-numbers mb-1" id="kpi-revenue">
+                93,000.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>
+              </div>
+              <div class="text-[11px] text-purple-600 dark:text-purple-400 flex items-center gap-1 font-medium">
+                <span>بناءً على الحصص المسلمة للطلاب</span>
+              </div>
+              <div class="text-[9px] text-slate-400 mt-2 font-mono">لا يساوي قيمة العقود (لا يشمل المؤجل)</div>
+            </div>
+          </div>
+
+          <!-- Maker-Checker Alert Bar -->
+          <div class="bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-300 dark:border-amber-800/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+            <div class="flex items-center gap-3">
+              <span class="text-xl">🛡️</span>
+              <div>
+                <div class="text-xs font-bold text-slate-900 dark:text-white">طلبات واعتمادات تنتظر توقيع المدير الرئيسي (Maker-Checker Gate)</div>
+                <div class="text-[11px] text-slate-600 dark:text-slate-400">يوجد سندات صرف أعدها المحاسب تتطلب اعتمادك، وملف فرق إغلاق خزينة قيد المراجعة الإدارية (UP-705)</div>
+              </div>
+            </div>
+            <button onclick="switchTab('tab-approvals')" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition">
+              فتح مركز الاعتمادات (3 طلبات)
+            </button>
+          </div>
+
+          <!-- Split Operational View: Branch Cards & Pending Queue -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left 7 Cols: Branch Overview Cards -->
+            <div class="lg:col-span-7 space-y-4">
+              <div class="flex items-center justify-between">
+                <h2 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>🏢 أداء الفروع والسيولة النقدية</span>
+                  <span class="text-[10px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-mono">3 فروع</span>
+                </h2>
+                <button onclick="switchTab('tab-branches')" class="text-xs text-red-700 dark:text-red-400 font-semibold hover:underline">عرض سجل الفروع الكامل ←</button>
+              </div>
+
+              <!-- Branch Card 1: Dokki -->
+              <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 hover:border-slate-300 dark:hover:border-slate-700 transition">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-slate-900 dark:text-white text-sm">فرع الدقي (الرئيسي)</span>
+                      <span class="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded">فرع حضوري</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-0.5">14 شارع مصدق، الدقي • المحاسب: أحمد سمير (ACC-01)</div>
+                  </div>
+                  <span class="text-xs bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1 rounded-lg font-bold">
+                    إغلاق اليوم: متطابق (OK)
+                  </span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs">
+                  <div>
+                    <div class="text-[10px] text-slate-500">التحصيلات:</div>
+                    <div class="font-bold font-mono-numbers text-slate-900 dark:text-white">62,000.00 ج.م</div>
+                  </div>
+                  <div>
+                    <div class="text-[10px] text-slate-500">سيولة الخزائن:</div>
+                    <div class="font-bold font-mono-numbers text-blue-600 dark:text-blue-400">38,400.00 ج.م</div>
+                  </div>
+                  <div>
+                    <div class="text-[10px] text-slate-500">الإيراد المحقق:</div>
+                    <div class="font-bold font-mono-numbers text-purple-600 dark:text-purple-400">52,000.00 ج.م</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Branch Card 2: Nasr City -->
+              <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 hover:border-slate-300 dark:hover:border-slate-700 transition">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-slate-900 dark:text-white text-sm">فرع مدينة نصر</span>
+                      <span class="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded">فرع حضوري</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-0.5">28 شارع الطيران • المحاسب: هاني كمال (ACC-02)</div>
+                  </div>
+                  <span class="text-xs bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 px-2.5 py-1 rounded-lg font-bold">
+                    ⚠️ فرق عجز قيد التحقيق (UP-705)
+                  </span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs">
+                  <div>
+                    <div class="text-[10px] text-slate-500">التحصيلات:</div>
+                    <div class="font-bold font-mono-numbers text-slate-900 dark:text-white">48,500.00 ج.م</div>
+                  </div>
+                  <div>
+                    <div class="text-[10px] text-slate-500">سيولة الخزائن:</div>
+                    <div class="font-bold font-mono-numbers text-blue-600 dark:text-blue-400">18,000.00 ج.م</div>
+                  </div>
+                  <div>
+                    <div class="text-[10px] text-slate-500">الإيراد المحقق:</div>
+                    <div class="font-bold font-mono-numbers text-purple-600 dark:text-purple-400">41,000.00 ج.م</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Branch Card 3: Online Digital Branch (Deferred Scope) -->
+              <div class="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-4 opacity-75 hover:opacity-100 transition">
+                <div class="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-slate-700 dark:text-slate-300 text-sm">الفرع الأونلاين (منصة التعليم الرقمي)</span>
+                      <span class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-bold px-2 py-0.5 rounded font-mono">Branch.isOnline = true</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-0.5">منصة التعلم الإلكتروني • النطاق المالي: مؤجل — خارج النطاق المالي الحالي</div>
+                  </div>
+                  <span class="text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg font-bold">
+                    مؤجل — خارج النطاق المالي
+                  </span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs">
+                  <div>
+                    <div class="text-[10px] text-slate-500">التحصيلات:</div>
+                    <div class="font-bold text-slate-400">— (مؤجل)</div>
+                  </div>
+                  <div>
+                    <div class="text-[10px] text-slate-500">الخزائن النقدية:</div>
+                    <div class="font-bold text-slate-400">غير منطبق (رقمي)</div>
+                  </div>
+                  <div>
+                    <div class="text-[10px] text-slate-500">الإيراد المحقق:</div>
+                    <div class="font-bold text-slate-400">— (مؤجل)</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right 5 Cols: Pending Approvals Queue -->
+            <div class="lg:col-span-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <h2 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>📝 المعاملات المعلقة للاعتماد</span>
+                  <span class="text-[10px] bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full font-mono">3 معلقة</span>
+                </h2>
+                <button onclick="switchTab('tab-approvals')" class="text-xs text-red-700 dark:text-red-400 font-semibold hover:underline">عرض الكل ←</button>
+              </div>
+
+              <!-- Item 1: Expense Voucher -->
+              <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
+                <div class="flex items-center justify-between text-xs mb-2">
+                  <span class="font-bold text-slate-900 dark:text-white">سند صرف نثريات #EXP-1049</span>
+                  <span class="font-bold text-red-600 font-mono-numbers">2,500.00 ج.م</span>
+                </div>
+                <div class="text-xs text-slate-500 mb-3">
+                  فرع الدقي • بند: صيانة معامل وحاسبات • المستندات المؤيدة: فاتورة تجارية / إيصال مورد
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="openVoucherModal('EXP-1049', '2,500.00 ج.م', 'صيانة معامل وحاسبات')" class="flex-1 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition">
+                    اعتماد الصرف
+                  </button>
+                  <button onclick="showPrototypeNotice('رفض السند وإعادته للمحاسب')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-medium transition">
+                    رفض
+                  </button>
+                </div>
+              </div>
+
+              <!-- Item 2: Cashbox Discrepancy under UP-705 -->
+              <div class="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/60 rounded-2xl p-4 shadow-xs">
+                <div class="flex items-center justify-between text-xs mb-2">
+                  <span class="font-bold text-slate-900 dark:text-white">محضر إغلاق خزينة #DISC-004</span>
+                  <span class="font-bold text-amber-600 font-mono-numbers">عجز: -150.00 ج.م</span>
+                </div>
+                <div class="text-xs text-slate-500 mb-3">
+                  فرع مدينة نصر (كاشير 1) • الجرد: 17,850 ج.م (الدفتري: 18,000 ج.م) • قيد التحقيق (UP-705)
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="openDiscrepancyModal('DISC-004', '-150.00 ج.م', 'فرع مدينة نصر')" class="flex-1 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition">
+                    فحص ملف التحقيق
+                  </button>
+                </div>
+              </div>
+
+              <!-- Item 3: Student Discount Adjustment -->
+              <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
+                <div class="flex items-center justify-between text-xs mb-2">
+                  <span class="font-bold text-slate-900 dark:text-white">طلب خصم تفوق دراسي #ADJ-044</span>
+                  <span class="font-bold text-purple-600 font-mono-numbers">خصم: 500.00 ج.م</span>
+                </div>
+                <div class="text-xs text-slate-500 mb-3">
+                  طالب: أحمد سمير علي (STU-9102) • شهادة تفوق مرفقة • يخفض الدفعات المستقبلية المتبقية
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="showPrototypeNotice('اعتماد الخصم الدراسي')" class="flex-1 py-1.5 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold transition">
+                    اعتماد الخصم
+                  </button>
+                  <button onclick="showPrototypeNotice('رفض الخصم')" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-medium transition">
+                    رفض
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Section 4: Recent Audited Movements Table -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>📋 أحدث حركات المقبوضات والتحويلات المسجلة بالخزائن</span>
+                <span class="text-[10px] text-slate-500 font-mono">[DEMO DATA — NOT REAL]</span>
+              </h2>
+              <span class="text-xs text-slate-400">سجل غير قابل للتعديل (Append-Only)</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+              <table class="w-full text-xs text-start">
+                <thead class="bg-slate-50 dark:bg-slate-800/70 text-slate-500 dark:text-slate-400 border-y border-slate-200 dark:border-slate-700">
+                  <tr>
+                    <th class="py-2.5 px-3 text-start">رقم الإيصال/الحركة</th>
+                    <th class="py-2.5 px-3 text-start">الطالب / البيان</th>
+                    <th class="py-2.5 px-3 text-start">النوع</th>
+                    <th class="py-2.5 px-3 text-start">المبلغ</th>
+                    <th class="py-2.5 px-3 text-start">طريقة الدفع</th>
+                    <th class="py-2.5 px-3 text-start">الفرع الخازن</th>
+                    <th class="py-2.5 px-3 text-start">حالة الاعتماد</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <td class="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white">#REC-9821</td>
+                    <td class="py-2.5 px-3 font-medium">عمر شريف فاروق (STU-8821)</td>
+                    <td class="py-2.5 px-3"><span class="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold">سداد دفعة</span></td>
+                    <td class="py-2.5 px-3 font-mono-numbers font-bold text-slate-900 dark:text-white">750.00 ج.م</td>
+                    <td class="py-2.5 px-3">نقدي (كاشير 1)</td>
+                    <td class="py-2.5 px-3">فرع الدقي</td>
+                    <td class="py-2.5 px-3 text-emerald-600 font-bold">مرحل ومعتمد للخزينة</td>
+                  </tr>
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <td class="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white">#REC-9820</td>
+                    <td class="py-2.5 px-3 font-medium">مريم خالد السعدني (STU-8819)</td>
+                    <td class="py-2.5 px-3"><span class="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold">رسوم تسجيل</span></td>
+                    <td class="py-2.5 px-3 font-mono-numbers font-bold text-slate-900 dark:text-white">1,200.00 ج.م</td>
+                    <td class="py-2.5 px-3">بطاقة بنكية (POS)</td>
+                    <td class="py-2.5 px-3">فرع مدينة نصر</td>
+                    <td class="py-2.5 px-3 text-emerald-600 font-bold">مرحل ومعتمد للخزينة</td>
+                  </tr>
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <td class="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white">#XFER-041</td>
+                    <td class="py-2.5 px-3 font-medium">تحويل نقدية: تيل 1 ➔ الخزينة الرئيسية</td>
+                    <td class="py-2.5 px-3"><span class="bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 px-2 py-0.5 rounded text-[10px] font-bold">تحويل خزائن</span></td>
+                    <td class="py-2.5 px-3 font-mono-numbers font-bold text-blue-600">5,000.00 ج.م</td>
+                    <td class="py-2.5 px-3">تحويل داخلي</td>
+                    <td class="py-2.5 px-3">فرع الدقي</td>
+                    <td class="py-2.5 px-3 text-blue-600 font-bold">توازن تام (Conservation OK)</td>
+                  </tr>
+                  <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <td class="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white">#REC-9818</td>
+                    <td class="py-2.5 px-3 font-medium">سارة محمود عثمان (STU-8755)</td>
+                    <td class="py-2.5 px-3"><span class="bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold">سداد دفعة</span></td>
+                    <td class="py-2.5 px-3 font-mono-numbers font-bold text-slate-900 dark:text-white">600.00 ج.م</td>
+                    <td class="py-2.5 px-3">نقدي (كاشير 1)</td>
+                    <td class="py-2.5 px-3">فرع الدقي</td>
+                    <td class="py-2.5 px-3 text-emerald-600 font-bold">مرحل ومعتمد للخزينة</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 2: BRANCH MANAGEMENT (PM-BR-01) -->
+        <!-- ========================================================================= -->
+        <div id="tab-branches" class="tab-content space-y-6">
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 class="text-base font-bold text-slate-900 dark:text-white">إدارة الفروع ومراكز التدريب (PM-BR-01)</h2>
+                <p class="text-xs text-slate-500">متابعة الفروع المكانية والمنصة الرقمية تحت الحوكمة المباشرة للمدير الرئيسي (لا يوجد دور مدير فرع - OD-701)</p>
+              </div>
+              <button onclick="showPrototypeNotice('إضافة فرع جديد')" class="px-3.5 py-2 bg-red-700 hover:bg-red-800 text-white rounded-xl text-xs font-bold transition">
+                + إضافة فرع جديد
+              </button>
+            </div>
+
+            <div class="space-y-4">
+              <!-- Dokki -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/30">
+                <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-slate-900 dark:text-white">فرع الدقي (الرئيسي) - BR-01</span>
+                      <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">فرع حضوري مجهز</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-0.5">14 شارع مصدق، الدقي، الجيزة • القاعات: 6 معامل تدريبية • المحاسب: أحمد سمير</div>
+                  </div>
+                  <div class="text-xs font-bold text-emerald-700">حالة اليوم: إغلاق مطابق ومعتمد</div>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div><span class="text-slate-500">الطلاب المسجلين:</span> <strong class="font-mono-numbers">450 طالباً</strong></div>
+                  <div><span class="text-slate-500">التحصيلات:</span> <strong class="font-mono-numbers">62,000.00 ج.م</strong></div>
+                  <div><span class="text-slate-500">الخزائن النشطة:</span> <strong class="font-mono-numbers">خزينتان (38,400 ج.م)</strong></div>
+                  <div><span class="text-slate-500">المصروفات المعتمدة:</span> <strong class="font-mono-numbers">14,200.00 ج.م</strong></div>
+                </div>
+              </div>
+
+              <!-- Nasr City -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/30">
+                <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-slate-900 dark:text-white">فرع مدينة نصر - BR-02</span>
+                      <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">فرع حضوري مجهز</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-0.5">28 شارع الطيران، مدينة نصر، القاهرة • القاعات: 5 معامل تدريبية • المحاسب: هاني كمال</div>
+                  </div>
+                  <div class="text-xs font-bold text-amber-600">⚠️ فرق عجز قيد التحقيق الإداري (UP-705)</div>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div><span class="text-slate-500">الطلاب المسجلين:</span> <strong class="font-mono-numbers">320 طالباً</strong></div>
+                  <div><span class="text-slate-500">التحصيلات:</span> <strong class="font-mono-numbers">48,500.00 ج.م</strong></div>
+                  <div><span class="text-slate-500">الخزائن النشطة:</span> <strong class="font-mono-numbers">خزينة واحدة (18,000.00 ج.م)</strong></div>
+                  <div><span class="text-slate-500">المصروفات المعتمدة:</span> <strong class="font-mono-numbers">11,800.00 ج.م</strong></div>
+                </div>
+              </div>
+
+              <!-- Online (Deferred Scope) -->
+              <div class="border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-4 bg-slate-50/30 dark:bg-slate-800/20 opacity-80">
+                <div class="flex flex-wrap items-start justify-between gap-2 mb-3">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="font-bold text-slate-700 dark:text-slate-300">الفرع الأونلاين (منصة التعليم الرقمي) - BR-ONLINE</span>
+                      <span class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded font-mono">isOnline: true</span>
+                    </div>
+                    <div class="text-xs text-slate-500 mt-0.5">منصة التعلم الإلكتروني • المحتوى: 48 حصة تفاعلية • المشرف: د. إيمان يسري</div>
+                  </div>
+                  <div class="text-xs font-bold text-slate-500">الحالة المالية: مؤجل — خارج النطاق المالي الحالي</div>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div><span class="text-slate-500">الطلاب المسجلين:</span> <strong class="font-mono-numbers">680 مشتركاً</strong></div>
+                  <div><span class="text-slate-500">التحصيلات المالية:</span> <strong class="text-slate-400">— (مؤجل)</strong></div>
+                  <div><span class="text-slate-500">الخزائن النقدية:</span> <strong class="text-slate-400">غير منطبق (رقمي)</strong></div>
+                  <div><span class="text-slate-500">المعاملات المالية:</span> <strong class="text-slate-400">0 عملية نشطة</strong></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 3: STUDENT FINANCIALS (PM-STU-01) -->
+        <!-- ========================================================================= -->
+        <div id="tab-students" class="tab-content space-y-6">
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base font-bold text-slate-900 dark:text-white">شؤون الطلاب والملفات المالية الفرعية (PM-STU-01)</h2>
+                <p class="text-xs text-slate-500">متابعة العقود، جداول الدفعات ومواعيد الاستحقاق، السداد الفعلي، ومضاهاة الإيراد التعليمي المكتسب</p>
+              </div>
+              <!-- Search Student -->
+              <div class="flex items-center gap-2">
+                <input type="text" value="عمر شريف فاروق (STU-8821)" class="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 w-64 font-bold text-slate-900 dark:text-white">
+                <button class="px-3 py-1.5 bg-red-700 text-white rounded-xl text-xs font-bold">بحث</button>
+              </div>
+            </div>
+
+            <!-- The 4 Financial Pillars Cards for Selected Student -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div class="text-[10px] text-slate-500 font-bold mb-1">1. إجمالي قيمة العقد (Agreement)</div>
+                <div class="text-lg font-black font-mono-numbers text-slate-900 dark:text-white">5,500.00 ج.م</div>
+                <div class="text-[10px] text-slate-500 mt-1">الأصل: 6,000 - خصم منحة: 500</div>
+              </div>
+              <div class="p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-900/50">
+                <div class="text-[10px] text-amber-700 font-bold mb-1">2. الدفعات المستحقة (Amount Due)</div>
+                <div class="text-lg font-black font-mono-numbers text-amber-700 dark:text-amber-400">3,000.00 ج.م</div>
+                <div class="text-[10px] text-amber-600 mt-1">المتبقي الواجب دفعه: 500 ج.م</div>
+              </div>
+              <div class="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200 dark:border-emerald-900/50">
+                <div class="text-[10px] text-emerald-700 font-bold mb-1">3. المسدد فعلياً (Collections)</div>
+                <div class="text-lg font-black font-mono-numbers text-emerald-700 dark:text-emerald-400">2,500.00 ج.م</div>
+                <div class="text-[10px] text-emerald-600 mt-1">إيصالات معتمدة بالخزينة (2)</div>
+              </div>
+              <div class="p-3 bg-purple-50/50 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-900/50">
+                <div class="text-[10px] text-purple-700 font-bold mb-1">4. الإيراد المحقق (Recognized)</div>
+                <div class="text-lg font-black font-mono-numbers text-purple-700 dark:text-purple-400">2,000.00 ج.م</div>
+                <div class="text-[10px] text-purple-600 mt-1">4 حصص تعليمية منفذة ومثبتة</div>
+              </div>
+            </div>
+
+            <!-- Payment Schedule Table -->
+            <div>
+              <h3 class="text-xs font-bold text-slate-900 dark:text-white mb-2">جدول استحقاق الدفعات والمواعيد:</h3>
+              <div class="overflow-x-auto">
+                <table class="w-full text-xs text-start">
+                  <thead class="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                    <tr>
+                      <th class="py-2 px-3 text-start">#</th>
+                      <th class="py-2 px-3 text-start">مسمى الدفعة</th>
+                      <th class="py-2 px-3 text-start">تاريخ الاستحقاق</th>
+                      <th class="py-2 px-3 text-start">المبلغ المطلوب</th>
+                      <th class="py-2 px-3 text-start">المسدد فعلياً</th>
+                      <th class="py-2 px-3 text-start">المتبقي للسداد</th>
+                      <th class="py-2 px-3 text-start">حالة السداد</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tr>
+                      <td class="py-2 px-3 font-mono">01</td>
+                      <td class="py-2 px-3 font-medium">الدفعة الأولى (التسجيل)</td>
+                      <td class="py-2 px-3 font-mono">2026-09-15</td>
+                      <td class="py-2 px-3 font-mono-numbers">1,500.00 ج.م</td>
+                      <td class="py-2 px-3 font-mono-numbers text-emerald-600 font-bold">1,500.00 ج.م</td>
+                      <td class="py-2 px-3 font-mono-numbers">0.00 ج.م</td>
+                      <td class="py-2 px-3"><span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold">مسدد بالكامل</span></td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 px-3 font-mono">02</td>
+                      <td class="py-2 px-3 font-medium">الدفعة الثانية (شهر أكتوبر)</td>
+                      <td class="py-2 px-3 font-mono">2026-10-15</td>
+                      <td class="py-2 px-3 font-mono-numbers">1,000.00 ج.م</td>
+                      <td class="py-2 px-3 font-mono-numbers text-emerald-600 font-bold">1,000.00 ج.م</td>
+                      <td class="py-2 px-3 font-mono-numbers">0.00 ج.م</td>
+                      <td class="py-2 px-3"><span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold">مسدد بالكامل</span></td>
+                    </tr>
+                    <tr class="bg-amber-50/40 dark:bg-amber-950/20">
+                      <td class="py-2 px-3 font-mono">03</td>
+                      <td class="py-2 px-3 font-medium text-amber-900 dark:text-amber-200">الدفعة الثالثة (شهر نوفمبر)</td>
+                      <td class="py-2 px-3 font-mono text-amber-800">2026-11-01</td>
+                      <td class="py-2 px-3 font-mono-numbers">1,000.00 ج.م</td>
+                      <td class="py-2 px-3 font-mono-numbers text-slate-400">0.00 ج.م</td>
+                      <td class="py-2 px-3 font-mono-numbers text-amber-700 font-bold">1,000.00 ج.م</td>
+                      <td class="py-2 px-3"><span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded font-bold">⚠️ متأخر عن موعده</span></td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 px-3 font-mono">04</td>
+                      <td class="py-2 px-3 font-medium text-slate-400">الدفعة الرابعة (شهر ديسمبر)</td>
+                      <td class="py-2 px-3 font-mono text-slate-400">2026-12-01</td>
+                      <td class="py-2 px-3 font-mono-numbers text-slate-400">1,000.00 ج.م</td>
+                      <td class="py-2 px-3 font-mono-numbers text-slate-400">0.00 ج.م</td>
+                      <td class="py-2 px-3 font-mono-numbers text-slate-400">1,000.00 ج.م</td>
+                      <td class="py-2 px-3"><span class="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded">مجدول مستقبلاً</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Delivered Lessons & Recognition -->
+            <div class="p-4 bg-purple-50/40 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/40 rounded-xl text-xs space-y-1">
+              <div class="font-bold text-purple-900 dark:text-purple-300">خطة التخصيص المعتمدة وإثبات تسليم الخدمة التعليمية (ALLOCATION PLAN & CERTIFIED DELIVERY):</div>
+              <div class="text-purple-800 dark:text-purple-400">
+                تم اعتماد إثبات تسليم الخدمة للحصص 1 إلى 4 (حضور موثق). التخصيص المالي المعتمد للموديول الأول وفق خطة التخصيص غير القابلة للتعديل: <strong>2,000.00 ج.م</strong>.
+                <br>
+                <strong>إجمالي الإيراد التعليمي المعترف به:</strong> 2,000.00 ج.م • <strong>مبالغ محصلة غير مكتسبة (مؤجلة):</strong> 500.00 ج.م (تُعلق لحين اكتمال تسليم الموديول التالي).
+                <br>
+                <span class="text-[10px] text-purple-900 dark:text-purple-300 font-semibold">تنبيه الفصل المالي: الإيراد مشتق حصراً من خطة التخصيص وإثبات التسليم. سياسة أجور المعلمين (UP-704) معلقة ولا تُستنتج من إيرادات الطلاب أو أعداد الحصص.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 4: CASHBOXES & RECONCILIATION (CB-MGT-01) -->
+        <!-- ========================================================================= -->
+        <div id="tab-cashboxes" class="tab-content space-y-6">
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base font-bold text-slate-900 dark:text-white">إدارة الخزائن والنقدية ومحاضر الإغلاق (CB-MGT-01)</h2>
+                <p class="text-xs text-slate-500">مراقبة سيولة التيلز، تحويلات النقدية، وفحص الفروقات قيد التحقيق (UP-705)</p>
+              </div>
+              <button onclick="openTransferModal()" class="px-3.5 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                <span>+ تحويل نقدية بين الخزائن</span>
+              </button>
+            </div>
+
+            <!-- 4 Cashbox Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              
+              <!-- Cashbox 1 -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/40">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-bold text-xs text-slate-900 dark:text-white">خزينة الاستقبال 1</span>
+                  <span class="font-mono text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded">CB-01</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mb-2">فرع الدقي • أمين الخزينة: كاشير 1</div>
+                <div class="text-xl font-black font-mono-numbers text-slate-900 dark:text-white mb-2">24,500.00 ج.م</div>
+                <span class="inline-block text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">إغلاق مطابق ومعتمد</span>
+              </div>
+
+              <!-- Cashbox 2 -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/40">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-bold text-xs text-slate-900 dark:text-white">خزينة الاستقبال 2</span>
+                  <span class="font-mono text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded">CB-02</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mb-2">فرع الدقي • أمين الخزينة: كاشير 2</div>
+                <div class="text-xl font-black font-mono-numbers text-slate-900 dark:text-white mb-2">13,900.00 ج.م</div>
+                <span class="inline-block text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">مفتوحة للجلسة المسائية</span>
+              </div>
+
+              <!-- Cashbox 3: Discrepancy under UP-705 -->
+              <div class="border border-amber-300 dark:border-amber-800 rounded-xl p-4 bg-amber-50/30 dark:bg-amber-950/20">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-bold text-xs text-slate-900 dark:text-white">خزينة كاشير 1 - مدينة نصر</span>
+                  <span class="font-mono text-[10px] bg-amber-200 dark:bg-amber-900 px-1.5 py-0.5 rounded">CB-03</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mb-2">فرع مدينة نصر • أمين الخزينة: هاني كمال</div>
+                <div class="text-xl font-black font-mono-numbers text-amber-700 dark:text-amber-400 mb-2">18,000.00 ج.م</div>
+                <span class="inline-block text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded font-bold">⚠️ عجز -150 ج.م قيد التحقيق</span>
+              </div>
+
+              <!-- Cashbox 4: Central Vault -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/40">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-bold text-xs text-slate-900 dark:text-white">الخزينة الرئيسية - فرع الدقي</span>
+                  <span class="font-mono text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded">CB-MAIN</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mb-2">فرع الدقي (الرئيسي والمقر الإداري - BR-01) • في عهدة المدير الرئيسي</div>
+                <div class="text-xl font-black font-mono-numbers text-slate-900 dark:text-white mb-2">30,000.00 ج.م</div>
+                <span class="inline-block text-[10px] bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-bold">خزينة الودائع المركزية بالمقر الرئيسي</span>
+              </div>
+
+            </div>
+
+            <!-- UP-705 Investigation Panel -->
+            <div class="border border-amber-300 dark:border-amber-800/80 rounded-2xl p-4 bg-amber-50/50 dark:bg-amber-950/40 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="text-base">📁</span>
+                  <h3 class="text-xs font-bold text-slate-900 dark:text-white">ملف التحقيق في فرق جرد الخزينة #DISC-004 (سياسة UP-705 المفتوحة)</h3>
+                </div>
+                <span class="text-[10px] bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded font-mono font-bold">FAIL-CLOSED PROTOCOL</span>
+              </div>
+              <p class="text-xs text-slate-700 dark:text-slate-300">
+                أظهر الجرد الفعلي المسائي لخزينة مدينة نصر (CB-03) وجود نقدية فعلية قدرها <strong>17,850.00 ج.م</strong> مقابل رصيد دفتري مسجل <strong>18,000.00 ج.م</strong> (عجز قدره <strong>-150.00 ج.م</strong>).
+                <br>
+                <strong>الإجراء الإداري المطبق:</strong> تم إبقاء الملف في وضع مراجعة وتحقيق محايد. <em>لا يسمح النظام بالشطب التلقائي، أو تحميل العجز لعهدة الموظف، أو إثبات أرباح فائض، أو توليد قيود محاسبية (سياسة UP-705 معلقة ومحمية).</em>
+              </p>
+              <div class="flex flex-wrap items-center gap-2 pt-1">
+                <button onclick="showPrototypeNotice('تسجيل إفادة أمين الخزينة')" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white rounded-xl text-xs font-bold">تسجيل إفادة أمين الخزينة</button>
+                <button onclick="showPrototypeNotice('طلب تقرير توضيحي من المحاسب')" class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-semibold">طلب تقرير توضيحي من المحاسب</button>
+                <button onclick="showPrototypeNotice('إبقاء الملف قيد التحقيق (UP-705)')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold">إبقاء الملف قيد التحقيق (UP-705)</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 5: APPROVALS CENTER (PM-APPR-01 & EXP-01) -->
+        <!-- ========================================================================= -->
+        <div id="tab-approvals" class="tab-content space-y-6">
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-5">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 dark:text-white">مركز اعتمادات المصروفات والموافقات المالية (Maker-Checker Center)</h2>
+              <p class="text-xs text-slate-500">حلقة التحقق الثنائي: المحاسب يُعِد السندات، والمدير الرئيسي يملك صلاحية التوقيع والاعتماد الحصرية</p>
+            </div>
+
+            <!-- Single High-Fidelity Expense Voucher Review -->
+            <div class="border border-slate-200 dark:border-slate-800 rounded-2xl p-4 bg-slate-50/50 dark:bg-slate-800/20 space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold text-slate-900 dark:text-white font-mono">سند صرف معروض للاعتماد: EXP-2026-1049</span>
+                  <span class="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">بانتظار موافقة المدير</span>
+                </div>
+                <div class="text-xs text-slate-500 font-mono">تاريخ التقديم: 2026-11-03 14:15 • فرع الدقي</div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <span class="text-slate-500 block">بند الصرف ومركز التكلفة:</span>
+                  <strong class="text-slate-900 dark:text-white">صيانة حاسبات وشبكات المعامل التدريبية</strong>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">المبلغ المطلوب اعتماده:</span>
+                  <strong class="text-base text-red-600 font-mono-numbers">2,500.00 ج.م</strong>
+                </div>
+                <div>
+                  <span class="text-slate-500 block">الخزينة المقترحة للصرف:</span>
+                  <strong class="text-slate-900 dark:text-white">خزينة الاستقبال 1 (رصيدها: 24,500 ج.م)</strong>
+                </div>
+              </div>
+
+              <!-- Attachments & Notes -->
+              <div class="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-500">المستفيد: شركة النور لصيانة النظم التكنولوجية</span>
+                  <span class="text-emerald-600 font-bold">المستندات المؤيدة مستوفاة (2)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono text-[11px] text-slate-700 dark:text-slate-300 flex items-center gap-1 border border-slate-200 dark:border-slate-700">
+                    📄 فاتورة_أو_إيصال_المورد_1049.pdf (1.2 MB)
+                  </span>
+                  <span class="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg font-mono text-[11px] text-slate-700 dark:text-slate-300 flex items-center gap-1 border border-slate-200 dark:border-slate-700">
+                    📄 محضر_فحص_واستلام_فني.pdf (840 KB)
+                  </span>
+                </div>
+                <div class="text-slate-600 dark:text-slate-400 text-[11px] pt-1">
+                  <strong>ملاحظات المحاسب (أحمد سمير):</strong> تم توريد قطع الغيار اللازمة لمعمل الحاسب الآلي بقاعة 3 واستلام كفاءة التشغيل بموجب محضر فحص واستلام فني معتمد (المستندات المؤيدة مرنة وتتضمن إيصالات/فواتير/محاضر دون اشتراط حصري لفاتورة ضريبية، ودون تطبيق ضرائب أو ضريبة قيمة مضافة).
+                </div>
+              </div>
+
+              <!-- Manager Decision Controls -->
+              <div class="pt-2 flex flex-wrap items-center gap-3">
+                <button onclick="showPrototypeNotice('اعتماد سند الصرف')" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center gap-1.5">
+                  <span>✔️ اعتماد السند وتفويض الصرف</span>
+                </button>
+                <button onclick="showPrototypeNotice('رفض سند الصرف')" class="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white rounded-xl text-xs font-bold shadow-xs transition">
+                  <span>❌ رفض السند</span>
+                </button>
+                <button onclick="showPrototypeNotice('إعادة السند للمحاسب للاستيفاء')" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-semibold transition">
+                  <span>🔄 إعادة للمحاسب للاستيفاء</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 6: TEACHER OVERSIGHT (PM-TCH-01) -->
+        <!-- ========================================================================= -->
+        <div id="tab-teachers" class="tab-content space-y-6">
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 dark:text-white">متابعة مستحقات وأدلة تدريس المعلمين (PM-TCH-01)</h2>
+              <p class="text-xs text-slate-500">حصر الحصص التعليمية المنفذة وأدلة الحضور المثبتة، مع التحفظ على معادلات التسوية لحين اعتماد اللائحة (UP-704)</p>
+            </div>
+
+            <!-- UP-704 Fail-Closed Policy Banner -->
+            <div class="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-xl p-3 text-xs text-blue-900 dark:text-blue-300 flex items-center gap-2">
+              <span class="text-base">ℹ️</span>
+              <span><strong>تنبيه السياسة UP-704:</strong> لم يتم اعتماد معادلة الأجور النهائية رسمياً (نسبة من الطلاب مقابل أجر الحصة الثابت). يعرض النظام الحصص المنفذة وسجلات الحضور المعتمدة، وتظل التسويات المالية معلقة.</span>
+            </div>
+
+            <div class="space-y-3">
+              <!-- Teacher 1 -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/20">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div>
+                    <span class="font-bold text-sm text-slate-900 dark:text-white">أ. محمد إبراهيم خليل</span>
+                    <span class="text-xs text-slate-500 mr-2">• مادة: الرياضيات التطبيقية • الفروع: الدقي ومدينة نصر</span>
+                  </div>
+                  <span class="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded font-mono">حالة التسوية: بانتظار اللائحة (UP-704)</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div><span class="text-slate-500">الحصص المنفذة:</span> <strong class="font-mono-numbers">12 حصة تدريسية</strong></div>
+                  <div><span class="text-slate-500">ساعات التدريس:</span> <strong class="font-mono-numbers">24 ساعة معتمدة</strong></div>
+                  <div><span class="text-slate-500">حضور الطلاب:</span> <strong class="font-mono-numbers">380 طالباً (92%)</strong></div>
+                  <div><span class="text-slate-500">سلفيات سابقة:</span> <strong class="font-mono-numbers text-red-600">2,000.00 ج.م</strong></div>
+                </div>
+              </div>
+
+              <!-- Teacher 2 -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/20">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div>
+                    <span class="font-bold text-sm text-slate-900 dark:text-white">أ. منى كمال الشريف</span>
+                    <span class="text-xs text-slate-500 mr-2">• مادة: الكيمياء العامة • الفروع: فرع الدقي</span>
+                  </div>
+                  <span class="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded font-mono">حالة التسوية: بانتظار اللائحة (UP-704)</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div><span class="text-slate-500">الحصص المنفذة:</span> <strong class="font-mono-numbers">8 حصص تدريسية</strong></div>
+                  <div><span class="text-slate-500">ساعات التدريس:</span> <strong class="font-mono-numbers">16 ساعة معتمدة</strong></div>
+                  <div><span class="text-slate-500">حضور الطلاب:</span> <strong class="font-mono-numbers">210 طالباً (88%)</strong></div>
+                  <div><span class="text-slate-500">سلفيات سابقة:</span> <strong class="font-mono-numbers">0.00 ج.م</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 7: FINANCIAL REPORTS (PM-RPT-01) -->
+        <!-- ========================================================================= -->
+        <div id="tab-reports" class="tab-content space-y-6">
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
+            <div>
+              <h2 class="text-base font-bold text-slate-900 dark:text-white">مركز التقارير والتدقيق المالي (PM-RPT-01)</h2>
+              <p class="text-xs text-slate-500">تقارير مدققة من واقع السجلات الفعلية (لا توجد توقعات مستقبلية وهمية ولا نماذج ضرائب أو ضريبة قيمة مضافة)</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              
+              <!-- Report 1 -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between">
+                <div>
+                  <div class="font-bold text-xs text-slate-900 dark:text-white mb-1">📊 تقرير التحصيلات النقدية والإلكترونية</div>
+                  <p class="text-[11px] text-slate-500 mb-3">حصر تفصيلي لكافة المقبوضات حسب الفرع، الخزينة، وطريقة الدفع (نقدي / كروت / فوري).</p>
+                </div>
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <button onclick="showPrototypeNotice('تصدير تقرير التحصيلات بصيغة PDF')" class="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold">PDF</button>
+                  <button onclick="showPrototypeNotice('تصدير تقرير التحصيلات بصيغة Excel')" class="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold">Excel</button>
+                </div>
+              </div>
+
+              <!-- Report 2 -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between">
+                <div>
+                  <div class="font-bold text-xs text-slate-900 dark:text-white mb-1">📑 تقرير أعمار الديون والمبالغ المتأخرة للطلاب</div>
+                  <p class="text-[11px] text-slate-500 mb-3">تحليل الدفعات والمبالغ المستحقة غير المسددة مصنفة حسب فترات التأخير (30، 60، أكثر من 90 يوماً).</p>
+                </div>
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <button onclick="showPrototypeNotice('تصدير تقرير أعمار الديون بصيغة PDF')" class="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold">PDF</button>
+                  <button onclick="showPrototypeNotice('تصدير تقرير أعمار الديون بصيغة Excel')" class="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold">Excel</button>
+                </div>
+              </div>
+
+              <!-- Report 3 -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between">
+                <div>
+                  <div class="font-bold text-xs text-slate-900 dark:text-white mb-1">🏢 تقرير المقارنة المالية بين الفروع الحضورية</div>
+                  <p class="text-[11px] text-slate-500 mb-3">مضاهاة نسب التحصيل، الأرصدة المتوفرة، والمصروفات بين فرعي الدقي ومدينة نصر (مع استبعاد الأونلاين المؤجل مالياً).</p>
+                </div>
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <button onclick="showPrototypeNotice('تصدير تقرير مقارنة الفروع بصيغة PDF')" class="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold">PDF</button>
+                  <button onclick="showPrototypeNotice('تصدير تقرير مقارنة الفروع بصيغة Excel')" class="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold">Excel</button>
+                </div>
+              </div>
+
+              <!-- Report 4 -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between">
+                <div>
+                  <div class="font-bold text-xs text-slate-900 dark:text-white mb-1">🔒 سجل حركات الخزائن ومحاضر الإغلاق</div>
+                  <p class="text-[11px] text-slate-500 mb-3">سجل تدقيق كامل لكافة حركات الإيداع، الصرف، التحويل، وفروقات الجرد قيد التحقيق (UP-705).</p>
+                </div>
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <button onclick="showPrototypeNotice('تصدير سجل حركات الخزائن بصيغة PDF')" class="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold">PDF</button>
+                  <button onclick="showPrototypeNotice('تصدير سجل حركات الخزائن بصيغة Excel')" class="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold">Excel</button>
+                </div>
+              </div>
+
+              <!-- Report 5 -->
+              <div class="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between">
+                <div>
+                  <div class="font-bold text-xs text-slate-900 dark:text-white mb-1">🎓 تقرير الإيراد التعليمي المحقق</div>
+                  <p class="text-[11px] text-slate-500 mb-3">بيان الإيراد المكتسب الفعلي من واقع الحصص المسلمة للطلاب مع استبعاد الرسوم المؤجلة.</p>
+                </div>
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <button onclick="showPrototypeNotice('تصدير تقرير الإيراد التعليمي المحقق بصيغة PDF')" class="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold">PDF</button>
+                  <button onclick="showPrototypeNotice('تصدير تقرير الإيراد التعليمي المحقق بصيغة Excel')" class="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold">Excel</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Interactive Modal 1: Inter-Cashbox Transfer -->
+  <div id="modal-transfer" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+          <span>🔄</span>
+          <span>تحويل نقدية بين الخزائن (Atomic Transfer)</span>
+        </h3>
+        <button onclick="closeModal('modal-transfer')" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-500 mb-1">خزينة المصدر (خصم النقدية):</label>
+          <select id="transfer-src" class="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+            <option value="CB01">خزينة الاستقبال 1 - فرع الدقي (الرصيد: 24,500 ج.م)</option>
+            <option value="CB02">خزينة الاستقبال 2 - فرع الدقي (الرصيد: 13,900 ج.م)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-500 mb-1">خزينة الوجهة (إيداع النقدية):</label>
+          <select id="transfer-dst" class="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold">
+            <option value="CBMAIN">الخزينة الرئيسية - فرع الدقي (المقر الرئيسي - BR-01) (الرصيد: 30,000 ج.م)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-500 mb-1">المبلغ المراد تحويله (ج.م):</label>
+          <input type="number" id="transfer-amount" value="5000" class="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold text-slate-900 dark:text-white">
+        </div>
+        <div class="p-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 rounded-xl text-[11px] text-blue-900 dark:text-blue-300">
+          قاعدة الحفظ والتبعية المؤسسية: كافة الخزائن تابعة لفروع المؤسسة حصراً (التحويلات داخلية فقط — التحويل بين مؤسسات مختلفة محظور).
+        </div>
+      </div>
+      <div class="flex items-center gap-2 pt-2">
+        <button onclick="executeTransfer()" class="flex-1 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold transition">
+          تنفيذ التحويل وتأكيد الاستلام
+        </button>
+        <button onclick="closeModal('modal-transfer')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold">
+          إلغاء
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Modal 2: Voucher Approval Inspection -->
+  <div id="modal-voucher" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+          <span>📝</span>
+          <span id="modal-voucher-title">فحص سند صرف #EXP-1049</span>
+        </h3>
+        <button onclick="closeModal('modal-voucher')" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div class="grid grid-cols-2 gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+          <div><span class="text-slate-500">المبلغ المطلوب:</span> <strong id="modal-voucher-amount" class="text-red-600 font-mono-numbers">2,500.00 ج.م</strong></div>
+          <div><span class="text-slate-500">مركز التكلفة:</span> <strong id="modal-voucher-cost">صيانة حاسبات</strong></div>
+        </div>
+        <div>
+          <label class="block text-slate-500 mb-1">ملاحظات وقرار المدير الرئيسي:</label>
+          <textarea class="w-full p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs" rows="2" placeholder="اكتب ملاحظات الاعتماد هنا..."></textarea>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 pt-2">
+        <button onclick="showPrototypeNotice('اعتماد صرف السند'); closeModal('modal-voucher');" class="flex-1 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition">
+          تأكيد الاعتماد والصرف
+        </button>
+        <button onclick="closeModal('modal-voucher')" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold">
+          إغلاق
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Interaction Logic -->
+  <script>
+    // Tab Switching Logic
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
+      
+      const targetTab = document.getElementById(tabId);
+      if (targetTab) targetTab.classList.add('active');
+
+      const targetNav = document.getElementById('nav-' + tabId);
+      if (targetNav) targetNav.classList.add('active');
+
+      // Update breadcrumb
+      const titles = {
+        'tab-dashboard': 'لوحة القيادة التنفيذية',
+        'tab-branches': 'إدارة ومتابعة الفروع',
+        'tab-approvals': 'مركز الاعتمادات والموافقات',
+        'tab-cashboxes': 'الخزائن والنقدية',
+        'tab-students': 'شؤون الطلاب المالية',
+        'tab-teachers': 'مستحقات وأدلة المعلمين',
+        'tab-reports': 'التقارير المالية والتدقيق'
+      };
+      document.getElementById('breadcrumb-current-tab').innerText = titles[tabId] || 'لوحة القيادة';
+    }
+
+    // Branch Scope Filter Simulator
+    function changeBranchScope(val) {
+      const topbarLabel = document.getElementById('topbar-branch-label');
+      const breadcrumbBadge = document.getElementById('breadcrumb-scope-badge');
+      const kpiCol = document.getElementById('kpi-collections');
+      const kpiOver = document.getElementById('kpi-overdue');
+      const kpiCash = document.getElementById('kpi-cashbox');
+      const kpiRev = document.getElementById('kpi-revenue');
+      const kpiSub = document.getElementById('kpi-cashbox-sub');
+
+      if (val === 'ALL') {
+        topbarLabel.innerText = 'المركز بالكامل (عرض موحد - حضوري)';
+        breadcrumbBadge.innerText = 'نطاق: شامل الفروع الحضورية';
+        kpiCol.innerHTML = '110,500.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiOver.innerHTML = '39,700.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiCash.innerHTML = '86,400.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiRev.innerHTML = '93,000.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiSub.innerText = '4 خزائن نشطة بفرعين';
+      } else if (val === 'BR01') {
+        topbarLabel.innerText = 'فرع الدقي (الرئيسي)';
+        breadcrumbBadge.innerText = 'نطاق: فرع الدقي';
+        kpiCol.innerHTML = '62,000.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiOver.innerHTML = '18,200.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiCash.innerHTML = '38,400.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiRev.innerHTML = '52,000.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiSub.innerText = 'خزينتان نشطتان (CB-01, CB-02)';
+      } else if (val === 'BR02') {
+        topbarLabel.innerText = 'فرع مدينة نصر';
+        breadcrumbBadge.innerText = 'نطاق: فرع مدينة نصر';
+        kpiCol.innerHTML = '48,500.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiOver.innerHTML = '21,500.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiCash.innerHTML = '18,000.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiRev.innerHTML = '41,000.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiSub.innerText = 'خزينة كاشير 1 (عجز قيد التحقيق UP-705)';
+      } else if (val === 'ONLINE') {
+        topbarLabel.innerText = 'الفرع الأونلاين (مؤجل — خارج النطاق المالي)';
+        breadcrumbBadge.innerText = 'نطاق: المنصة الرقمية (مؤجل)';
+        kpiCol.innerHTML = '— <span class="text-xs font-bold text-slate-500 font-sans">(مؤجل)</span>';
+        kpiOver.innerHTML = '— <span class="text-xs font-bold text-slate-500 font-sans">(مؤجل)</span>';
+        kpiCash.innerHTML = '0.00 <span class="text-xs font-bold text-slate-500 font-sans">ج.م</span>';
+        kpiRev.innerHTML = '— <span class="text-xs font-bold text-slate-500 font-sans">(مؤجل)</span>';
+        kpiSub.innerText = 'خارج النطاق المالي الحالي (حضوري أولاً)';
+      }
+    }
+
+    // Modal Controls
+    function openTransferModal() {
+      document.getElementById('modal-transfer').classList.remove('hidden');
+    }
+    function openVoucherModal(id, amt, cost) {
+      document.getElementById('modal-voucher-title').innerText = 'فحص سند صرف #' + id;
+      document.getElementById('modal-voucher-amount').innerText = amt;
+      document.getElementById('modal-voucher-cost').innerText = cost;
+      document.getElementById('modal-voucher').classList.remove('hidden');
+    }
+    function openDiscrepancyModal(id, amt, branch) {
+      switchTab('tab-cashboxes');
+    }
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.add('hidden');
+    }
+    // Prototype Interaction Notice Helper
+    function showPrototypeNotice(actionName) {
+      alert('هذه محاكاة تصميمية فقط — لا يتم تنفيذ أي عملية مالية فعلية أو توقيع إلكتروني حقيقي.');
+    }
+
+    function executeTransfer() {
+      showPrototypeNotice('تحويل النقدية بين الخزائن');
+      closeModal('modal-transfer');
+    }
+
+    // Viewport Simulator
+    function setViewport(w) {
+      const container = document.getElementById('app-viewport-container');
+      container.style.maxWidth = w;
+    }
+
+    // Theme Toggle
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      const icon = document.getElementById('theme-icon');
+      icon.innerText = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+    }
+
+    // Sidebar Toggle
+    function toggleSidebarCollapse() {
+      const sidebar = document.getElementById('main-sidebar');
+      const texts = document.querySelectorAll('.sidebar-text');
+      if (sidebar.classList.contains('w-[260px]')) {
+        sidebar.classList.remove('w-[260px]');
+        sidebar.classList.add('w-[72px]');
+        texts.forEach(t => t.classList.add('hidden'));
+      } else {
+        sidebar.classList.remove('w-[72px]');
+        sidebar.classList.add('w-[260px]');
+        texts.forEach(t => t.classList.remove('hidden'));
+      }
+    }
+
+    function triggerPrintModal() {
+      showPrototypeNotice('تصدير ملخص PDF');
+    }
+    function refreshData() {
+      showPrototypeNotice('تحديث الأرقام');
+    }
+  </script>
+</body>
+</html>
+

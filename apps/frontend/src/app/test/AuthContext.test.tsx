@@ -43,8 +43,8 @@ describe('AuthContext', () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
 
     await act(async () => {
-      const success = await result.current.login('test@test.com', 'password', 'ONLINE_STUDENT');
-      expect(success).toBe(true);
+      const res = await result.current.login('test@test.com', 'password', 'ONLINE_STUDENT');
+      expect(res?.success ?? res).toBe(true);
     });
 
     expect(localStorage.getItem('token')).toBe('test-token');

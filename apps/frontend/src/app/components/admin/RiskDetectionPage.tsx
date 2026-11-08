@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState } from 'react';
 import { AlertTriangle, Brain, TrendingDown, Phone, MessageCircle, Eye, Filter } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -7,6 +8,7 @@ import { useEffect } from 'react';
 import { analyticsApi } from '../../services/api';
 
 export default function RiskDetectionPage() {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
   const [filter, setFilter] = useState('all');
   const [riskStudents, setRiskStudents] = useState<any[]>([]);
@@ -50,8 +52,8 @@ export default function RiskDetectionPage() {
             <Brain className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className={`text-2xl font-bold ${textPrimary}`}>كشف الطلاب في خطر</h1>
-            <p className={textSecondary}>نظام الذكاء الاصطناعي لاكتشاف حالات الخطر مبكراً والتدخل السريع</p>
+            <h1 className={`text-2xl font-bold ${textPrimary}`}>{t('كشف الطلاب في خطر')}</h1>
+            <p className={textSecondary}>{t('نظام الذكاء الاصطناعي لاكتشاف حالات الخطر مبكراً والتدخل السريع')}</p>
           </div>
         </div>
       </div>
@@ -81,14 +83,14 @@ export default function RiskDetectionPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Risk by Subject */}
         <div className={`${cardBg} border rounded-2xl p-6`}>
-          <h2 className={`font-bold ${textPrimary} mb-6`}>الخطر حسب المادة</h2>
+          <h2 className={`font-bold ${textPrimary} mb-6`}>{t('الخطر حسب المادة')}</h2>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={riskBySubject} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#374151' : '#f0f0f0'} />
               <XAxis type="number" tick={{ fill: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }} />
               <YAxis dataKey="subject" type="category" tick={{ fill: isDark ? '#9ca3af' : '#6b7280', fontSize: 11 }} width={70} />
               <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="count" fill="#ef4444" radius={[0, 6, 6, 0]} name="عدد الطلاب" />
+              <Bar dataKey="count" fill="#ef4444" radius={[0, 6, 6, 0]} name={t('عدد الطلاب')} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -97,7 +99,7 @@ export default function RiskDetectionPage() {
         <div className={`lg:col-span-2 ${cardBg} border rounded-2xl p-6`}>
           <div className="flex items-center gap-2 mb-4">
             <Brain className="w-5 h-5 text-purple-600" />
-            <h2 className={`font-bold ${textPrimary}`}>تحليل الذكاء الاصطناعي</h2>
+            <h2 className={`font-bold ${textPrimary}`}>{t('تحليل الذكاء الاصطناعي')}</h2>
           </div>
           <div className="space-y-4">
             {[
@@ -146,9 +148,9 @@ export default function RiskDetectionPage() {
       {/* Risk Students List */}
       <div className="space-y-4">
         {loading ? (
-           <div className="text-center py-8">جاري تحميل البيانات...</div>
+           <div className="text-center py-8">{t('جاري تحميل البيانات...')}</div>
         ) : filtered.length === 0 ? (
-           <div className="text-center py-8 text-gray-500">لا توجد حالات خطرة مسجلة</div>
+           <div className="text-center py-8 text-gray-500">{t('لا توجد حالات خطرة مسجلة')}</div>
         ) : filtered.map((student, idx) => {
           const riskStyle = riskColors[student.risk as keyof typeof riskColors] || riskColors['متوسط'];
           return (
@@ -162,14 +164,14 @@ export default function RiskDetectionPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className={`font-bold ${textPrimary}`}>{student.name}</h3>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${riskStyle.bg} ${riskStyle.text}`}>
-                        خطر {student.risk}
+                        {t('خطر')} {student.risk}
                       </span>
                     </div>
-                    <p className={`text-sm ${textSecondary} mb-2`}>{student.grade} • {student.type} • آخر نشاط: {student.lastActivity}</p>
+                    <p className={`text-sm ${textSecondary} mb-2`}>{student.grade} • {student.type} {t('• آخر نشاط:')} {student.lastActivity}</p>
                     
                     {/* Risk Score Bar */}
                     <div className="flex items-center gap-3 mb-3">
-                      <span className={`text-xs ${textSecondary}`}>مؤشر الخطر:</span>
+                      <span className={`text-xs ${textSecondary}`}>{t('مؤشر الخطر:')}</span>
                       <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div
                           className={`h-2 rounded-full ${student.riskScore >= 80 ? 'bg-red-500' : student.riskScore >= 60 ? 'bg-orange-500' : 'bg-yellow-500'}`}
@@ -177,7 +179,7 @@ export default function RiskDetectionPage() {
                         />
                       </div>
                       <span className={`text-xs font-bold ${student.riskScore >= 80 ? 'text-red-600' : student.riskScore >= 60 ? 'text-orange-600' : 'text-yellow-600'}`}>
-                        {student.riskScore}٪
+                        {student.riskScore}{t('٪')}
                       </span>
                     </div>
 
@@ -195,17 +197,17 @@ export default function RiskDetectionPage() {
                 {/* Actions */}
                 <div className="flex flex-col gap-2 flex-shrink-0">
                   <div className={`text-right mb-2`}>
-                    <span className="text-2xl font-bold text-red-600">{student.avg}٪</span>
-                    <p className="text-xs text-red-500 font-medium">{student.trend}٪ هذا الشهر</p>
+                    <span className="text-2xl font-bold text-red-600">{student.avg}{t('٪')}</span>
+                    <p className="text-xs text-red-500 font-medium">{student.trend}{t('٪ هذا الشهر')}</p>
                   </div>
                   <button className="flex items-center gap-1 bg-gradient-to-l from-purple-600 to-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-90">
-                    <Eye className="w-3 h-3" /> الملف
+                    <Eye className="w-3 h-3" /> {t('الملف')}
                   </button>
                   <button className="flex items-center gap-1 bg-gradient-to-l from-cyan-600 to-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-90">
-                    <MessageCircle className="w-3 h-3" /> رسالة
+                    <MessageCircle className="w-3 h-3" /> {t('رسالة')}
                   </button>
                   <button className="flex items-center gap-1 border border-green-500 text-green-600 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-green-50">
-                    <Phone className="w-3 h-3" /> ولي الأمر
+                    <Phone className="w-3 h-3" /> {t('ولي الأمر')}
                   </button>
                 </div>
               </div>

@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -7,6 +8,7 @@ import { isGoogleDriveUrl } from '../../utils/videoUtils';
 import { ArrowRight, BookOpen, CheckCircle, Clock, Video, Loader2, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function StudentReportPage() {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -53,7 +55,7 @@ export default function StudentReportPage() {
     return (
       <div className="p-8 font-['Cairo']" dir="rtl">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#9e1b1b] font-bold hover:underline mb-6">
-          <ArrowRight className="w-5 h-5" /> رجوع
+          <ArrowRight className="w-5 h-5" /> {t('رجوع')}
         </button>
         <div className={`p-8 rounded-2xl border flex flex-col items-center justify-center min-h-[300px] ${isDark ? 'bg-red-950/20 border-red-900/40 text-rose-300' : 'bg-rose-50 border-rose-200 text-rose-700'}`}>
           <AlertCircle className="w-12 h-12 mb-4 text-[#9e1b1b]" />
@@ -66,7 +68,7 @@ export default function StudentReportPage() {
   return (
     <div className={`p-6 lg:p-8 ${isDark ? 'bg-[#090b10]' : 'bg-slate-50'} min-h-full font-['Cairo']`} dir="rtl">
       <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-[#9e1b1b] font-bold hover:underline mb-6">
-        <ArrowRight className="w-5 h-5" /> رجوع إلى قائمة الطلاب
+        <ArrowRight className="w-5 h-5" /> {t('رجوع إلى قائمة الطلاب')}
       </button>
 
       <div className="flex items-center gap-4 mb-8">
@@ -84,7 +86,7 @@ export default function StudentReportPage() {
         <div className={`${cardBg} border rounded-2xl p-6`}>
           <div className="flex items-center gap-2 mb-4">
             <CheckCircle className="w-5 h-5 text-emerald-600" />
-            <h2 className={`text-lg font-bold ${textPrimary}`}>الامتحانات ({report.examAttempts?.length || 0})</h2>
+            <h2 className={`text-lg font-bold ${textPrimary}`}>{t('الامتحانات (')}{report.examAttempts?.length || 0})</h2>
           </div>
           {report.examAttempts?.length > 0 ? (
             <div className="space-y-3">
@@ -96,14 +98,14 @@ export default function StudentReportPage() {
                   </div>
                   <div className="flex flex-col gap-2 items-end">
                     <span className={`font-bold px-2.5 py-1 rounded-lg text-sm ${attempt.score >= 50 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'}`}>
-                      {attempt.score}٪
+                      {attempt.score}{t('٪')}
                     </span>
                     {(attempt.examId || attempt.assessmentId) && attempt.id && (
                       <button 
                         onClick={() => navigate(`/teacher/assessment/${attempt.examId || attempt.assessmentId}/review/${attempt.id}`)}
                         className="text-xs text-[#9e1b1b] hover:underline font-bold"
                       >
-                        عرض النتيجة التفصيلية ←
+                        {t('عرض النتيجة التفصيلية ←')}
                       </button>
                     )}
                   </div>
@@ -111,7 +113,7 @@ export default function StudentReportPage() {
               ))}
             </div>
           ) : (
-            <p className={`text-sm ${textSecondary}`}>لم يقدم أي امتحانات بعد.</p>
+            <p className={`text-sm ${textSecondary}`}>{t('لم يقدم أي امتحانات بعد.')}</p>
           )}
         </div>
 
@@ -119,7 +121,7 @@ export default function StudentReportPage() {
         <div className={`${cardBg} border rounded-2xl p-6`}>
           <div className="flex items-center gap-2 mb-4">
             <BookOpen className="w-5 h-5 text-[#9e1b1b]" />
-            <h2 className={`text-lg font-bold ${textPrimary}`}>الواجبات المسلمة ({report.submissions?.length || 0})</h2>
+            <h2 className={`text-lg font-bold ${textPrimary}`}>{t('الواجبات المسلمة (')}{report.submissions?.length || 0})</h2>
           </div>
           {report.submissions?.length > 0 ? (
             <div className="space-y-3">
@@ -138,7 +140,7 @@ export default function StudentReportPage() {
                         onClick={() => navigate(`/teacher/assessment/${sub.homeworkId || sub.assessmentId}/review/${sub.id}`)}
                         className="text-xs text-[#9e1b1b] hover:underline font-bold"
                       >
-                        عرض النتيجة التفصيلية ←
+                        {t('عرض النتيجة التفصيلية ←')}
                       </button>
                     )}
                   </div>
@@ -146,7 +148,7 @@ export default function StudentReportPage() {
               ))}
             </div>
           ) : (
-            <p className={`text-sm ${textSecondary}`}>لم يسلم أي واجبات بعد.</p>
+            <p className={`text-sm ${textSecondary}`}>{t('لم يسلم أي واجبات بعد.')}</p>
           )}
         </div>
 
@@ -154,7 +156,7 @@ export default function StudentReportPage() {
         <div className={`${cardBg} border rounded-2xl p-6 md:col-span-2`}>
           <div className="flex items-center gap-2 mb-4">
             <Video className="w-5 h-5 text-purple-600" />
-            <h2 className={`text-lg font-bold ${textPrimary}`}>التقدم في الفيديوهات وتحليل المخاطر ({videoAnalytics.length})</h2>
+            <h2 className={`text-lg font-bold ${textPrimary}`}>{t('التقدم في الفيديوهات وتحليل المخاطر (')}{videoAnalytics.length})</h2>
           </div>
           {videoAnalytics.length > 0 ? (
             <div className="space-y-4">
@@ -200,32 +202,31 @@ export default function StudentReportPage() {
                     {isExpanded && (
                       <div className={`p-4 border-t ${isDark ? 'border-gray-600' : 'border-gray-200'} grid grid-cols-1 sm:grid-cols-2 gap-4`}>
                         <div className="space-y-2">
-                          <p className={`text-sm ${textSecondary}`}>حالة الإكمال: <span className={`font-medium ${textPrimary}`}>{completionText}</span></p>
-                          <p className={`text-sm ${textSecondary}`}>نسبة المشاهدة: <span className={`font-medium ${textPrimary}`}>{isDrive ? 'غير متاح' : `${Math.round(vp.progress)}%`}</span></p>
-                          <p className={`text-sm ${textSecondary}`}>وقت المشاهدة: <span className={`font-medium ${textPrimary}`}>{isDrive ? 'غير متاح' : `${Math.floor(vp.totalWatchTimeSec / 60)} دقيقة`}</span></p>
-                          <p className={`text-sm ${textSecondary}`}>الجلسات: <span className={`font-medium ${textPrimary}`}>{isDrive ? 'غير متاح' : vp.watchSessionsCount}</span></p>
-                          {isDrive && <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">⚠ لا يمكن التحقق من المشاهدة التفصيلية بسبب قيود Google Drive.</p>}
+                          <p className={`text-sm ${textSecondary}`}>{t('حالة الإكمال:')} <span className={`font-medium ${textPrimary}`}>{completionText}</span></p>
+                          <p className={`text-sm ${textSecondary}`}>{t('نسبة المشاهدة:')} <span className={`font-medium ${textPrimary}`}>{isDrive ? 'غير متاح' : `${Math.round(vp.progress)}%`}</span></p>
+                          <p className={`text-sm ${textSecondary}`}>{t('وقت المشاهدة:')} <span className={`font-medium ${textPrimary}`}>{isDrive ? 'غير متاح' : `${Math.floor(vp.totalWatchTimeSec / 60)} دقيقة`}</span></p>
+                          <p className={`text-sm ${textSecondary}`}>{t('الجلسات:')} <span className={`font-medium ${textPrimary}`}>{isDrive ? 'غير متاح' : vp.watchSessionsCount}</span></p>
+                          {isDrive && <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2">{t('⚠ لا يمكن التحقق من المشاهدة التفصيلية بسبب قيود Google Drive.')}</p>}
                         </div>
                         <div className="space-y-2 border-r pr-4 border-gray-200 dark:border-gray-700">
                           <h4 className={`font-bold text-sm mb-2 flex items-center gap-2 ${textPrimary}`}>
-                            سجل المخاطر
+                            {t('سجل المخاطر')}
                           </h4>
                           {vp.riskHistory?.length > 0 ? (
                             vp.riskHistory.map((rh: any, rid: number) => (
                               <div key={rid} className="mb-2">
                                 <p className="text-xs text-red-500">
-                                  {new Date(rh.detectedAt).toLocaleDateString('ar-EG')} - تم اكتشاف الخطر 
-                                  ({rh.riskCode === 'NOT_OPENED_3_DAYS' ? 'لم يفتح الطالب درس الفيديو خلال 3 أيام من إتاحته.' : rh.riskCode === 'NOT_STARTED_3_DAYS' ? 'لم يبدأ الطالب تشغيل الفيديو خلال 3 أيام من إتاحته.' : rh.riskCode})
+                                  {new Date(rh.detectedAt).toLocaleDateString('ar-EG')} {t('- تم اكتشاف الخطر \n                                  (')}{rh.riskCode === 'NOT_OPENED_3_DAYS' ? 'لم يفتح الطالب درس الفيديو خلال 3 أيام من إتاحته.' : rh.riskCode === 'NOT_STARTED_3_DAYS' ? 'لم يبدأ الطالب تشغيل الفيديو خلال 3 أيام من إتاحته.' : rh.riskCode})
                                 </p>
                                 {rh.resolvedAt && (
                                   <p className="text-xs text-green-500 mt-1">
-                                    {new Date(rh.resolvedAt).toLocaleDateString('ar-EG')} - تم الحل ({rh.resolutionCode === 'LESSON_OPENED' ? 'تم فتح الدرس' : rh.resolutionCode === 'VIDEO_STARTED' ? 'بدأ تشغيل الفيديو' : rh.resolutionCode})
+                                    {new Date(rh.resolvedAt).toLocaleDateString('ar-EG')} {t('- تم الحل (')}{rh.resolutionCode === 'LESSON_OPENED' ? 'تم فتح الدرس' : rh.resolutionCode === 'VIDEO_STARTED' ? 'بدأ تشغيل الفيديو' : rh.resolutionCode})
                                   </p>
                                 )}
                               </div>
                             ))
                           ) : (
-                            <p className={`text-xs ${textSecondary}`}>لم يتم تسجيل أي مخاطر سابقة.</p>
+                            <p className={`text-xs ${textSecondary}`}>{t('لم يتم تسجيل أي مخاطر سابقة.')}</p>
                           )}
                           
                           {/* Teacher manual completion for Google Drive */}
@@ -243,7 +244,7 @@ export default function StudentReportPage() {
                               }}
                               className="mt-4 px-3 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 rounded-lg text-xs font-bold transition-colors"
                             >
-                              تأكيد اكتمال المشاهدة
+                              {t('تأكيد اكتمال المشاهدة')}
                             </button>
                           )}
                         </div>
@@ -254,7 +255,7 @@ export default function StudentReportPage() {
               })}
             </div>
           ) : (
-            <p className={`text-sm ${textSecondary}`}>لم يتم إسناد أو مشاهدة أي فيديوهات بعد.</p>
+            <p className={`text-sm ${textSecondary}`}>{t('لم يتم إسناد أو مشاهدة أي فيديوهات بعد.')}</p>
           )}
         </div>
 
@@ -262,7 +263,7 @@ export default function StudentReportPage() {
         <div className={`${cardBg} border rounded-2xl p-6`}>
           <div className="flex items-center gap-2 mb-4">
             <Clock className="w-5 h-5 text-orange-600" />
-            <h2 className={`text-lg font-bold ${textPrimary}`}>سجل الحضور ({report.attendances?.length || 0})</h2>
+            <h2 className={`text-lg font-bold ${textPrimary}`}>{t('سجل الحضور (')}{report.attendances?.length || 0})</h2>
           </div>
           {report.attendances?.length > 0 ? (
             <div className="space-y-3">
@@ -282,7 +283,7 @@ export default function StudentReportPage() {
               ))}
             </div>
           ) : (
-            <p className={`text-sm ${textSecondary}`}>لا يوجد سجل حضور.</p>
+            <p className={`text-sm ${textSecondary}`}>{t('لا يوجد سجل حضور.')}</p>
           )}
         </div>
       </div>

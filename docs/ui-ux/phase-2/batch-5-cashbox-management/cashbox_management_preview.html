@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة الخزائن والسيولة النقدية — أكاديمية أوكس التعليمية | OX-DIGITAL Education</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Cairo & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Cairo', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+              900: '#082f49',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+    }
+    .font-mono-numbers {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-full flex flex-col antialiased">
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="fixed bottom-6 left-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-slate-900/95 text-white px-5 py-3.5 rounded-xl shadow-2xl border border-slate-700/80 flex items-center gap-3 max-w-md">
+      <div class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></div>
+      <div>
+        <p class="text-xs text-amber-300 font-bold mb-0.5">تنبيه النموذج التفاعلي (Design Prototype)</p>
+        <p class="text-xs text-slate-200" id="toastMessage">هذه محاكاة تصميمية فقط — لا يتم تنفيذ أي عملية مالية فعلية.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Global App Shell Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Brand & Context -->
+        <div class="flex items-center gap-4">
+          <div class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+            OX
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">الفرع الرئيسي • الدقي</span>
+              <span class="text-xs text-slate-400">|</span>
+              <span class="text-xs text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">الخزائن الفعلية نشطة</span>
+            </div>
+            <h1 class="text-base font-bold text-slate-900 leading-tight">إدارة الخزائن والسيولة النقدية <span class="text-xs text-slate-500 font-normal">(Cashbox Management)</span></h1>
+          </div>
+        </div>
+
+        <!-- Controls: Branch Scope & Persona Switcher -->
+        <div class="flex items-center gap-3">
+          
+          <!-- Branch Selector -->
+          <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 text-xs">
+            <span class="text-slate-500">نطاق الفروع:</span>
+            <select id="branchSelector" onchange="filterBranchScope(this.value)" class="bg-transparent font-bold text-slate-800 outline-none cursor-pointer">
+              <option value="ALL">جميع الفروع (المدير الرئيسي)</option>
+              <option value="BR-01">فرع الدقي (BR-01) — 3 خزائن</option>
+              <option value="BR-02">فرع مدينة نصر (BR-02) — خزينة واحدة</option>
+            </select>
+          </div>
+
+          <!-- Role Indicator -->
+          <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
+            <div class="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold">
+              م ر
+            </div>
+            <div class="text-right">
+              <p class="text-xs font-bold text-slate-900 leading-none">أحمد سمير</p>
+              <p class="text-[10px] text-brand-600 font-semibold leading-none mt-0.5">المدير الرئيسي (Primary Manager)</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Prototype Synthetic Disclaimer Banner -->
+  <div class="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2 text-xs flex items-center justify-between">
+    <div class="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amber-500 inline-block animate-ping"></span>
+        <span class="font-bold">بيانات تجريبية مصطنعة (DEMO DATA):</span>
+        <span>كافة مبالغ الخزائن والحركات المسجلة هي بيانات تصميمية فقط لتوثيق دورة العمل واعتماد السياسة المالية.</span>
+      </div>
+      <div class="text-[11px] font-mono text-amber-800 bg-amber-100/80 px-2.5 py-0.5 rounded border border-amber-300">
+        UP-705: قيد المراجعة الحيادية (OPEN)
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+    <!-- Consolidated Institutional Cash Position & Liquidity KPI Bar -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- KPI 1: Cashbox Book Balances -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-slate-500">أرصدة الخزائن الدفترية (داخل الخزائن)</span>
+          <span class="text-[11px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded">4 خزائن معتمدة</span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl font-extrabold text-slate-900 font-mono-numbers tracking-tight" id="kpiBookLiquidity">86,400.00</span>
+          <span class="text-xs font-bold text-slate-500">ج.م</span>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-2 flex items-center gap-1.5">
+          <span>✓</span> مجموع الأرصدة المستقرة داخل الخزائن الأربعة
+        </p>
+      </div>
+
+      <!-- KPI 2: Cash in Transit -->
+      <div class="bg-white p-5 rounded-2xl border border-blue-200 shadow-xs relative overflow-hidden bg-gradient-to-br from-white to-blue-50/20">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-blue-950">نقد قيد النقل بين الخزائن (Cash in Transit)</span>
+          <span class="text-[11px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded border border-blue-200">تحويل #TRF-104</span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl font-extrabold text-blue-600 font-mono-numbers tracking-tight" id="kpiCashInTransit">1,500.00</span>
+          <span class="text-xs font-bold text-blue-700">ج.م</span>
+        </div>
+        <p class="text-[11px] text-blue-700 mt-2">
+          خُصم من CB-01 وفي الطريق إلى CB-MAIN (لم يُودع بعد)
+        </p>
+      </div>
+
+      <!-- KPI 3: Total Institutional Cash Position -->
+      <div class="bg-white p-5 rounded-2xl border-2 border-emerald-300 shadow-xs relative overflow-hidden bg-gradient-to-br from-white to-emerald-50/30">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-emerald-950">إجمالي المركز النقدي للمؤسسة (Total Cash Position)</span>
+          <span class="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">الخزائن + الترانزيت</span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl font-extrabold text-emerald-700 font-mono-numbers tracking-tight" id="kpiTotalInstitutionalCash">87,900.00</span>
+          <span class="text-xs font-bold text-emerald-800">ج.م</span>
+        </div>
+        <p class="text-[11px] text-emerald-800 mt-2 font-medium">
+          86,400.00 (خزائن) + 1,500.00 (ترانزيت) = 87,900.00 ج.م
+        </p>
+      </div>
+
+      <!-- KPI 4: Actual Counted Cash & Discrepancy -->
+      <div class="bg-white p-5 rounded-2xl border border-amber-200 shadow-xs relative overflow-hidden bg-gradient-to-br from-white to-amber-50/30">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-amber-950">إجمالي النقد الفعلي وصافي الفروق</span>
+          <span class="text-[11px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">UP-705 مفتوحة</span>
+        </div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl font-extrabold text-slate-900 font-mono-numbers tracking-tight" id="kpiCountedCash">86,250.00</span>
+          <span class="text-xs font-bold text-slate-500">ج.م</span>
+          <span class="text-xs font-bold text-amber-700 mr-2" id="kpiDiscrepancy">(-150.00 ج.م)</span>
+        </div>
+        <p class="text-[11px] text-amber-800 mt-2 font-medium">
+          عجز دفتري قيد التحقيق بخزينة CB-03 (لا شطب ولا تحميل)
+        </p>
+      </div>
+
+    </section>
+
+    <!-- Workspace Tabs Navigation -->
+    <div class="border-b border-slate-200 flex flex-wrap gap-2 text-sm font-bold bg-white p-1 rounded-xl shadow-2xs">
+      <button onclick="switchTab('tab-overview', this)" class="tab-btn px-4 py-2.5 rounded-lg text-brand-700 bg-brand-50 border border-brand-200 transition-all flex items-center gap-2">
+        <span>🏛️</span>
+        <span>دليل الخزائن المعتمدة</span>
+      </button>
+      <button onclick="switchTab('tab-movements', this)" class="tab-btn px-4 py-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center gap-2">
+        <span>📜</span>
+        <span>سجل الحركات التفصيلي</span>
+      </button>
+      <button onclick="switchTab('tab-transfers', this)" class="tab-btn px-4 py-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center gap-2">
+        <span>🔄</span>
+        <span>التحويلات الداخلية (5 مراحل)</span>
+        <span class="bg-blue-100 text-blue-800 text-[10px] px-1.5 py-0.5 rounded-full font-mono">1 معلق</span>
+      </button>
+      <button onclick="switchTab('tab-reconcile', this)" class="tab-btn px-4 py-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center gap-2">
+        <span>⚖️</span>
+        <span>المطابقة اليومية والعد الفعلي</span>
+      </button>
+      <button onclick="switchTab('tab-discrepancy', this)" class="tab-btn px-4 py-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center gap-2">
+        <span>⚠️</span>
+        <span>ملف التحقيق في الفروق (UP-705)</span>
+        <span class="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.5 rounded-full font-mono">-150 ج.م</span>
+      </button>
+      <button onclick="switchTab('tab-expenses', this)" class="tab-btn px-4 py-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center gap-2">
+        <span>🧾</span>
+        <span>أذونات الصرف والمصروفات</span>
+      </button>
+      <button onclick="switchTab('tab-audit', this)" class="tab-btn px-4 py-2.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all flex items-center gap-2">
+        <span>🛡️</span>
+        <span>سجل التدقيق والمستندات</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: CASHBOX DIRECTORY (CBM-OVR-01) -->
+    <div id="tab-overview" class="tab-content active space-y-4">
+      
+      <!-- Top Action Bar -->
+      <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs">
+        <div>
+          <h2 class="text-sm font-bold text-slate-900">الخزائن الفعلية الأربعة المعتمدة بالمؤسسة</h2>
+          <p class="text-xs text-slate-500">تم التخصيص الحصري للمراكز التعليمية؛ الخزينة المركزية تابعة تنظيمياً لفرع الدقي (BR-01).</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openModal('modal-transfer-request')" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center gap-1.5">
+            <span>+</span> طلب تحويل داخلي
+          </button>
+          <button onclick="openModal('modal-expense-voucher')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center gap-1.5">
+            <span>+</span> إذن صرف نثريات
+          </button>
+        </div>
+      </div>
+
+      <!-- Cashbox Cards Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Cashbox 1: CB-01 (Dokki) -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:border-brand-300 transition-all">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-mono text-xs font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">CB-01</span>
+                <span class="text-xs font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded">فرع الدقي (BR-01)</span>
+              </div>
+              <h3 class="text-base font-bold text-slate-900">خزينة الاستقبال 1 — الشباك الرئيسي</h3>
+              <p class="text-xs text-slate-500">أمين العهدة: محمود حسن (كاشير الخزينة)</p>
+            </div>
+            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+              <span>✓</span> متطابقة تماماً
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl mb-4 border border-slate-100">
+            <div>
+              <p class="text-[11px] text-slate-500 font-medium">الرصيد الدفتري الحالي</p>
+              <p class="text-lg font-extrabold text-slate-900 font-mono-numbers">24,500.00 <span class="text-xs font-bold text-slate-500">ج.م</span></p>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-500 font-medium">آخر عد فعلي مسجل</p>
+              <p class="text-lg font-extrabold text-emerald-700 font-mono-numbers">24,500.00 <span class="text-xs font-bold text-emerald-600">ج.م</span></p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs pt-3 border-t border-slate-100">
+            <span class="text-slate-400">آخر حركة: منذ 12 دقيقة (تحصيل #REC-9912)</span>
+            <div class="flex items-center gap-2">
+              <button onclick="selectCashboxAndTab('CB-01', 'tab-movements')" class="text-brand-600 hover:text-brand-800 font-bold hover:underline">عرض الحركات</button>
+              <span class="text-slate-300">|</span>
+              <button onclick="navigateToReconcile('CB-01')" class="text-slate-600 hover:text-slate-900 font-semibold">مطابقة الوردية</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cashbox 2: CB-02 (Dokki) -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs hover:border-brand-300 transition-all">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-mono text-xs font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">CB-02</span>
+                <span class="text-xs font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded">فرع الدقي (BR-01)</span>
+              </div>
+              <h3 class="text-base font-bold text-slate-900">خزينة الاستقبال 2 — الشباك الثانوي</h3>
+              <p class="text-xs text-slate-500">أمين العهدة: أحمد سمير (كاشير الخزينة)</p>
+            </div>
+            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+              <span>✓</span> متطابقة تماماً
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl mb-4 border border-slate-100">
+            <div>
+              <p class="text-[11px] text-slate-500 font-medium">الرصيد الدفتري الحالي</p>
+              <p class="text-lg font-extrabold text-slate-900 font-mono-numbers">13,900.00 <span class="text-xs font-bold text-slate-500">ج.م</span></p>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-500 font-medium">آخر عد فعلي مسجل</p>
+              <p class="text-lg font-extrabold text-emerald-700 font-mono-numbers">13,900.00 <span class="text-xs font-bold text-emerald-600">ج.م</span></p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs pt-3 border-t border-slate-100">
+            <span class="text-slate-400">آخر حركة: منذ ساعة (تحصيل #REC-9894)</span>
+            <div class="flex items-center gap-2">
+              <button onclick="selectCashboxAndTab('CB-02', 'tab-movements')" class="text-brand-600 hover:text-brand-800 font-bold hover:underline">عرض الحركات</button>
+              <span class="text-slate-300">|</span>
+              <button onclick="navigateToReconcile('CB-02')" class="text-slate-600 hover:text-slate-900 font-semibold">مطابقة الوردية</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cashbox 3: CB-MAIN (Central Vault - Dokki BR-01) -->
+        <div class="bg-white rounded-2xl border-2 border-brand-200 p-5 shadow-xs relative bg-gradient-to-br from-white to-brand-50/20">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-mono text-xs font-bold bg-brand-700 text-white px-2 py-0.5 rounded shadow-2xs">CB-MAIN</span>
+                <span class="text-xs font-bold text-brand-800 bg-brand-100 px-2 py-0.5 rounded border border-brand-300">الخزينة المركزية (الرئيسية)</span>
+                <span class="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">فرع الدقي (BR-01)</span>
+              </div>
+              <h3 class="text-base font-bold text-slate-900">خزينة حفظ النقد المركزية (Central Vault)</h3>
+              <p class="text-xs text-slate-500">أمين الخزينة المستلم: أ. رأفت توفيق (CB-MAIN)</p>
+            </div>
+            <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+              <span>✓</span> متطابقة تماماً
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 p-3 bg-white rounded-xl mb-4 border border-brand-100 shadow-2xs">
+            <div>
+              <p class="text-[11px] text-slate-500 font-medium">الرصيد الدفتري الحالي</p>
+              <p class="text-lg font-extrabold text-slate-900 font-mono-numbers">30,000.00 <span class="text-xs font-bold text-slate-500">ج.م</span></p>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-500 font-medium">آخر عد فعلي مسجل</p>
+              <p class="text-lg font-extrabold text-emerald-700 font-mono-numbers">30,000.00 <span class="text-xs font-bold text-emerald-600">ج.م</span></p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs pt-3 border-t border-slate-100">
+            <span class="text-slate-400">آخر حركة: منذ ساعتين (استلام تحويل #TRF-102)</span>
+            <div class="flex items-center gap-2">
+              <button onclick="selectCashboxAndTab('CB-MAIN', 'tab-movements')" class="text-brand-600 hover:text-brand-800 font-bold hover:underline">عرض الحركات</button>
+              <span class="text-slate-300">|</span>
+              <button onclick="navigateToReconcile('CB-MAIN')" class="text-slate-600 hover:text-slate-900 font-semibold">مطابقة الوردية</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cashbox 4: CB-03 (Nasr City) -->
+        <div class="bg-white rounded-2xl border-2 border-amber-300 p-5 shadow-xs relative bg-gradient-to-br from-white to-amber-50/30">
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-mono text-xs font-bold bg-slate-800 text-white px-2 py-0.5 rounded">CB-03</span>
+                <span class="text-xs font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">فرع مدينة نصر (BR-02)</span>
+              </div>
+              <h3 class="text-base font-bold text-slate-900">خزينة الفرع الرئيسية — مدينة نصر</h3>
+              <p class="text-xs text-slate-500">أمين العهدة: كريم النجار (كاشير الخزينة)</p>
+            </div>
+            <span class="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 animate-pulse">
+              <span>⚠️</span> فارق قيد التحقيق (UP-705)
+            </span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 p-3 bg-amber-50/60 rounded-xl mb-4 border border-amber-200">
+            <div>
+              <p class="text-[11px] text-slate-600 font-medium">الرصيد الدفتري</p>
+              <p class="text-base font-extrabold text-slate-900 font-mono-numbers">18,000.00 <span class="text-[10px] text-slate-500">ج.م</span></p>
+            </div>
+            <div>
+              <p class="text-[11px] text-slate-600 font-medium">العد الفعلي</p>
+              <p class="text-base font-extrabold text-slate-900 font-mono-numbers">17,850.00 <span class="text-[10px] text-slate-500">ج.م</span></p>
+            </div>
+            <div>
+              <p class="text-[11px] text-amber-800 font-bold">الفارق الدفتري</p>
+              <p class="text-base font-extrabold text-amber-700 font-mono-numbers">-150.00 <span class="text-[10px] text-amber-800">ج.م</span></p>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs pt-3 border-t border-amber-100">
+            <span class="text-amber-800 font-medium">ملف التحقيق: #REC-2026-11-04-CB03</span>
+            <div class="flex items-center gap-2">
+              <button onclick="switchTab('tab-discrepancy', document.querySelectorAll('.tab-btn')[4])" class="text-amber-800 hover:text-amber-950 font-bold underline">فتح ملف التحقيق</button>
+              <span class="text-slate-300">|</span>
+              <button onclick="navigateToReconcile('CB-03')" class="text-slate-600 hover:text-slate-900 font-semibold">مطابقة الوردية</button>
+              <span class="text-slate-300">|</span>
+              <button onclick="selectCashboxAndTab('CB-03', 'tab-movements')" class="text-slate-600 hover:text-slate-900 font-semibold">عرض الحركات</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- TAB 2: CASHBOX MOVEMENTS LEDGER (CBM-DET-01) -->
+    <div id="tab-movements" class="tab-content space-y-4">
+      
+      <!-- Filter and Cashbox Picker -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <label class="text-xs font-bold text-slate-600">اختر الخزينة:</label>
+          <div class="flex gap-1.5" id="cashboxPills">
+            <button onclick="loadCashboxMovements('CB-01', this)" class="cashbox-pill px-3 py-1.5 text-xs font-bold rounded-lg bg-brand-600 text-white shadow-2xs">CB-01 (الدقي - 24,500)</button>
+            <button onclick="loadCashboxMovements('CB-02', this)" class="cashbox-pill px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">CB-02 (الدقي - 13,900)</button>
+            <button onclick="loadCashboxMovements('CB-MAIN', this)" class="cashbox-pill px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">CB-MAIN (المركزية - 30,000)</button>
+            <button onclick="loadCashboxMovements('CB-03', this)" class="cashbox-pill px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200">CB-03 (مدينة نصر - 18,000)</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="showToast('تم استخراج كشف الحركة غير القابل للتعديل بصيغة PDF')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center gap-1.5">
+            <span>📄</span> تصدير كشف حركة رسمي
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Cashbox Period Summary Strip -->
+      <div class="bg-slate-900 text-white p-4 rounded-xl shadow-xs flex flex-wrap items-center justify-between gap-4 text-xs">
+        <div class="flex items-center gap-4">
+          <div>
+            <span class="text-slate-400 block text-[10px]">الخزينة المحددة</span>
+            <span class="font-bold text-sm text-brand-300" id="detailBoxTitle">خزينة الاستقبال 1 (CB-01) — فرع الدقي</span>
+          </div>
+          <div class="h-8 w-px bg-slate-800"></div>
+          <div>
+            <span class="text-slate-400 block text-[10px]">رصيد أول المدة</span>
+            <span class="font-bold font-mono-numbers text-slate-200" id="detailOpening">18,500.00 ج.م</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block text-[10px]">إجمالي المقبوضات (+)</span>
+            <span class="font-bold font-mono-numbers text-emerald-400" id="detailInflow">+7,500.00 ج.م</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block text-[10px]">تحويلات صادرة (-)</span>
+            <span class="font-bold font-mono-numbers text-blue-400" id="detailOutTransfer">-1,500.00 ج.م</span>
+          </div>
+          <div>
+            <span class="text-slate-400 block text-[10px]">مصروفات ونثريات (-)</span>
+            <span class="font-bold font-mono-numbers text-rose-400" id="detailExpense">0.00 ج.م</span>
+          </div>
+        </div>
+        <div class="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+          <span class="text-slate-400 block text-[10px]">الرصيد الدفتري الحالي المتوقع</span>
+          <span class="text-base font-extrabold font-mono-numbers text-amber-300" id="detailExpectedClose">24,500.00 ج.م</span>
+        </div>
+      </div>
+
+      <!-- Movements Table -->
+      <div class="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-4">رقم الحركة</th>
+                <th class="py-3 px-4">التاريخ والوقت</th>
+                <th class="py-3 px-4">نوع الحركة</th>
+                <th class="py-3 px-4">البيان المرجعي / التفاصيل</th>
+                <th class="py-3 px-4">وارد (+)</th>
+                <th class="py-3 px-4">صادر (-)</th>
+                <th class="py-3 px-4">الرصيد التراكمي</th>
+                <th class="py-3 px-4">المستخدم</th>
+                <th class="py-3 px-4 text-center">المستند</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-medium" id="movementsTableBody">
+              <!-- Rendered via JS based on selected box -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 3: INTERNAL TRANSFERS (CBM-TRF-01) -->
+    <div id="tab-transfers" class="tab-content space-y-4">
+      
+      <!-- 5-Stage Lifecycle Stepper Info Banner -->
+      <div class="bg-white p-5 rounded-2xl border border-blue-200 shadow-xs">
+        <h3 class="text-xs font-bold text-blue-900 mb-3 flex items-center gap-2">
+          <span>🔄</span> دورة حياة التحويل النقدي المعتمدة (Authoritative 5-Stage Lifecycle)
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-2 text-center text-xs">
+          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-white inline-flex items-center justify-center text-[10px] font-bold mb-1">1</span>
+            <p class="font-bold text-slate-800">إنشاء الطلب</p>
+            <p class="text-[10px] text-slate-500">المحاسب (Maker)</p>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-white inline-flex items-center justify-center text-[10px] font-bold mb-1">2</span>
+            <p class="font-bold text-slate-800">مراجعة واعتماد</p>
+            <p class="text-[10px] text-slate-500">المدير الرئيسي (Checker)</p>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="w-5 h-5 rounded-full bg-slate-800 text-white inline-flex items-center justify-center text-[10px] font-bold mb-1">3</span>
+            <p class="font-bold text-slate-800">قرار الاعتماد</p>
+            <p class="text-[10px] text-slate-500">APPROVED / REJECTED</p>
+          </div>
+          <div class="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 font-bold">
+            <span class="w-5 h-5 rounded-full bg-blue-600 text-white inline-flex items-center justify-center text-[10px] font-bold mb-1">4</span>
+            <p class="font-bold">النقل الفعلي (ترانزيت)</p>
+            <p class="text-[10px] text-blue-700">TRANSFER_OUT (خصم المصدر)</p>
+          </div>
+          <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 font-bold">
+            <span class="w-5 h-5 rounded-full bg-emerald-600 text-white inline-flex items-center justify-center text-[10px] font-bold mb-1">5</span>
+            <p class="font-bold">تأكيد الاستلام والعد</p>
+            <p class="text-[10px] text-emerald-700">TRANSFER_IN (إيداع الوجهة)</p>
+          </div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
+          <span>* تنبيه حوكمة: لا يتم الخصم إلا عند الإرسال الفعلي، ولا يكتمل التحويل إلا بعد عد وتأكيد استلام الخزينة الوجهة.</span>
+          <span class="font-bold text-slate-700">التحويلات محايدة تماماً للسيولة المجمعة (Δ = 0.00 ج.م)</span>
+        </p>
+      </div>
+
+      <!-- Transfers List -->
+      <div class="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-900">سجل التحويلات النقدية الجارية والسابقة</h3>
+          <button onclick="openModal('modal-transfer-request')" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-lg shadow-xs">
+            + إنشاء طلب تحويل جديد
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-4">رقم التحويل</th>
+                <th class="py-3 px-4">التاريخ والوقت</th>
+                <th class="py-3 px-4">الخزينة المصدر</th>
+                <th class="py-3 px-4">الخزينة الوجهة</th>
+                <th class="py-3 px-4">المبلغ</th>
+                <th class="py-3 px-4">سبب التحويل</th>
+                <th class="py-3 px-4">المرحلة الحالية</th>
+                <th class="py-3 px-4 text-center">الإجراء المتاح</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              
+              <!-- Scenario 4: Transfer In Transit -->
+              <tr class="hover:bg-slate-50/80 bg-blue-50/20">
+                <td class="py-3 px-4 font-mono font-bold text-blue-700">#TRF-104</td>
+                <td class="py-3 px-4 font-mono text-slate-500">2026-11-04 11:15</td>
+                <td class="py-3 px-4">
+                  <span class="font-bold text-slate-900">CB-01</span>
+                  <span class="text-[10px] text-slate-500 block">فرع الدقي (تم الخصم)</span>
+                </td>
+                <td class="py-3 px-4">
+                  <span class="font-bold text-slate-900">CB-MAIN</span>
+                  <span class="text-[10px] text-slate-500 block">الخزينة المركزية (بانتظار الاستلام)</span>
+                </td>
+                <td class="py-3 px-4 font-mono-numbers font-extrabold text-slate-900">1,500.00 ج.م</td>
+                <td class="py-3 px-4 text-slate-600">ترحيل فائض الوردية الصباحية للمركزية</td>
+                <td class="py-3 px-4">
+                  <span class="bg-blue-100 text-blue-800 border border-blue-200 text-[11px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping"></span>
+                    قيد النقل الفعلي (ترانزيت)
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-center" id="actionTRF104">
+                  <button onclick="confirmPhysicalReceipt('TRF-104', 1500)" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold shadow-2xs" title="صلاحية حصرية لأمين الخزينة المستلم بالخزينة الوجهة (CB-MAIN)">
+                    تأكيد الاستلام والعد (أمين الخزينة: رأفت توفيق)
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Scenario 3: Transfer Awaiting Approval -->
+              <tr class="hover:bg-slate-50/80 bg-amber-50/20">
+                <td class="py-3 px-4 font-mono font-bold text-amber-800">#TRF-105</td>
+                <td class="py-3 px-4 font-mono text-slate-500">2026-11-04 11:45</td>
+                <td class="py-3 px-4">
+                  <span class="font-bold text-slate-900">CB-02</span>
+                  <span class="text-[10px] text-slate-500 block">فرع الدقي (الرصيد: 13,900)</span>
+                </td>
+                <td class="py-3 px-4">
+                  <span class="font-bold text-slate-900">CB-MAIN</span>
+                  <span class="text-[10px] text-slate-500 block">الخزينة المركزية</span>
+                </td>
+                <td class="py-3 px-4 font-mono-numbers font-extrabold text-slate-900">3,000.00 ج.م</td>
+                <td class="py-3 px-4 text-slate-600">إيداع أسبوعي مؤمن بالخزينة الرئيسية</td>
+                <td class="py-3 px-4">
+                  <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                    بانتظار اعتماد المدير (Checker)
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="approveTransfer('TRF-105')" class="px-2.5 py-1 bg-brand-600 hover:bg-brand-700 text-white rounded text-[11px] font-bold shadow-2xs">
+                      اعتماد الطلب
+                    </button>
+                    <button onclick="showToast('تم رفض طلب التحويل وإعادته للمحاسب')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-bold">
+                      رفض
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Scenario 5: Completed Transfer -->
+              <tr class="hover:bg-slate-50/80">
+                <td class="py-3 px-4 font-mono font-bold text-slate-700">#TRF-102</td>
+                <td class="py-3 px-4 font-mono text-slate-500">2026-11-04 10:00</td>
+                <td class="py-3 px-4">
+                  <span class="font-bold text-slate-900">CB-03</span>
+                  <span class="text-[10px] text-slate-500 block">فرع مدينة نصر</span>
+                </td>
+                <td class="py-3 px-4">
+                  <span class="font-bold text-slate-900">CB-MAIN</span>
+                  <span class="text-[10px] text-slate-500 block">الخزينة المركزية بالدقي</span>
+                </td>
+                <td class="py-3 px-4 font-mono-numbers font-extrabold text-slate-900">1,200.00 ج.م</td>
+                <td class="py-3 px-4 text-slate-600">توريد نقدي دوري بين الفروع</td>
+                <td class="py-3 px-4">
+                  <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                    ✓ مكتمل ومطابق
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <button onclick="showToast('عرض إيصال التحويل المعتمد رقم #TRF-102')" class="text-brand-600 hover:underline font-bold text-[11px]">
+                    عرض الإيصال المؤيد
+                  </button>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 4: DAILY RECONCILIATION & SHIFT COUNT (CBM-REC-01) -->
+    <div id="tab-reconcile" class="tab-content space-y-4">
+      
+      <!-- Top Box Picker for Count -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <div>
+          <h3 class="text-xs font-bold text-slate-900">المطابقة اليومية والعد الفعلي للخزائن</h3>
+          <p class="text-xs text-slate-500">احتساب الرصيد الدفتري المتوقع ومقارنته بالعد النقدي الفعلي للفئات الورقية.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-xs font-bold text-slate-600">الخزينة المراد مطابقتها:</label>
+          <select id="reconcileBoxSelect" onchange="loadReconcileView(this.value)" class="bg-slate-50 border border-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg">
+            <option value="CB-03">CB-03 — مدينة نصر (فارق -150 ج.م)</option>
+            <option value="CB-01">CB-01 — فرع الدقي (متطابقة 24,500 ج.م)</option>
+            <option value="CB-02">CB-02 — فرع الدقي (متطابقة 13,900 ج.م)</option>
+            <option value="CB-MAIN">CB-MAIN — الخزينة المركزية (متطابقة 30,000 ج.م)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Reconciliation Sheet Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Formula & Expected Derivation Card -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+          <h4 class="text-xs font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center justify-between">
+            <span>1. معادلة احتساب الرصيد الدفتري المتوقع</span>
+            <span class="font-mono text-brand-600 font-bold" id="recBoxCode">CB-03</span>
+          </h4>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
+              <span class="text-slate-600">رصيد أول المدة (Opening Balance):</span>
+              <span class="font-mono-numbers font-bold text-slate-800" id="recOpening">15,200.00 ج.م</span>
+            </div>
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
+              <span class="text-emerald-700 font-medium">(+) مقبوضات نقدية مسجلة بالإيصالات:</span>
+              <span class="font-mono-numbers font-bold text-emerald-700" id="recCollections">+4,500.00 ج.م</span>
+            </div>
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
+              <span class="text-blue-700 font-medium">(+) تحويلات واردة من خزائن أخرى:</span>
+              <span class="font-mono-numbers font-bold text-blue-700" id="recInTransfer">+0.00 ج.م</span>
+            </div>
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
+              <span class="text-rose-700 font-medium">(-) تحويلات صادرة تم إرسالها:</span>
+              <span class="font-mono-numbers font-bold text-rose-700" id="recOutTransfer">-1,200.00 ج.م</span>
+            </div>
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-50">
+              <span class="text-rose-700 font-medium">(-) أذونات صرف نثريات معتمدة:</span>
+              <span class="font-mono-numbers font-bold text-rose-700" id="recExpenses">-500.00 ج.م</span>
+            </div>
+            <div class="flex items-center justify-between pt-3 border-t-2 border-slate-200">
+              <span class="font-extrabold text-slate-900 text-sm">الرصيد الدفتري المتوقع (Expected):</span>
+              <span class="font-mono-numbers font-extrabold text-brand-700 text-base" id="recExpectedTotal">18,000.00 ج.م</span>
+            </div>
+          </div>
+
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-500 leading-relaxed">
+            <span class="font-bold text-slate-700">القاعدة المحاسبية المعتمدة:</span>
+            الرصيد الدفتري المتوقع يحسب آلياً من القيود غير القابلة للتعديل؛ لا يجوز تعديل هذا الرقم يدوياً لمطابقة الواقع الفعلي.
+          </div>
+        </div>
+
+        <!-- Physical Count Submission Card -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+          <h4 class="text-xs font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center justify-between">
+            <span>2. تفصيل العد النقدي الفعلي بالخزينة</span>
+            <span class="text-[11px] text-slate-500 font-normal" id="recCustodianName">أمين الخزينة: كريم النجار</span>
+          </h4>
+
+          <!-- Denominations Grid or Empty State Container -->
+          <div id="recDenominationsContainer">
+            <!-- Rendered dynamically by loadReconcileView -->
+          </div>
+
+          <!-- Total Counted vs Difference -->
+          <div class="p-4 rounded-xl bg-amber-50 border border-amber-300 space-y-2" id="recResultBox">
+            <div class="flex items-center justify-between text-xs font-bold text-slate-800">
+              <span>إجمالي النقد الفعلي المعدود (Actual Counted):</span>
+              <span class="font-mono-numbers text-base text-slate-900" id="recActualTotal">17,850.00 ج.م</span>
+            </div>
+            <div class="flex items-center justify-between text-xs font-bold pt-2 border-t border-amber-200">
+              <span class="text-amber-900">فارق المطابقة الدفتري (Difference = Counted - Expected):</span>
+              <span class="font-mono-numbers text-base text-amber-700" id="recDiffTotal">-150.00 ج.م</span>
+            </div>
+            <p class="text-[11px] text-amber-800 pt-1" id="recDiffNote">
+              ⚠️ الحالة: [عجز دفتري قيد التحقيق — DISCREPANCY_PENDING_INVESTIGATION]. تم فتح ملف رسمي رقم #REC-2026-11-04-CB03.
+            </p>
+          </div>
+
+          <div class="flex items-center justify-end gap-2 pt-2">
+            <button onclick="showToast('تم حفظ استمارة العد واعتماد فتح ملف التحقيق المحايد')" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold shadow-xs">
+              تثبيت محضر المطابقة
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- TAB 5: DISCREPANCY INVESTIGATION DOSSIER (CBM-DISC-01 - UP-705) -->
+    <div id="tab-discrepancy" class="tab-content space-y-4">
+      
+      <!-- Top Alert: Neutral Status Governance -->
+      <div class="bg-amber-500 text-white p-5 rounded-2xl shadow-xs border border-amber-600 flex items-start gap-4">
+        <span class="text-2xl">⚠️</span>
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <h3 class="font-bold text-sm">التزام حوكمة السياسة المفتوحة UP-705 (Cashbox Discrepancy Protocol)</h3>
+            <span class="bg-white text-amber-900 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase">حالة حيادية تامة</span>
+          </div>
+          <p class="text-xs text-amber-100 leading-relaxed">
+            وفقاً لقرارات المنتج المعتمدة، تبقى فروق الخزينة قيد التحقيق والمراجعة الإدارية (DISCREPANCY_PENDING_INVESTIGATION).
+            <strong>يمنع النظام قطعياً:</strong> شطب العجز، تحميله على راتب أو عهدة الكاشير، الاعتراف بالفائض كإيراد، إنشاء قيود تسوية موازنة، أو تطبيق أي حدود سماح تلقائية (Tolerances).
+          </p>
+        </div>
+      </div>
+
+      <!-- Dossier Metadata Card -->
+      <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+        
+        <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="font-mono text-xs font-bold bg-slate-900 text-white px-2 py-0.5 rounded">#REC-2026-11-04-CB03</span>
+              <span class="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold px-2 py-0.5 rounded">قيد التحقيق الإداري</span>
+            </div>
+            <h2 class="text-base font-bold text-slate-900">ملف تدقيق فارق نقدية — خزينة الفرع الرئيسية بمدينة نصر (CB-03)</h2>
+          </div>
+          <div class="text-left">
+            <span class="text-xs text-slate-500 block">تاريخ فتح الملف</span>
+            <span class="font-mono text-xs font-bold text-slate-800">2026-11-04 12:00:00</span>
+          </div>
+        </div>
+
+        <!-- Investigation Figures Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+          <div>
+            <span class="text-slate-500 block">الرصيد الدفتري المتوقع:</span>
+            <span class="text-base font-extrabold font-mono-numbers text-slate-900">18,000.00 ج.م</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block">النقد الفعلي المسجل بالعد:</span>
+            <span class="text-base font-extrabold font-mono-numbers text-slate-900">17,850.00 ج.م</span>
+          </div>
+          <div>
+            <span class="text-amber-800 font-bold block">صافي العجز المرصود:</span>
+            <span class="text-base font-extrabold font-mono-numbers text-amber-700">-150.00 ج.م</span>
+          </div>
+          <div>
+            <span class="text-slate-500 block">أمين الخزينة وقت المطابقة:</span>
+            <span class="text-sm font-bold text-slate-900">كريم النجار (كاشير)</span>
+          </div>
+        </div>
+
+        <!-- Investigation Timeline & Audit Steps -->
+        <div class="space-y-3 pt-2">
+          <h4 class="text-xs font-bold text-slate-800">إجراءات التحقيق والتدقيق الميداني المسجلة:</h4>
+          
+          <div class="space-y-2 text-xs">
+            
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <span class="w-2 h-2 rounded-full bg-slate-400 mt-1.5"></span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-slate-900">12:00:00 — رصد الفارق وتجميد حالة المطابقة</span>
+                  <span class="text-slate-400 font-mono text-[10px]">النظام الآلي</span>
+                </div>
+                <p class="text-slate-600 mt-0.5">تم رصد عجز بمبلغ 150.00 ج.م؛ النظام منع أي قيد شطب أو تسوية تلقائية وفتح هذا الملف بحالة DISCREPANCY_PENDING_INVESTIGATION.</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <span class="w-2 h-2 rounded-full bg-blue-500 mt-1.5"></span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-slate-900">12:15:20 — إفادة أمين العهدة (كريم النجار)</span>
+                  <span class="text-slate-400 font-mono text-[10px]">إفادة موثقة</span>
+                </div>
+                <p class="text-slate-600 mt-0.5">"أفاد الكاشير باحتمال حدوث خطأ في تسليم الباقي النقدي لولي أمر الطالب صاحب إيصال التحصيل رقم #REC-9855 المسجل بمبلغ 2,500 ج.م، أو سقوط عملات ورقية تحت درج الخزينة."</p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
+              <span class="w-2 h-2 rounded-full bg-amber-500 mt-1.5"></span>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-slate-900">12:30:45 — مراجعة المحاسب القانوني وإدارة الفرع</span>
+                  <span class="text-slate-400 font-mono text-[10px]">قيد التنفيذ</span>
+                </div>
+                <p class="text-slate-600 mt-0.5">جاري تدقيق دفاتر إيصالات التحصيل اليدوية ومطابقة أرقام الإيصالات التسلسلية مع كشوفات الحضور المسجلة، وفحص حركة تسليم وتسلم العهدة النقدية؛ الملف يظل مفتوحاً في حالة حيادية تامة لحين اعتماد سياسة UP-705.</p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Governance Decision Footer -->
+        <div class="p-4 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+          <div>
+            <span class="font-bold text-slate-800 block">الإجراء النظامي المتاح حالياً:</span>
+            <span class="text-slate-600">تسجيل إفادات إضافية فقط؛ الإغلاق المالي معلق لحين اعتماد سياسة UP-705 من مجلس الإدارة.</span>
+          </div>
+          <button onclick="showToast('تم تسجيل مذكرة متابعة بملف التحقيق #REC-2026-11-04-CB03')" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold shadow-xs">
+            + إضافة إفادة تدقيقية
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- TAB 6: EXPENSE VOUCHERS (CBM-EXP-01) -->
+    <div id="tab-expenses" class="tab-content space-y-4">
+      
+      <!-- Top Actions & Policy Notice -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h3 class="text-xs font-bold text-slate-900">أذونات الصرف والمصروفات التشغيلية (Expense Vouchers)</h3>
+          <p class="text-xs text-slate-500">نظام الصرف النقدي للنثريات والمصروفات التشغيلية للمراكز وفق ضوابط Maker-Checker.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openModal('modal-expense-voucher')" class="px-3.5 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center gap-1.5">
+            <span>+</span> تحرير إذن صرف جديد (Maker)
+          </button>
+        </div>
+      </div>
+
+      <!-- Expense Policy Rule Pills -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+          <span class="text-slate-500 block text-[10px]">حوكمة اعتماد المصروفات (Maker-Checker)</span>
+          <span class="font-bold text-slate-900">قرار السياسة معلق — لا يوجد حد مالي محدد</span>
+          <p class="text-[10px] text-slate-400 mt-1">المحاسب يُعِد، والمدير الرئيسي يعتمد عند اشتراط الاعتماد بموجب السياسة.</p>
+        </div>
+        <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-2xs">
+          <span class="text-slate-500 block text-[10px]">مرونة المستندات المؤيدة (Supporting Evidence)</span>
+          <span class="font-bold text-slate-900">وثائق إثبات تشغيلية مرنة</span>
+          <p class="text-[10px] text-slate-400 mt-1">يقبل إيصال الشراء العادي أو مذكرة الصيانة أو بيان المورد.</p>
+        </div>
+      </div>
+
+      <!-- Expense Vouchers Table -->
+      <div class="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-4">رقم الإذن</th>
+                <th class="py-3 px-4">التاريخ</th>
+                <th class="py-3 px-4">الخزينة المنفذة</th>
+                <th class="py-3 px-4">البند والبيان</th>
+                <th class="py-3 px-4">المبلغ</th>
+                <th class="py-3 px-4">المستند المؤيد</th>
+                <th class="py-3 px-4">المُعِد (Maker)</th>
+                <th class="py-3 px-4">الحالة والاعتماد</th>
+                <th class="py-3 px-4 text-center">الإجراء</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              
+              <!-- Scenario 6: Expense Awaiting Approval -->
+              <tr class="hover:bg-slate-50/80 bg-amber-50/20">
+                <td class="py-3 px-4 font-mono font-bold text-amber-800">#EXP-115</td>
+                <td class="py-3 px-4 font-mono text-slate-500">2026-11-04</td>
+                <td class="py-3 px-4 font-bold text-slate-800">CB-01 (الدقي)</td>
+                <td class="py-3 px-4">
+                  <span class="font-bold text-slate-900 block">صيانة دورية لأجهزة التكييف بالقاعات</span>
+                  <span class="text-[10px] text-amber-700">يتطلب اعتماد المدير الرئيسي بموجب السياسة</span>
+                </td>
+                <td class="py-3 px-4 font-mono-numbers font-extrabold text-slate-900">1,200.00 ج.م</td>
+                <td class="py-3 px-4">
+                  <span class="text-brand-600 font-semibold flex items-center gap-1">
+                    <span>📄</span> تقرير_فحص_فني.pdf
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-slate-600">محمود حسن (محاسب)</td>
+                <td class="py-3 px-4">
+                  <span class="bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                    بانتظار اعتماد المدير الرئيسي
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button onclick="approveExpense('EXP-115')" class="px-2.5 py-1 bg-brand-600 hover:bg-brand-700 text-white rounded text-[11px] font-bold shadow-2xs">
+                      اعتماد وصرف
+                    </button>
+                    <button onclick="showToast('تم رفض إذن الصرف')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-bold">
+                      رفض
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Standard Expense 1 -->
+              <tr class="hover:bg-slate-50/80">
+                <td class="py-3 px-4 font-mono font-bold text-slate-700">#EXP-114</td>
+                <td class="py-3 px-4 font-mono text-slate-500">2026-11-04</td>
+                <td class="py-3 px-4 font-bold text-slate-800">CB-03 (م. نصر)</td>
+                <td class="py-3 px-4">
+                  <span class="font-bold text-slate-900 block">أدوات مكتبية ومستلزمات تصوير فرعية</span>
+                  <span class="text-[10px] text-slate-500">مستلزمات تعليمية</span>
+                </td>
+                <td class="py-3 px-4 font-mono-numbers font-extrabold text-slate-900">500.00 ج.م</td>
+                <td class="py-3 px-4">
+                  <span class="text-brand-600 font-semibold flex items-center gap-1">
+                    <span>📄</span> فاتورة_مورد_مكتبة.pdf
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-slate-600">كريم النجار</td>
+                <td class="py-3 px-4">
+                  <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                    ✓ مصروف نقداً
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <button onclick="showToast('عرض إيصال الصرف المعتمد #EXP-114')" class="text-brand-600 hover:underline font-bold text-[11px]">
+                    عرض الإذن
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Standard Expense 2 -->
+              <tr class="hover:bg-slate-50/80">
+                <td class="py-3 px-4 font-mono font-bold text-slate-700">#EXP-112</td>
+                <td class="py-3 px-4 font-mono text-slate-500">2026-11-03</td>
+                <td class="py-3 px-4 font-bold text-slate-800">CB-02 (الدقي)</td>
+                <td class="py-3 px-4">
+                  <span class="font-bold text-slate-900 block">ضيافة واحتياجات نظافة يومية</span>
+                  <span class="text-[10px] text-slate-500">نظافة وضيافة</span>
+                </td>
+                <td class="py-3 px-4 font-mono-numbers font-extrabold text-slate-900">250.00 ج.م</td>
+                <td class="py-3 px-4">
+                  <span class="text-brand-600 font-semibold flex items-center gap-1">
+                    <span>📄</span> بيان_مشتريات_محلي.pdf
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-slate-600">أحمد سمير</td>
+                <td class="py-3 px-4">
+                  <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                    ✓ مصروف نقداً
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-center">
+                  <button onclick="showToast('عرض إيصال الصرف المعتمد #EXP-112')" class="text-brand-600 hover:underline font-bold text-[11px]">
+                    عرض الإذن
+                  </button>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 7: FORENSIC AUDIT TRAIL & VAULT (CBM-AUD-01) -->
+    <div id="tab-audit" class="tab-content space-y-4">
+      
+      <div class="bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+        <div>
+          <h3 class="text-xs font-bold text-slate-900">سجل المراجعة والتدقيق والمستندات المؤيدة (Audit & Verification Ledger)</h3>
+          <p class="text-xs text-slate-500">سجل إلكتروني غير قابل للحذف أو التعديل لكافة العمليات والتحويلات والإلغاءات التعويضية.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">
+            ✓ نظام الإلغاء التعويضي النشط (Compensating Reversals Only)
+          </span>
+        </div>
+      </div>
+
+      <!-- Audit Events Table -->
+      <div class="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-right text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-4">رقم القيد</th>
+                <th class="py-3 px-4">الوقت والتاريخ</th>
+                <th class="py-3 px-4">نوع الحدث</th>
+                <th class="py-3 px-4">الخزينة المعنية</th>
+                <th class="py-3 px-4">المستخدم والوظيفة</th>
+                <th class="py-3 px-4">التفاصيل والبيان التدقيقي</th>
+                <th class="py-3 px-4">عنوان IP</th>
+                <th class="py-3 px-4 text-center">المستند المرفق</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-medium">
+              
+              <tr class="hover:bg-slate-50">
+                <td class="py-3 px-4 font-mono font-bold text-slate-700">#AUD-9081</td>
+                <td class="py-3 px-4 font-mono text-slate-500">2026-11-04 12:00:15</td>
+                <td class="py-3 px-4">
+                  <span class="bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded text-[10px]">فتح تحقيق فارق عد</span>
+                </td>
+                <td class="py-3 px-4 font-bold text-slate-900">CB-03</td>
+                <td class="py-3 px-4">النظام الآلي • أمين الخزينة</td>
+                <td class="py-3 px-4 text-slate-700">تسجيل فارق عد بقيمة -150 ج.م وإحالة الملف للمراجعة الإدارية (UP-705)</td>
+                <td class="py-3 px-4 font-mono text-slate-400">192.168.2.14</td>
+                <td class="py-3 px-4 text-center">
+                  <span class="text-brand-600 cursor-pointer hover:underline font-bold" onclick="showToast('عرض محضر المطابقة الممسوح ضوئياً')">📄 محضر_مطابقة.pdf</span>
+                </td>
+              </tr>
+
+              <tr class="hover:bg-slate-50">
+                <td class="py-3 px-4 font-mono font-bold text-slate-700">#AUD-9078</td>
+                <td class="py-3 px-4 font-mono text-slate-500">2026-11-04 11:25:00</td>
+                <td class="py-3 px-4">
+                  <span class="bg-blue-100 text-blue-900 font-bold px-2 py-0.5 rounded text-[10px]">إرسال تحويل نقدي</span>
+                </td>
+                <td class="py-3 px-4 font-bold text-slate-900">CB-01 ➔ CB-MAIN</td>
+                <td class="py-3 px-4">محمود حسن (كاشير)</td>
+                <td class="py-3 px-4 text-slate-700">تسليم نقدية بقيمة 1,500.00 ج.م لأمين الخزينة المستلم بموجب إذن التحويل #TRF-104</td>
+                <td class="py-3 px-4 font-mono text-slate-400">192.168.1.10</td>
+                <td class="py-3 px-4 text-center">
+                  <span class="text-brand-600 cursor-pointer hover:underline font-bold" onclick="showToast('عرض إيصال تسليم النقدية')">📄 إذن_تسليم_104.pdf</span>
+                </td>
+              </tr>
+
+              <!-- Scenario 7: Reversal Audit Event -->
+              <tr class="hover:bg-slate-50 bg-rose-50/20">
+                <td class="py-3 px-4 font-mono font-bold text-rose-800">#AUD-9062</td>
+                <td class="py-3 px-4 font-mono text-slate-500">2026-11-04 09:30:10</td>
+                <td class="py-3 px-4">
+                  <span class="bg-rose-100 text-rose-900 font-bold px-2 py-0.5 rounded text-[10px]">قيد تعويضي لإلغاء حركة</span>
+                </td>
+                <td class="py-3 px-4 font-bold text-slate-900">CB-01</td>
+                <td class="py-3 px-4">أحمد سمير (مدير رئيسي)</td>
+                <td class="py-3 px-4 text-slate-700">
+                  <span class="font-bold text-rose-800">قيد تعويضي #MOV-095 (-500 ج.م):</span>
+                  إلغاء الإيصال الخاطئ رقم #REC-9810 بقيد تعويضي كامل مع الحفاظ على القيد الأصلي #MOV-089
+                </td>
+                <td class="py-3 px-4 font-mono text-slate-400">192.168.1.1</td>
+                <td class="py-3 px-4 text-center">
+                  <span class="text-brand-600 cursor-pointer hover:underline font-bold" onclick="showToast('عرض مذكرة الإلغاء التعويضي المعتمدة')">📄 مذكرة_إلغاء_095.pdf</span>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL: INTERNAL TRANSFER REQUEST (MAKER) -->
+  <div id="modal-transfer-request" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 text-right space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">إنشاء طلب تحويل نقدي داخلي جديد (Maker)</h3>
+          <p class="text-[11px] text-slate-500 mt-0.5">يخضع للتحقق الإلزامي لشروط الأهلية الستة واعتماد المدير الرئيسي (Checker)</p>
+        </div>
+        <button onclick="closeModal('modal-transfer-request')" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+      </div>
+
+      <!-- In-Modal Validation Error Alert Banner -->
+      <div id="modalTrfValidationAlert" class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-bold hidden"></div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">الخزينة المصدر (خزينة نقدية فعلية نشطة بنفس المؤسسة):</label>
+          <select id="modalTrfSource" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
+            <option value="CB-01">CB-01 — فرع الدقي (الرصيد المتاح: 24,500.00 ج.م)</option>
+            <option value="CB-02">CB-02 — فرع الدقي (الرصيد المتاح: 13,900.00 ج.م)</option>
+            <option value="CB-MAIN">CB-MAIN — الخزينة المركزية (الرصيد المتاح: 30,000.00 ج.م)</option>
+            <option value="CB-03">CB-03 — فرع مدينة نصر (الرصيد المتاح: 18,000.00 ج.م)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">الخزينة الوجهة (يجب أن تختلف عن المصدر ونفس المؤسسة):</label>
+          <select id="modalTrfDest" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
+            <option value="CB-MAIN">CB-MAIN — الخزينة المركزية بالدقي</option>
+            <option value="CB-01">CB-01 — شباك استقبال 1 بالدقي</option>
+            <option value="CB-02">CB-02 — شباك استقبال 2 بالدقي</option>
+            <option value="CB-03">CB-03 — خزينة مدينة نصر</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">مبلغ التحويل بالجنيه المصري (موجب $\le$ الرصيد المتاح):</label>
+          <input type="number" id="modalTrfAmount" value="2000" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono font-bold text-slate-900" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">سبب ومبرر التحويل الإداري والمالي (إلزامي):</label>
+          <textarea id="modalTrfReason" rows="2" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-800" placeholder="مثال: ترحيل فائض تحصيلات أو تغذية رصيد شباك الاستقبال"></textarea>
+        </div>
+
+        <!-- 6 Conditions Governance Card -->
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-700 space-y-1">
+          <div class="font-bold text-slate-900 mb-1 flex items-center gap-1">
+            <span class="text-brand-600">🛡️</span> شروط الأهلية الستة الإلزامية للتحويل المالي الداخلي:
+          </div>
+          <p>1. <strong>اختلاف الخزائن:</strong> الخزينة المصدر تختلف تماماً عن الخزينة الوجهة.</p>
+          <p>2. <strong>الحالة التشغيلية:</strong> كلتا الخزينتين في حالة نشطة (ACTIVE).</p>
+          <p>3. <strong>الخزائن الفعلية:</strong> كلتا الخزينتين خزائن فعلية نقدية (<code>isOnline = false</code>).</p>
+          <p>4. <strong>عزل المؤسسة:</strong> تتبع كلتا الخزينتين نفس المؤسسة التعليمية.</p>
+          <p>5. <strong>كفاية الرصيد:</strong> مبلغ التحويل موجب ولا يتجاوز الرصيد الدفتري المتاح للمصدر.</p>
+          <p>6. <strong>المبرر الإداري:</strong> إدخال سبب ومبرر مالي واضح ومعتمد.</p>
+          <p class="text-[10px] text-slate-500 pt-1 border-t border-slate-200"><strong>سلطة التحقق:</strong> يتم إنفاذ هذه الشروط قطعياً على مستوى الـ Backend/API؛ واجهة المستخدم توفر توجيهاً فورياً فقط.</p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+        <button onclick="closeModal('modal-transfer-request')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold">إلغاء</button>
+        <button onclick="submitTransferRequest()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-bold shadow-xs">إرسال الطلب للاعتماد</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EXPENSE VOUCHER DRAFTING (MAKER) -->
+  <div id="modal-expense-voucher" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 text-right space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-sm font-bold text-slate-900">تحرير إذن صرف نثريات / مصروفات تشغيلية (Maker)</h3>
+        <button onclick="closeModal('modal-expense-voucher')" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">الخزينة المنفذة للصرف:</label>
+          <select id="modalExpBox" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-slate-800">
+            <option value="CB-01">CB-01 — فرع الدقي</option>
+            <option value="CB-02">CB-02 — فرع الدقي</option>
+            <option value="CB-03">CB-03 — فرع مدينة نصر</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">بند المصروف:</label>
+            <select class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-800">
+              <option>نظافة وضيافة</option>
+              <option>صيانة دورية وإصلاحات</option>
+              <option>أدوات مكتبية ومطبوعات</option>
+              <option>مستلزمات تعليمية وقاعات</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">المبلغ المطلوب (ج.م):</label>
+            <input type="number" id="modalExpAmount" value="350" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono font-bold text-slate-900" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">بيان الصرف التفصيلي:</label>
+          <input type="text" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-slate-800" placeholder="مثال: شراء أدوات نظافة ومطهرات للقاعات التعليمية" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">المستند المؤيد (Flexible Evidence):</label>
+          <input type="file" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-[11px] text-slate-500 file:ml-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-200 file:text-xs file:font-bold" />
+          <span class="text-[10px] text-slate-400 block mt-0.5">يقبل النظام إيصالات الشراء العادية، فواتير الموردين، أو مذكرات الصيانة المعتمدة.</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+        <button onclick="closeModal('modal-expense-voucher')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold">إلغاء</button>
+        <button onclick="submitExpenseVoucher()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold shadow-xs">حفظ وإرسال للاعتماد</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Interaction Script -->
+  <script>
+    // Demo State Data
+    const cashboxMovementsData = {
+      'CB-01': [
+        { id: '#MOV-1049', time: '2026-11-04 11:25:00', type: 'TRANSFER_OUT', badge: 'bg-blue-100 text-blue-800', desc: 'تحويل صادر للخزينة المركزية #TRF-104 (ترانزيت)', in: '-', out: '1,500.00', balance: '24,500.00', user: 'محمود حسن', doc: '📄 إذن_تسليم_104.pdf' },
+        { id: '#MOV-1048', time: '2026-11-04 11:12:30', type: 'COLLECTION', badge: 'bg-emerald-100 text-emerald-800', desc: 'تحصيل نقدي شباك — إيصال #REC-9912 (طالب 8821)', in: '1,000.00', out: '-', balance: '26,000.00', user: 'محمود حسن', doc: '📄 إيصال_9912.pdf' },
+        { id: '#MOV-1045', time: '2026-11-04 10:40:15', type: 'COLLECTION', badge: 'bg-emerald-100 text-emerald-800', desc: 'تحصيل نقدي شباك — إيصال #REC-9905 (طالب 9104)', in: '2,000.00', out: '-', balance: '25,000.00', user: 'محمود حسن', doc: '📄 إيصال_9905.pdf' },
+        { id: '#MOV-095', time: '2026-11-04 09:30:10', type: 'REVERSAL', badge: 'bg-rose-100 text-rose-800 font-bold', desc: 'قيد تعويضي لإلغاء تحصيل خاطئ #REC-9810 (معاكس لـ #MOV-089)', in: '-', out: '500.00', balance: '23,000.00', user: 'أحمد سمير', doc: '📄 مذكرة_تسوية_095.pdf' },
+        { id: '#MOV-089', time: '2026-11-04 09:15:00', type: 'COLLECTION', badge: 'bg-slate-200 text-slate-500 line-through', desc: '[حركة ملغاة تعويضياً] تحصيل نقدي مسجل بالخطأ #REC-9810', in: '500.00', out: '-', balance: '23,500.00', user: 'محمود حسن', doc: '📄 ملغى_089.pdf' },
+        { id: '#MOV-080', time: '2026-11-04 08:30:00', type: 'COLLECTION', badge: 'bg-emerald-100 text-emerald-800', desc: 'تحصيل نقدي شباك — إيصال #REC-9891', in: '4,500.00', out: '-', balance: '23,000.00', user: 'محمود حسن', doc: '📄 إيصال_9891.pdf' },
+        { id: '#MOV-001', time: '2026-11-04 08:00:00', type: 'OPENING', badge: 'bg-slate-100 text-slate-700', desc: 'رصيد افتتاحي مدور من إغلاق اليوم السابق', in: '18,500.00', out: '-', balance: '18,500.00', user: 'النظام', doc: '-' }
+      ],
+      'CB-02': [
+        { id: '#MOV-2022', time: '2026-11-04 10:50:00', type: 'COLLECTION', badge: 'bg-emerald-100 text-emerald-800', desc: 'تحصيل نقدي شباك — إيصال #REC-9894', in: '1,000.00', out: '-', balance: '13,900.00', user: 'أحمد سمير', doc: '📄 إيصال_9894.pdf' },
+        { id: '#MOV-2015', time: '2026-11-04 09:40:00', type: 'COLLECTION', badge: 'bg-emerald-100 text-emerald-800', desc: 'تحصيل نقدي شباك — إيصال #REC-9870', in: '2,900.00', out: '-', balance: '12,900.00', user: 'أحمد سمير', doc: '📄 إيصال_9870.pdf' },
+        { id: '#MOV-2001', time: '2026-11-04 08:00:00', type: 'OPENING', badge: 'bg-slate-100 text-slate-700', desc: 'رصيد افتتاحي مدور من اليوم السابق', in: '10,000.00', out: '-', balance: '10,000.00', user: 'النظام', doc: '-' }
+      ],
+      'CB-MAIN': [
+        { id: '#MOV-9005', time: '2026-11-04 10:45:00', type: 'TRANSFER_IN', badge: 'bg-blue-100 text-blue-800', desc: 'استلام تحويل داخلي من فرع مدينة نصر #TRF-102', in: '1,200.00', out: '-', balance: '30,000.00', user: 'رأفت توفيق', doc: '📄 إيصال_استلام_102.pdf' },
+        { id: '#MOV-9001', time: '2026-11-04 08:00:00', type: 'OPENING', badge: 'bg-slate-100 text-slate-700', desc: 'رصيد افتتاحي مدور بالخزينة المركزية', in: '28,800.00', out: '-', balance: '28,800.00', user: 'النظام', doc: '-' }
+      ],
+      'CB-03': [
+        { id: '#MOV-306', time: '2026-11-04 12:00:00', type: 'RECONCILE', badge: 'bg-amber-100 text-amber-900 font-bold', desc: 'محضر إغلاق وردية — عد فعلي 17,850 ج.م (فارق -150 ج.م)', in: '-', out: '-', balance: '18,000.00', user: 'كريم النجار', doc: '📄 محضر_مطابقة_CB03.pdf' },
+        { id: '#MOV-305', time: '2026-11-04 11:30:00', type: 'TRANSFER_OUT', badge: 'bg-blue-100 text-blue-800', desc: 'تحويل صادر للخزينة المركزية بالدقي #TRF-102', in: '-', out: '1,200.00', balance: '18,000.00', user: 'كريم النجار', doc: '📄 إذن_تحويل_102.pdf' },
+        { id: '#MOV-304', time: '2026-11-04 11:00:00', type: 'DISBURSEMENT', badge: 'bg-rose-100 text-rose-800', desc: 'صرف نثريات ومطبوعات — إذن #EXP-114', in: '-', out: '500.00', balance: '19,200.00', user: 'كريم النجار', doc: '📄 فاتورة_مكتبة.pdf' },
+        { id: '#MOV-303', time: '2026-11-04 10:15:30', type: 'COLLECTION', badge: 'bg-emerald-100 text-emerald-800', desc: 'تحصيل نقدي شباك — إيصال #REC-9855', in: '2,500.00', out: '-', balance: '19,700.00', user: 'كريم النجار', doc: '📄 إيصال_9855.pdf' },
+        { id: '#MOV-302', time: '2026-11-04 09:45:10', type: 'COLLECTION', badge: 'bg-emerald-100 text-emerald-800', desc: 'تحصيل نقدي شباك — إيصال #REC-9841', in: '2,000.00', out: '-', balance: '17,200.00', user: 'كريم النجار', doc: '📄 إيصال_9841.pdf' },
+        { id: '#MOV-301', time: '2026-11-04 08:30:00', type: 'OPENING', badge: 'bg-slate-100 text-slate-700', desc: 'رصيد افتتاحي مدور من إغلاق اليوم السابق', in: '15,200.00', out: '-', balance: '15,200.00', user: 'النظام', doc: '-' }
+      ]
+    };
+
+    const cashboxMetadata = {
+      'CB-01': { title: 'خزينة الاستقبال 1 (CB-01) — فرع الدقي', opening: '18,500.00 ج.م', inflow: '+7,500.00 ج.م', outTransfer: '-1,500.00 ج.م', expense: '0.00 ج.م', expected: '24,500.00 ج.م' },
+      'CB-02': { title: 'خزينة الاستقبال 2 (CB-02) — فرع الدقي', opening: '10,000.00 ج.م', inflow: '+3,900.00 ج.م', outTransfer: '0.00 ج.م', expense: '0.00 ج.م', expected: '13,900.00 ج.م' },
+      'CB-MAIN': { title: 'الخزينة المركزية (CB-MAIN) — فرع الدقي', opening: '28,800.00 ج.م', inflow: '+1,200.00 ج.م', outTransfer: '0.00 ج.م', expense: '0.00 ج.م', expected: '30,000.00 ج.م' },
+      'CB-03': { title: 'خزينة الفرع الرئيسية (CB-03) — فرع مدينة نصر', opening: '15,200.00 ج.م', inflow: '+4,500.00 ج.م', outTransfer: '-1,200.00 ج.م', expense: '-500.00 ج.م', expected: '18,000.00 ج.م' }
+    };
+
+    // Tab Switcher
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('text-brand-700', 'bg-brand-50', 'border-brand-200');
+        el.classList.add('text-slate-600');
+      });
+
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('text-brand-700', 'bg-brand-50', 'border-brand-200');
+      btn.classList.remove('text-slate-600');
+    }
+
+    // Select Cashbox & Go to movements tab
+    function selectCashboxAndTab(code, tabId) {
+      const tabBtn = document.querySelectorAll('.tab-btn')[1];
+      switchTab(tabId, tabBtn);
+      const pillBtn = Array.from(document.querySelectorAll('.cashbox-pill')).find(p => p.textContent.includes(code));
+      if (pillBtn) loadCashboxMovements(code, pillBtn);
+    }
+
+    // Load Movements for Selected Cashbox
+    function loadCashboxMovements(boxCode, btn) {
+      document.querySelectorAll('.cashbox-pill').forEach(b => {
+        b.className = 'cashbox-pill px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200';
+      });
+      btn.className = 'cashbox-pill px-3 py-1.5 text-xs font-bold rounded-lg bg-brand-600 text-white shadow-2xs';
+
+      const meta = cashboxMetadata[boxCode];
+      document.getElementById('detailBoxTitle').textContent = meta.title;
+      document.getElementById('detailOpening').textContent = meta.opening;
+      document.getElementById('detailInflow').textContent = meta.inflow;
+      document.getElementById('detailOutTransfer').textContent = meta.outTransfer;
+      document.getElementById('detailExpense').textContent = meta.expense;
+      document.getElementById('detailExpectedClose').textContent = meta.expected;
+
+      const tbody = document.getElementById('movementsTableBody');
+      tbody.innerHTML = '';
+      
+      const rows = cashboxMovementsData[boxCode] || [];
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition-colors';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono font-bold text-slate-800">${r.id}</td>
+          <td class="py-3 px-4 font-mono text-slate-500">${r.time}</td>
+          <td class="py-3 px-4"><span class="${r.badge} text-[10px] px-2 py-0.5 rounded font-bold">${r.type}</span></td>
+          <td class="py-3 px-4 text-slate-800">${r.desc}</td>
+          <td class="py-3 px-4 font-mono-numbers font-bold text-emerald-700">${r.in}</td>
+          <td class="py-3 px-4 font-mono-numbers font-bold text-rose-700">${r.out}</td>
+          <td class="py-3 px-4 font-mono-numbers font-extrabold text-slate-900">${r.balance} ج.م</td>
+          <td class="py-3 px-4 text-slate-600">${r.user}</td>
+          <td class="py-3 px-4 text-center">
+            ${r.doc !== '-' ? `<span onclick="showToast('عرض المستند المؤيد: ${r.doc}')" class="text-brand-600 font-bold hover:underline cursor-pointer">${r.doc}</span>` : '-'}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Reconcile Table Source of Truth
+    const reconcileTableData = {
+      'CB-01': {
+        boxCode: 'CB-01',
+        custodian: 'أمين الخزينة: محمود حسن (كاشير الخزينة)',
+        opening: '18,500.00 ج.م',
+        collections: '+7,500.00 ج.م', // net after 500 EGP compensating reversal
+        inTransfer: '+0.00 ج.م',
+        outTransfer: '-1,500.00 ج.م',
+        expenses: '-0.00 ج.م',
+        expectedTotal: '24,500.00 ج.م',
+        actualTotal: '24,500.00 ج.م',
+        diffTotal: '0.00 ج.م',
+        statusClass: 'p-4 rounded-xl bg-emerald-50 border border-emerald-300 space-y-2',
+        statusNote: '✓ الحالة: [مطابقة متوازنة — RECONCILED_BALANCED]. العد الفعلي المسجل يطابق الرصيد الدفتري المتوقع تماماً.',
+        isDiscrepancy: false
+      },
+      'CB-02': {
+        boxCode: 'CB-02',
+        custodian: 'أمين الخزينة: أحمد سمير (كاشير الخزينة)',
+        opening: '10,000.00 ج.م',
+        collections: '+3,900.00 ج.م',
+        inTransfer: '+0.00 ج.م',
+        outTransfer: '-0.00 ج.م',
+        expenses: '-0.00 ج.م',
+        expectedTotal: '13,900.00 ج.م',
+        actualTotal: '13,900.00 ج.م',
+        diffTotal: '0.00 ج.م',
+        statusClass: 'p-4 rounded-xl bg-emerald-50 border border-emerald-300 space-y-2',
+        statusNote: '✓ الحالة: [مطابقة متوازنة — RECONCILED_BALANCED]. العد الفعلي المسجل يطابق الرصيد الدفتري المتوقع تماماً.',
+        isDiscrepancy: false
+      },
+      'CB-MAIN': {
+        boxCode: 'CB-MAIN',
+        custodian: 'أمين الخزينة المستلم: أ. رأفت توفيق (CB-MAIN)',
+        opening: '28,800.00 ج.م',
+        collections: '+0.00 ج.م',
+        inTransfer: '+1,200.00 ج.م',
+        outTransfer: '-0.00 ج.م',
+        expenses: '-0.00 ج.م',
+        expectedTotal: '30,000.00 ج.م',
+        actualTotal: '30,000.00 ج.م',
+        diffTotal: '0.00 ج.م',
+        statusClass: 'p-4 rounded-xl bg-emerald-50 border border-emerald-300 space-y-2',
+        statusNote: '✓ الحالة: [مطابقة متوازنة — RECONCILED_BALANCED]. العد الفعلي المسجل يطابق الرصيد الدفتري المتوقع تماماً.',
+        isDiscrepancy: false
+      },
+      'CB-03': {
+        boxCode: 'CB-03',
+        custodian: 'أمين الخزينة: كريم النجار (كاشير الخزينة)',
+        opening: '15,200.00 ج.م',
+        collections: '+4,500.00 ج.م',
+        inTransfer: '+0.00 ج.م',
+        outTransfer: '-1,200.00 ج.م',
+        expenses: '-500.00 ج.م',
+        expectedTotal: '18,000.00 ج.م',
+        actualTotal: '17,850.00 ج.م',
+        diffTotal: '-150.00 ج.م',
+        statusClass: 'p-4 rounded-xl bg-amber-50 border border-amber-300 space-y-2',
+        statusNote: '⚠️ الحالة: [عجز دفتري قيد التحقيق — DISCREPANCY_PENDING_INVESTIGATION]. الفارق: -150.00 ج.م بملف رسمي #REC-2026-11-04-CB03 (UP-705).',
+        isDiscrepancy: true
+      }
+    };
+
+    // Load Reconcile View
+    function loadReconcileView(boxCode) {
+      const data = reconcileTableData[boxCode] || reconcileTableData['CB-03'];
+      document.getElementById('recBoxCode').textContent = data.boxCode;
+      document.getElementById('recCustodianName').textContent = data.custodian;
+      document.getElementById('recOpening').textContent = data.opening;
+      document.getElementById('recCollections').textContent = data.collections;
+      document.getElementById('recInTransfer').textContent = data.inTransfer;
+      document.getElementById('recOutTransfer').textContent = data.outTransfer;
+      document.getElementById('recExpenses').textContent = data.expenses;
+      document.getElementById('recExpectedTotal').textContent = data.expectedTotal;
+      document.getElementById('recActualTotal').textContent = data.actualTotal;
+      document.getElementById('recDiffTotal').textContent = data.diffTotal;
+      document.getElementById('recResultBox').className = data.statusClass;
+      document.getElementById('recDiffNote').innerHTML = data.statusNote;
+
+      const container = document.getElementById('recDenominationsContainer');
+      if (boxCode === 'CB-03') {
+        container.innerHTML = `
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+              <div><span class="font-bold text-slate-800 block">فئة 200 ج.م</span><span class="text-[10px] text-slate-500 font-mono-numbers">50 ورقة</span></div>
+              <span class="font-mono-numbers font-bold text-slate-900">10,000.00 ج.م</span>
+            </div>
+            <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+              <div><span class="font-bold text-slate-800 block">فئة 100 ج.م</span><span class="text-[10px] text-slate-500 font-mono-numbers">60 ورقة</span></div>
+              <span class="font-mono-numbers font-bold text-slate-900">6,000.00 ج.م</span>
+            </div>
+            <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+              <div><span class="font-bold text-slate-800 block">فئة 50 ج.م</span><span class="text-[10px] text-slate-500 font-mono-numbers">30 ورقة</span></div>
+              <span class="font-mono-numbers font-bold text-slate-900">1,500.00 ج.م</span>
+            </div>
+            <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+              <div><span class="font-bold text-slate-800 block">فئة 20 ج.م</span><span class="text-[10px] text-slate-500 font-mono-numbers">15 ورقة</span></div>
+              <span class="font-mono-numbers font-bold text-slate-900">300.00 ج.م</span>
+            </div>
+            <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+              <div><span class="font-bold text-slate-800 block">فئة 10 ج.م</span><span class="text-[10px] text-slate-500 font-mono-numbers">5 ورقات</span></div>
+              <span class="font-mono-numbers font-bold text-slate-900">50.00 ج.م</span>
+            </div>
+            <div class="p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
+              <div><span class="font-bold text-slate-800 block">فئات معدنية / فكة</span><span class="text-[10px] text-slate-500">عملات مساعدة</span></div>
+              <span class="font-mono-numbers font-bold text-slate-900">0.00 ج.م</span>
+            </div>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="p-6 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center space-y-2">
+            <span class="text-2xl text-slate-400">📋</span>
+            <p class="text-xs font-bold text-slate-700">تفصيل الفئات النقدية الورقية غير مدرج في هذا النموذج المصطنع</p>
+            <p class="text-[11px] text-slate-500">العد الإجمالي المسجل: <strong class="text-slate-900 font-mono-numbers">${data.actualTotal}</strong> — مطابقة متوازنة تماماً دون أي عجز أو فائض.</p>
+          </div>
+        `;
+      }
+    }
+
+    // Direct Navigation to Reconciliation with Selected Cashbox
+    function navigateToReconcile(boxCode) {
+      const tabBtn = document.querySelectorAll('.tab-btn')[3];
+      switchTab('tab-reconcile', tabBtn);
+      const sel = document.getElementById('reconcileBoxSelect');
+      if (sel) {
+        sel.value = boxCode;
+        loadReconcileView(boxCode);
+      }
+    }
+
+    // Toast helper
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMessage');
+      toastMsg.textContent = msg || 'هذه محاكاة تصميمية فقط — لا يتم تنفيذ أي عملية مالية فعلية.';
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 4500);
+    }
+
+    // Modal helpers
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+      if (id === 'modal-transfer-request') {
+        const alertBox = document.getElementById('modalTrfValidationAlert');
+        if (alertBox) {
+          alertBox.classList.add('hidden');
+          alertBox.textContent = '';
+        }
+      }
+    }
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    }
+
+    // Transfer Workflow Simulations
+    function approveTransfer(trfId) {
+      showToast(`محاكاة توضيحية: تمت الموافقة على التحويل ${trfId} بواسطة المدير الرئيسي (Checker). التحويل الآن في حالة AUTHORIZED وبانتظار الإرسال والنقل الفعلي.`);
+    }
+
+    function confirmPhysicalReceipt(trfId, amount) {
+      const actionTd = document.getElementById('actionTRF104');
+      if (actionTd) {
+        actionTd.innerHTML = '<span class="text-emerald-700 font-bold text-[11px]">✓ تم الاستلام الفعلي</span>';
+      }
+      const transitKpi = document.getElementById('kpiCashInTransit');
+      if (transitKpi) {
+        transitKpi.textContent = '0.00';
+      }
+      showToast(`محاكاة توضيحية: قام أمين الخزينة المستلم بالخزينة المركزية (رأفت توفيق) بتأكيد استلام وعد ${amount.toLocaleString()} ج.م فعلياً. انخفض النقد قيد النقل إلى 0.00 ج.م وثبت إجمالي المركز النقدي للمؤسسة عند 87,900.00 ج.م.`);
+    }
+
+    // Approved Physical Cashboxes Registry (Domain Model Metadata)
+    const approvedCashboxesRegistry = {
+      'CB-01': { name: 'خزينة الاستقبال 1 (الدقي)', balance: 24500.00, isActive: true, isOnline: false, institutionId: 'INST-01' },
+      'CB-02': { name: 'خزينة الاستقبال 2 (الدقي)', balance: 13900.00, isActive: true, isOnline: false, institutionId: 'INST-01' },
+      'CB-MAIN': { name: 'الخزينة المركزية (الدقي)', balance: 30000.00, isActive: true, isOnline: false, institutionId: 'INST-01' },
+      'CB-03': { name: 'خزينة الفرع الرئيسية (مدينة نصر)', balance: 18000.00, isActive: true, isOnline: false, institutionId: 'INST-01' }
+    };
+
+    // Validated Transfer Request Submission enforcing all 6 eligibility conditions
+    function submitTransferRequest() {
+      const alertBox = document.getElementById('modalTrfValidationAlert');
+      if (alertBox) {
+        alertBox.classList.add('hidden');
+        alertBox.textContent = '';
+      }
+
+      const src = document.getElementById('modalTrfSource').value;
+      const dest = document.getElementById('modalTrfDest').value;
+      const amtVal = document.getElementById('modalTrfAmount').value;
+      const amt = parseFloat(amtVal);
+      const reason = document.getElementById('modalTrfReason').value.trim();
+
+      const sourceBox = approvedCashboxesRegistry[src];
+      const destBox = approvedCashboxesRegistry[dest];
+
+      function failValidation(errorMessage) {
+        if (alertBox) {
+          alertBox.textContent = errorMessage;
+          alertBox.classList.remove('hidden');
+        }
+        showToast(errorMessage);
+        // Fail-closed: Never close modal or simulate successful transfer on failed validation
+      }
+
+      // Condition 1: Source and destination must be different cashboxes
+      if (!src || !dest || src === dest) {
+        failValidation('خطأ في التحقق (شرط 1): لا يمكن التحويل لنفس الخزينة (الخزينة المصدر والخزينة الوجهة متطابقتان).');
+        return;
+      }
+
+      // Condition 2: Both cashboxes must be ACTIVE
+      if (!sourceBox || !destBox || !sourceBox.isActive || !destBox.isActive) {
+        failValidation('خطأ في التحقق (شرط 2): يجب أن تكون كلتا الخزينتين (المصدر والوجهة) في حالة نشطة (ACTIVE).');
+        return;
+      }
+
+      // Condition 3: Both cashboxes must be physical cashboxes (isOnline = false)
+      if (sourceBox.isOnline || destBox.isOnline) {
+        failValidation('خطأ في التحقق (شرط 3): التحويل مقتصر حصرياً على الخزائن النقدية الفعلية (Physical Cashbox: isOnline = false). الحسابات الإلكترونية غير مسموح بها.');
+        return;
+      }
+
+      // Condition 4: Both cashboxes must belong to the same institution
+      if (sourceBox.institutionId !== destBox.institutionId) {
+        failValidation('خطأ في التحقق (شرط 4): يمنع التحويل المالي بين مؤسسات مختلفة؛ يجب أن تتبع كلتا الخزينتين نفس المؤسسة التعليمية.');
+        return;
+      }
+
+      // Condition 5: Transfer amount must be positive and not exceed source available book balance
+      if (isNaN(amt) || amt <= 0) {
+        failValidation('خطأ في التحقق (شرط 5): يجب أن يكون مبلغ التحويل قيمة رقمية موجبة أكبر من الصفر.');
+        return;
+      }
+      if (amt > sourceBox.balance) {
+        failValidation(`خطأ في التحقق (شرط 5): المبلغ المطلوب (${amt.toLocaleString()} ج.م) يتجاوز الرصيد الدفتري المتاح بالخزينة المصدر (${sourceBox.balance.toLocaleString()} ج.م).`);
+        return;
+      }
+
+      // Condition 6: Mandatory transfer reason / business justification
+      if (!reason) {
+        failValidation('خطأ في التحقق (شرط 6): يرجى كتابة سبب ومبرر التحويل الإداري والمالي قبل إرسال الطلب.');
+        return;
+      }
+
+      // All 6 eligibility conditions passed successfully
+      closeModal('modal-transfer-request');
+      showToast(`محاكاة توضيحية: تم استيفاء شروط الأهلية الستة بنجاح وإنشاء طلب التحويل بمبلغ ${amt.toLocaleString()} ج.م من ${src} إلى ${dest} بحالة (REQUESTED) بانتظار اعتماد المدير الرئيسي.`);
+    }
+
+    function approveExpense(expId) {
+      showToast(`محاكاة توضيحية: تم اعتماد إذن الصرف ${expId} وتوثيق حركة الصرف النقدي بالخزينة بموجب تقرير الفحص الفني المرفق.`);
+    }
+
+    function submitExpenseVoucher() {
+      closeModal('modal-expense-voucher');
+      showToast('محاكاة توضيحية: تم حفظ مسودة إذن الصرف بنجاح وإرسالها للمراجعة.');
+    }
+
+    function filterBranchScope(val) {
+      showToast(`محاكاة توضيحية: تم تغيير نطاق الفروع إلى: ${val === 'ALL' ? 'جميع الفروع' : val}.`);
+    }
+
+    // Initial Load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadCashboxMovements('CB-01', document.querySelector('.cashbox-pill'));
+      loadReconcileView('CB-03');
+    });
+  </script>
+
+</body>
+</html>
+

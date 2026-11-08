@@ -14,6 +14,7 @@ import { notificationService } from '../services/notification.service';
 import { userService } from '../services/user.service';
 import { aiService } from '../services/ai.service';
 import { questionService } from '../services/question.service';
+import { brdSubscriptionService } from '../services/brdSubscription.service';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import { LanguageProvider } from '../contexts/LanguageContext';
 
@@ -126,6 +127,12 @@ vi.mock('../services/question.service', () => ({
   },
 }));
 
+vi.mock('../services/brdSubscription.service', () => ({
+  brdSubscriptionService: {
+    getTeacherStudents: vi.fn(),
+  },
+}));
+
 vi.mock('../services/api', () => ({
   analyticsApi: {
     get: vi.fn().mockResolvedValue({ data: { totalMessages: 120, totalSessions: 45, activeStudents: 22, conversations: [] } }),
@@ -149,6 +156,7 @@ describe('Phase 5.3: Approved Teacher Dashboard Remediation & Verification Suite
     vi.mocked(notificationService.getNotifications).mockResolvedValue(mockNotifications as any);
     vi.mocked(notificationService.getUnreadCount).mockResolvedValue({ data: { unreadCount: 1 } } as any);
     vi.mocked(userService.getUsers).mockResolvedValue({ data: mockStudents } as any);
+    vi.mocked(brdSubscriptionService.getTeacherStudents).mockResolvedValue({ data: mockStudents } as any);
   });
 
   const renderWithRouter = (ui: React.ReactElement, initialRoute = '/home') => {

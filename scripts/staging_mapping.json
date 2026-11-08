@@ -1,0 +1,68 @@
+{
+  "$schema": "https://ox-digital.edu.invalid/schemas/tenancy-mapping-v1.json",
+  "formatVersion": "1.0.0",
+  "datasetId": "SYNTH-STAGE-7.1-V1",
+  "generatorVersion": "1.0.0",
+  "approvedBy": "Product Owner & Financial Auditor",
+  "approvedAt": "2026-11-02T22:00:00.000Z",
+  "institutions": [
+    {
+      "targetInstitutionId": "inst_synth_alpha",
+      "targetInstitutionName": "Alpha Educational Academy",
+      "targetInstitutionCode": "ALPHA_EDU",
+      "defaultBranchId": "br_alpha_cairo",
+      "defaultBranchName": "Downtown Cairo Campus",
+      "defaultBranchCode": "ALPHA_CAIRO",
+      "onlineBranchId": "br_alpha_online",
+      "onlineBranchName": "Alpha Digital Hub",
+      "onlineBranchCode": "ALPHA_ONLINE",
+      "matchCriteria": {
+        "teacherIds": [
+          "usr_synth_t_a1",
+          "usr_synth_t_a2"
+        ],
+        "centerGroupIds": [
+          "cg_synth_a_cairo_01",
+          "cg_synth_a_alex_01"
+        ],
+        "userIds": [
+          "usr_synth_pm_a",
+          "usr_synth_s_a01",
+          "usr_synth_s_a02",
+          "usr_synth_s_hybrid"
+        ],
+        "courseIds": [
+          "crs_synth_a_math_101",
+          "crs_synth_a_physics_online"
+        ]
+      }
+    },
+    {
+      "targetInstitutionId": "inst_synth_beta",
+      "targetInstitutionName": "Beta STEM Institute",
+      "targetInstitutionCode": "BETA_STEM",
+      "defaultBranchId": "br_beta_alex",
+      "defaultBranchName": "Alexandria Campus",
+      "defaultBranchCode": "BETA_ALEX",
+      "onlineBranchId": "br_beta_online",
+      "onlineBranchName": "Beta Remote Portal",
+      "onlineBranchCode": "BETA_ONLINE",
+      "matchCriteria": {
+        "teacherIds": [
+          "usr_synth_t_b1"
+        ],
+        "centerGroupIds": [
+          "cg_synth_b_alex_01"
+        ],
+        "userIds": [
+          "usr_synth_pm_b",
+          "usr_synth_s_b01",
+          "usr_synth_s_b02"
+        ],
+        "courseIds": [
+          "crs_synth_b_chem_101"
+        ]
+      }
+    }
+  ]
+}

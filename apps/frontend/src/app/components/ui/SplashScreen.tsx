@@ -1,7 +1,9 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { useEffect, useState } from 'react';
 
 export default function SplashScreen() {
+  const { t } = useLanguage();
   const [isVisible, setIsVisible] = useState(true);
   const shouldReduceMotion = useReducedMotion();
 
@@ -50,7 +52,7 @@ export default function SplashScreen() {
             </div>
 
             <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mb-6">
-              منصة التعليم الذكي المتكاملة
+              {t('منصة التعليم الذكي المتكاملة')}
             </p>
 
             {/* Restrained Institutional Loading Indicator */}

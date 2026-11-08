@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 
@@ -34,10 +35,10 @@ export default class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle className="w-10 h-10 text-red-600 dark:text-red-400" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-              {this.state.error?.message.includes('Network') ? 'فشل الاتصال بالإنترنت' : 'عذراً، حدث خطأ غير متوقع'}
+              {this.state.error?.message.includes('Network') ? t('internetConnectionFailed', 'فشل الاتصال بالإنترنت') : t('unexpectedError', 'عذراً، حدث خطأ غير متوقع')}
             </h1>
             <p className="text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">
-              لقد واجهنا مشكلة فنية أثناء تحميل هذه الصفحة. يرجى محاولة تحديث الصفحة أو العودة إلى الصفحة الرئيسية.
+              {t('لقد واجهنا مشكلة فنية أثناء تحميل هذه الصفحة. يرجى محاولة تحديث الصفحة أو العودة إلى الصفحة الرئيسية.')}
             </p>
             <div className="flex gap-4 justify-center">
               <button
@@ -45,13 +46,13 @@ export default class ErrorBoundary extends Component<Props, State> {
                 className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium transition-colors"
               >
                 <RefreshCcw className="w-4 h-4" />
-                تحديث الصفحة
+                {t('تحديث الصفحة')}
               </button>
               <button
                 onClick={() => window.location.href = '/'}
                 className="px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 font-medium transition-colors"
               >
-                الرئيسية
+                {t('الرئيسية')}
               </button>
             </div>
           </div>

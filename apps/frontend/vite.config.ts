@@ -40,7 +40,7 @@ export default defineConfig({
 
   server: {
     host: '0.0.0.0',
-    port: 5173,
+    port: parseInt(process.env.PORT || '8080'),
     allowedHosts: true,
     hmr: true,
     headers: {
@@ -48,40 +48,25 @@ export default defineConfig({
     },
     proxy: {
       '/api/auth': {
-        target: 'http://localhost:4001',
+        target: process.env.VITE_AUTH_API_TARGET || 'http://localhost:4001',
         changeOrigin: true,
+        secure: false,
       },
-      '/api/users': {
-        target: 'http://localhost:4002',
+      '/api': {
+        target: process.env.VITE_BACKEND_PROXY_URL || 'http://localhost:4002',
         changeOrigin: true,
+        secure: false,
       },
-      '/api/notifications': {
-        target: 'http://localhost:4002',
+      '/socket.io': {
+        target: process.env.VITE_BACKEND_PROXY_URL || 'http://localhost:8080',
         changeOrigin: true,
+        secure: false,
+        ws: true,
       },
-      '/api/ai': {
-        target: 'http://localhost:4003',
+      '/uploads': {
+        target: process.env.VITE_BACKEND_PROXY_URL || 'http://localhost:8080',
         changeOrigin: true,
-      },
-      '/api/courses': {
-        target: 'http://localhost:4004',
-        changeOrigin: true,
-      },
-      '/api/homework': {
-        target: 'http://localhost:4004',
-        changeOrigin: true,
-      },
-      '/api/exams': {
-        target: 'http://localhost:4004',
-        changeOrigin: true,
-      },
-      '/api/questions': {
-        target: 'http://localhost:4004',
-        changeOrigin: true,
-      },
-      '/api/analytics': {
-        target: 'http://localhost:4005',
-        changeOrigin: true,
+        secure: false,
       },
     },
   },

@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, CheckCircle2, ChevronLeft, AlertCircle, Eye, EyeOff, Sun, Moon } from 'lucide-react';
@@ -6,6 +7,7 @@ import { authApi } from '../../services/api';
 import { useTheme } from '../../contexts/ThemeContext';
 
 export default function ResetPasswordPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isDark, toggleTheme } = useTheme();
@@ -19,11 +21,11 @@ export default function ResetPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      setError('كلمتا المرور غير متطابقتين.');
+      setError(t('كلمتا المرور غير متطابقتين.'));
       return;
     }
     if (!token) {
-      setError('رابط استعادة كلمة المرور غير صالح أو منتهي الصلاحية.');
+      setError(t('رابط استعادة كلمة المرور غير صالح أو منتهي الصلاحية.'));
       return;
     }
 
@@ -50,10 +52,10 @@ export default function ResetPasswordPage() {
         <button
           onClick={() => navigate('/login')}
           className="flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all bg-white/90 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl backdrop-blur-md shadow-sm text-xs sm:text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e1b1b] cursor-pointer"
-          aria-label="العودة لصفحة تسجيل الدخول"
+          aria-label={t('العودة لصفحة تسجيل الدخول')}
         >
           <ChevronLeft className="w-4 h-4 rotate-180 text-slate-500 dark:text-slate-400" />
-          <span>تسجيل الدخول</span>
+          <span>{t('تسجيل الدخول')}</span>
         </button>
 
         <button
@@ -82,10 +84,10 @@ export default function ResetPasswordPage() {
             />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight">
-            تعيين كلمة مرور جديدة
+            {t('تعيين كلمة مرور جديدة')}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm mt-1">
-            OX-DIGITAL Education • منصة التعليم الذكي المتكاملة
+            {t('OX-DIGITAL Education • منصة التعليم الذكي المتكاملة')}
           </p>
         </div>
 
@@ -95,7 +97,7 @@ export default function ResetPasswordPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  كلمة المرور الجديدة
+                  {t('كلمة المرور الجديدة')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute top-1/2 -translate-y-1/2 right-3.5 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
@@ -121,7 +123,7 @@ export default function ResetPasswordPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  تأكيد كلمة المرور الجديدة
+                  {t('تأكيد كلمة المرور الجديدة')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute top-1/2 -translate-y-1/2 right-3.5 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
@@ -147,15 +149,16 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
+                aria-busy={loading ? 'true' : undefined}
                 className="w-full py-3.5 rounded-xl font-bold text-sm text-white bg-[#9e1b1b] hover:bg-[#b91c1c] active:bg-[#7f1616] transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-red-950/20 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
                 {loading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>جاري التحديث...</span>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin motion-reduce:animate-none" />
+                    <span>{t('جاري التحديث...')}</span>
                   </>
                 ) : (
-                  <span>حفظ كلمة المرور الجديدة</span>
+                  <span>{t('حفظ كلمة المرور الجديدة')}</span>
                 )}
               </button>
             </form>
@@ -165,23 +168,23 @@ export default function ResetPasswordPage() {
                 <CheckCircle2 className="w-7 h-7" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                تم تغيير كلمة المرور بنجاح
+                {t('تم تغيير كلمة المرور بنجاح')}
               </h3>
               <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">
-                تم تحديث بيانات الحساب. يمكنك الآن الدخول بكلمة المرور الجديدة.
+                {t('تم تحديث بيانات الحساب. يمكنك الآن الدخول بكلمة المرور الجديدة.')}
               </p>
               <button
                 onClick={() => navigate('/login')}
                 className="w-full mt-4 py-3.5 rounded-xl font-bold text-sm text-white bg-[#9e1b1b] hover:bg-[#b91c1c] transition-colors cursor-pointer"
               >
-                تسجيل الدخول الآن
+                {t('تسجيل الدخول الآن')}
               </button>
             </div>
           )}
         </div>
 
         <p className="text-center text-slate-500 text-xs mt-6">
-          🔒 جلسة تشفير آمنة ومحمية
+          {t('🔒 جلسة تشفير آمنة ومحمية')}
         </p>
       </motion.div>
     </div>

@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useEffect, useState } from 'react';
 import { Plus, Edit, Trash2, X } from 'lucide-react';
 import { homeworkService } from '../../services/homework.service';
@@ -8,6 +9,7 @@ const DEFAULT_HOMEWORKS = [
 ];
 
 export default function HomeworkManagementPage() {
+  const { t } = useLanguage();
   const [showModal, setShowModal] = useState(false);
   const [editingHomework, setEditingHomework] = useState<any>(null);
   const [homeworks, setHomeworks] = useState<any[]>(DEFAULT_HOMEWORKS);
@@ -58,10 +60,10 @@ export default function HomeworkManagementPage() {
     try {
       if (editingHomework) {
         await homeworkService.updateHomework(editingHomework.id, formData);
-        showToast('تم التعديل بنجاح', 'success');
+        showToast(t('تم التعديل بنجاح'), 'success');
       } else {
         await homeworkService.createHomework(formData);
-        showToast('تمت الإضافة بنجاح', 'success');
+        showToast(t('تمت الإضافة بنجاح'), 'success');
       }
       setShowModal(false);
       setEditingHomework(null);
@@ -69,19 +71,19 @@ export default function HomeworkManagementPage() {
       fetchHomeworks();
     } catch (err: any) {
       console.error(err);
-      showToast('فشل في حفظ البيانات', 'error');
+      showToast(t('فشل في حفظ البيانات'), 'error');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('هل أنت متأكد من الحذف؟')) return;
+    if (!confirm(t('هل أنت متأكد من الحذف؟'))) return;
     try {
       await homeworkService.deleteHomework(id);
-      showToast('تم الحذف بنجاح', 'success');
+      showToast(t('تم الحذف بنجاح'), 'success');
       fetchHomeworks();
     } catch (err) {
       console.error(err);
-      showToast('فشل في الحذف', 'error');
+      showToast(t('فشل في الحذف'), 'error');
     }
   };
 
@@ -89,8 +91,8 @@ export default function HomeworkManagementPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">إدارة الواجبات</h1>
-          <p className="text-gray-600 dark:text-gray-400">إنشاء وإدارة الواجبات المنزلية</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('إدارة الواجبات')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('إنشاء وإدارة الواجبات المنزلية')}</p>
         </div>
         <button
           onClick={() => {
@@ -101,7 +103,7 @@ export default function HomeworkManagementPage() {
           className="flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700"
         >
           <Plus className="w-5 h-5" />
-          <span>إضافة واجب</span>
+          <span>{t('إضافة واجب')}</span>
         </button>
       </div>
 
@@ -109,12 +111,12 @@ export default function HomeworkManagementPage() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">عنوان الواجب</th>
-              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">الدورة</th>
-              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">عدد الأسئلة</th>
-              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">الموعد النهائي</th>
-              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">الحالة</th>
-              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">الإجراءات</th>
+              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">{t('عنوان الواجب')}</th>
+              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">{t('الدورة')}</th>
+              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">{t('عدد الأسئلة')}</th>
+              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">{t('الموعد النهائي')}</th>
+              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">{t('الحالة')}</th>
+              <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">{t('الإجراءات')}</th>
             </tr>
           </thead>
           <tbody>
@@ -134,14 +136,14 @@ export default function HomeworkManagementPage() {
                     <button 
                       onClick={() => handleEdit(hw)}
                       className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded transition-colors"
-                      title="تعديل"
+                      title={t('تعديل')}
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button 
                       onClick={() => handleDelete(hw.id)}
                       className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors"
-                      title="حذف"
+                      title={t('حذف')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -165,31 +167,31 @@ export default function HomeworkManagementPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">عنوان الواجب</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('عنوان الواجب')}</label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-purple-500"
-                  placeholder="مثال: واجب الجبر"
+                  placeholder={t('مثال: واجب الجبر')}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الدورة</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('الدورة')}</label>
                 <select 
                   value={formData.courseId}
                   onChange={(e) => setFormData({...formData, courseId: e.target.value})}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-purple-500"
                 >
-                  <option value="">اختر الدورة</option>
-                  <option value="1">الجبر</option>
-                  <option value="2">الهندسة</option>
+                  <option value="">{t('اختر الدورة')}</option>
+                  <option value="1">{t('الجبر')}</option>
+                  <option value="2">{t('الهندسة')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الموعد النهائي</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('الموعد النهائي')}</label>
                 <input
                   type="date"
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-purple-500"
@@ -201,13 +203,13 @@ export default function HomeworkManagementPage() {
                 onClick={() => setShowModal(false)}
                 className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                إلغاء
+                {t('إلغاء')}
               </button>
               <button
                 onClick={handleSave}
                 className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
-                حفظ
+                {t('حفظ')}
               </button>
             </div>
             </div>

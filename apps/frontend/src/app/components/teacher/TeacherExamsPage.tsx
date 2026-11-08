@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Clock, Users, CheckCircle, Edit, Trash2, Eye, Shuffle, ShieldCheck, BarChart3, Brain, Loader2, X, Image as ImageIcon, Upload } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -23,6 +24,7 @@ const questionTypes = [
 ];
 
 export default function TeacherExamsPage() {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'exams' | 'builder' | 'results'>('exams');
@@ -36,7 +38,7 @@ export default function TeacherExamsPage() {
   const [courses, setCourses] = useState<any[]>([]);
 
   const [newTitle, setNewTitle] = useState('');
-  const [newType, setNewType] = useState('امتحان');
+  const [newType, setNewType] = useState(t('امتحان'));
   const [newDuration, setNewDuration] = useState('');
   const [newCourseId, setNewCourseId] = useState('');
   const [newRequiresCamera, setNewRequiresCamera] = useState(false);
@@ -165,7 +167,7 @@ export default function TeacherExamsPage() {
       }
     } catch (err) {
       console.error(err);
-      setError('فشل في جلب الامتحانات');
+      setError(t('فشل في جلب الامتحانات'));
     } finally {
       setLoading(false);
     }
@@ -190,7 +192,7 @@ export default function TeacherExamsPage() {
     }
     if (newStartTime && newEndTime) {
       if (new Date(newStartTime) >= new Date(newEndTime)) {
-        toast.error('يجب أن يكون موعد البداية قبل موعد النهاية');
+        toast.error(t('يجب أن يكون موعد البداية قبل موعد النهاية'));
         return;
       }
     }
@@ -226,7 +228,7 @@ export default function TeacherExamsPage() {
             closeAt: newEndTime ? new Date(newEndTime).toISOString() : undefined
           };
           await homeworkService.updateHomework(editingExamId, homeworkPayload);
-          toast.success('تم تعديل الواجب بنجاح');
+          toast.success(t('تم تعديل الواجب بنجاح'));
         } else {
           const examPayload = {
             title: newTitle,
@@ -240,7 +242,7 @@ export default function TeacherExamsPage() {
             allowedIps: newAllowedIps.trim() || undefined
           };
           await examService.updateExam(editingExamId, examPayload);
-          toast.success('تم تعديل الامتحان بنجاح');
+          toast.success(t('تم تعديل الامتحان بنجاح'));
         }
       } else {
         if (newType === 'واجب') {
@@ -254,7 +256,7 @@ export default function TeacherExamsPage() {
             closeAt: newEndTime ? new Date(newEndTime).toISOString() : undefined
           };
           await homeworkService.createHomework(homeworkPayload);
-          toast.success('تم إنشاء الواجب بنجاح');
+          toast.success(t('تم إنشاء الواجب بنجاح'));
         } else {
           const examPayload = {
             title: newTitle,
@@ -268,7 +270,7 @@ export default function TeacherExamsPage() {
             allowedIps: newAllowedIps.trim() || undefined
           };
           await examService.createExam(examPayload);
-          toast.success('تم إنشاء الامتحان بنجاح');
+          toast.success(t('تم إنشاء الامتحان بنجاح'));
         }
       }
 
@@ -286,7 +288,7 @@ export default function TeacherExamsPage() {
       fetchExams();
     } catch (err: any) {
       console.error('Create failed', err);
-      toast.error('حدث خطأ أثناء الحفظ');
+      toast.error(t('حدث خطأ أثناء الحفظ'));
     } finally {
       setIsSubmitting(false);
     }
@@ -328,7 +330,7 @@ export default function TeacherExamsPage() {
       setEditingExamId(id);
       setShowCreate(true);
     } catch (err) {
-      toast.error('فشل في جلب بيانات الامتحان للتعديل');
+      toast.error(t('فشل في جلب بيانات الامتحان للتعديل'));
     } finally {
       setLoading(false);
     }
@@ -341,14 +343,14 @@ export default function TeacherExamsPage() {
       setSelectedExamResults(res.data);
       setShowResults(true);
     } catch (err) {
-      toast.error('فشل في جلب نتائج الامتحان');
+      toast.error(t('فشل في جلب نتائج الامتحان'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if(confirm('هل أنت متأكد من الحذف؟')) {
+    if(confirm(t('هل أنت متأكد من الحذف؟'))) {
       try {
         await examService.deleteExam(id);
         setExams(e => e.filter(x => x.id !== id));
@@ -390,7 +392,7 @@ export default function TeacherExamsPage() {
       updated[qIndex].imageStorageKey = assetData.storageKey;
       updated[qIndex].imageAssetId = assetData.assetId;
       setQuestions(updated);
-      toast.success('تم رفع صورة السؤال بنجاح');
+      toast.success(t('تم رفع صورة السؤال بنجاح'));
     } catch (err: any) {
       console.error('Image upload failed', err);
       const errMsg = err.response?.data?.message || 'فشل في رفع صورة السؤال';
@@ -414,7 +416,7 @@ export default function TeacherExamsPage() {
     updated[qIndex].imageStorageKey = undefined;
     updated[qIndex].imageAssetId = undefined;
     setQuestions(updated);
-    toast.info('تمت إزالة صورة السؤال');
+    toast.info(t('تمت إزالة صورة السؤال'));
   };
 
   const updateQuestion = (index: number, field: string, value: any, optIndex?: number) => {
@@ -433,7 +435,7 @@ export default function TeacherExamsPage() {
 
   const handleGenerateQuestions = async () => {
     if (!aiForm.topic.trim()) {
-      setAiError('يرجى كتابة موضوع الأسئلة');
+      setAiError(t('يرجى كتابة موضوع الأسئلة'));
       return;
     }
     try {
@@ -443,7 +445,7 @@ export default function TeacherExamsPage() {
       if (res.data?.questions) {
         setGeneratedQuestions(res.data.questions);
       } else {
-        setAiError('تنسيق غير متوقع من الخادم');
+        setAiError(t('تنسيق غير متوقع من الخادم'));
       }
     } catch (err: any) {
       console.error(err);
@@ -480,7 +482,7 @@ export default function TeacherExamsPage() {
         setGeneratedQuestions(updated);
         setEditingGeneratedQuestion(null);
       } else {
-        toast.error('فشل التوليد: لم يتم إرجاع سؤال');
+        toast.error(t('فشل التوليد: لم يتم إرجاع سؤال'));
       }
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'حدث خطأ أثناء إعادة التوليد');
@@ -533,7 +535,7 @@ export default function TeacherExamsPage() {
       // If bank was updated, fetch it in background
       if (saveToBank) fetchBankQuestions();
     } catch (err) {
-      toast.warning('فشل في حفظ بعض الأسئلة في بنك الأسئلة. تمت الإضافة للنموذج فقط.');
+      toast.warning(t('فشل في حفظ بعض الأسئلة في بنك الأسئلة. تمت الإضافة للنموذج فقط.'));
       const newFormQuestions = generatedQuestions.map(q => ({
         text: q.questionText,
         options: q.options?.map(o => o.text) || [],
@@ -571,8 +573,8 @@ export default function TeacherExamsPage() {
     <div className={`p-6 lg:p-8 ${isDark ? 'bg-[#090b10]' : 'bg-slate-50'} min-h-full font-['Cairo']`} dir="rtl">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className={`text-2xl font-bold ${textPrimary}`}>الامتحانات والواجبات</h1>
-          <p className={textSecondary}>إنشاء وإدارة الامتحانات التفاعلية وأنظمة المراقبة الذكية</p>
+          <h1 className={`text-2xl font-bold ${textPrimary}`}>{t('الامتحانات والواجبات')}</h1>
+          <p className={textSecondary}>{t('إنشاء وإدارة الامتحانات التفاعلية وأنظمة المراقبة الذكية')}</p>
         </div>
         <button
           onClick={() => {
@@ -585,7 +587,7 @@ export default function TeacherExamsPage() {
           }}
           className="flex items-center gap-2 bg-[#9e1b1b] hover:bg-[#851616] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all"
         >
-          <Plus className="w-4 h-4" /> إنشاء امتحان جديد
+          <Plus className="w-4 h-4" /> {t('إنشاء امتحان جديد')}
         </button>
       </div>
 
@@ -608,12 +610,18 @@ export default function TeacherExamsPage() {
         ))}
       </div>
 
-      {loading && <div className={`text-center py-8 ${textSecondary}`}>جاري تحميل البيانات...</div>}
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-12 gap-3" role="status" aria-live="polite">
+          <Loader2 className="w-8 h-8 animate-spin motion-reduce:animate-none text-[#9e1b1b]" />
+          <p className={`text-sm font-semibold ${textSecondary}`}>{t('جاري تحميل التقييمات والواجبات...')}</p>
+          <span className="sr-only">{t('جاري تحميل البيانات...')}</span>
+        </div>
+      )}
       {error && <div className="text-center py-8 text-red-500 bg-red-50 rounded-xl mb-4 border border-red-200">{error}</div>}
 
       {activeTab === 'exams' && !loading && !error && (
         <div className="space-y-4">
-          {exams.length === 0 && <div className={`text-center py-8 ${textSecondary}`}>لا يوجد امتحانات</div>}
+          {exams.length === 0 && <div className={`text-center py-8 ${textSecondary}`}>{t('لا يوجد امتحانات')}</div>}
           {exams.map((exam) => (
             <div key={exam.id} className={`${cardBg} border rounded-2xl p-5`}>
               <div className="flex items-start justify-between gap-4">
@@ -632,10 +640,10 @@ export default function TeacherExamsPage() {
                       <Clock className="w-4 h-4" /> {exam.duration}
                     </span>
                     <span className={`flex items-center gap-1 ${textSecondary}`}>
-                      <Users className="w-4 h-4" /> {exam.students} طالب
+                      <Users className="w-4 h-4" /> {exam.students} {t('طالب')}
                     </span>
                     <span className={`flex items-center gap-1 ${textSecondary}`}>
-                      <CheckCircle className="w-4 h-4" /> {exam.questions} سؤال
+                      <CheckCircle className="w-4 h-4" /> {exam.questions} {t('سؤال')}
                     </span>
                     <span className={textSecondary}>{exam.date}</span>
                   </div>
@@ -643,33 +651,33 @@ export default function TeacherExamsPage() {
                   <div className="flex flex-wrap gap-2 mt-3 items-center">
                     {exam.antiCheat && (
                       <span className="flex items-center gap-1 text-xs bg-red-50 text-red-600 px-2 py-1 rounded-lg border border-red-200">
-                        <ShieldCheck className="w-3 h-3" /> مكافحة الغش
+                        <ShieldCheck className="w-3 h-3" /> {t('مكافحة الغش')}
                       </span>
                     )}
                     {exam.randomize && (
                       <span className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg border border-blue-200">
-                        <Shuffle className="w-3 h-3" /> أسئلة عشوائية
+                        <Shuffle className="w-3 h-3" /> {t('أسئلة عشوائية')}
                       </span>
                     )}
                     {exam.avgScore && (
                       <span className="flex items-center gap-1 text-xs bg-green-50 text-green-600 px-2 py-1 rounded-lg border border-green-200">
-                        <BarChart3 className="w-3 h-3" /> متوسط: {exam.avgScore}٪
+                        <BarChart3 className="w-3 h-3" /> {t('متوسط:')} {exam.avgScore}{t('٪')}
                       </span>
                     )}
                     {exam.allowExternalStudents && exam.examAccessCode && (
                       <div className="flex items-center gap-1.5 bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-lg text-xs font-mono font-bold">
-                        <span>كود خارجي: {exam.examAccessCode}</span>
+                        <span>{t('كود خارجي:')} {exam.examAccessCode}</span>
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             const link = `${window.location.origin}/external-exam?code=${exam.examAccessCode}`;
                             navigator.clipboard.writeText(link);
-                            toast.success('تم نسخ رابط الامتحان الخارجي');
+                            toast.success(t('تم نسخ رابط الامتحان الخارجي'));
                           }}
                           className="bg-purple-600 text-white hover:bg-purple-700 px-1.5 py-0.5 rounded text-[10px] font-sans font-normal transition-colors"
                         >
-                          نسخ الرابط
+                          {t('نسخ الرابط')}
                         </button>
                       </div>
                     )}
@@ -697,21 +705,21 @@ export default function TeacherExamsPage() {
           <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-white" />
           </div>
-          <h2 className={`text-xl font-bold ${textPrimary} mb-2`}>بنك الأسئلة الذكي</h2>
+          <h2 className={`text-xl font-bold ${textPrimary} mb-2`}>{t('بنك الأسئلة الذكي')}</h2>
           <p className={`${textSecondary} mb-6 max-w-md mx-auto`}>
-            بنك يضم أكثر من ٢٠٠٠ سؤال في جميع مواضيع الرياضيات، مرتبة حسب الصعوبة والموضوع
+            {t('بنك يضم أكثر من ٢٠٠٠ سؤال في جميع مواضيع الرياضيات، مرتبة حسب الصعوبة والموضوع')}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {questionTypes.map((qt, idx) => (
               <div key={idx} className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-xl p-4`}>
-                <span className={`text-xs px-2 py-1 rounded-full ${qt.color}`}>{qt.label}</span>
+                <span className={`text-xs px-2 py-1 rounded-full ${qt.color}`}>{t(qt.label)}</span>
                 <p className={`text-2xl font-bold ${textPrimary} mt-3`}>{qt.count}</p>
-                <p className={`text-xs ${textSecondary}`}>سؤال</p>
+                <p className={`text-xs ${textSecondary}`}>{t('سؤال')}</p>
               </div>
             ))}
           </div>
           <button onClick={() => navigate('/teacher/questions')} className="bg-gradient-to-l from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-xl font-medium hover:opacity-90">
-            إدارة بنك الأسئلة والتوليد التلقائي
+            {t('إدارة بنك الأسئلة والتوليد التلقائي')}
           </button>
         </div>
       )}
@@ -719,14 +727,14 @@ export default function TeacherExamsPage() {
       {activeTab === 'results' && (
         <div className={`${cardBg} border rounded-2xl p-8 text-center`}>
           <BarChart3 className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
-          <h2 className={`text-xl font-bold ${textPrimary} mb-2`}>تحليل النتائج</h2>
-          <p className={`${textSecondary} mb-6`}>اختر امتحاناً لعرض تحليل مفصل للنتائج</p>
+          <h2 className={`text-xl font-bold ${textPrimary} mb-2`}>{t('تحليل النتائج')}</h2>
+          <p className={`${textSecondary} mb-6`}>{t('اختر امتحاناً لعرض تحليل مفصل للنتائج')}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {exams.filter(e => e.status === 'منتهي').length === 0 && <p className={textSecondary}>لا يوجد نتائج بعد.</p>}
+            {exams.filter(e => e.status === 'منتهي').length === 0 && <p className={textSecondary}>{t('لا يوجد نتائج بعد.')}</p>}
             {exams.filter(e => e.status === 'منتهي').map((exam) => (
-              <button key={exam.id} onClick={() => toast.info('عرض تقرير النتيجة قيد التطوير')} className={`p-4 rounded-xl border ${isDark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'} text-right transition-colors`}>
+              <button key={exam.id} onClick={() => toast.info(t('عرض تقرير النتيجة قيد التطوير'))} className={`p-4 rounded-xl border ${isDark ? 'border-gray-700 hover:bg-gray-700' : 'border-gray-200 hover:bg-gray-50'} text-right transition-colors`}>
                 <h3 className={`font-semibold ${textPrimary}`}>{exam.title}</h3>
-                <p className={`text-sm ${textSecondary} mt-1`}>{exam.students} طالب • متوسط: {exam.avgScore}٪</p>
+                <p className={`text-sm ${textSecondary} mt-1`}>{exam.students} {t('طالب • متوسط:')} {exam.avgScore}{t('٪')}</p>
               </button>
             ))}
           </div>
@@ -752,7 +760,7 @@ export default function TeacherExamsPage() {
                 </div>
                 <div>
                   <h2 className="text-lg font-black tracking-tight">{editingExamId ? 'تعديل الامتحان' : 'إنشاء امتحان / واجب جديد'}</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">املأ بيانات الامتحان وحدد الأسئلة والإعدادات</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('املأ بيانات الامتحان وحدد الأسئلة والإعدادات')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -786,12 +794,12 @@ export default function TeacherExamsPage() {
               <div id="exam-sec-info" className="space-y-4">
                 <h3 className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  المعلومات الأساسية
+                  {t('المعلومات الأساسية')}
                 </h3>
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">عنوان الامتحان *</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">{t('عنوان الامتحان *')}</label>
                   <input
-                    placeholder="مثال: امتحان التفاضل والتكامل الشامل"
+                    placeholder={t('مثال: امتحان التفاضل والتكامل الشامل')}
                     value={newTitle}
                     onChange={e => setNewTitle(e.target.value)}
                     className={`w-full px-4 py-2.5 rounded-xl border ${formErrors.title ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : (isDark ? 'bg-gray-750 border-gray-600 text-white placeholder-gray-400' : 'bg-gray-50 border-gray-200')} focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm`}
@@ -800,10 +808,10 @@ export default function TeacherExamsPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">الكورس المرتبط *</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">{t('الكورس المرتبط *')}</label>
                   {courses.length === 0 ? (
                     <div className={`p-3 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm text-center`}>
-                      أنشئ كورس أولاً لتمكن من إضافة امتحانات أو واجبات
+                      {t('أنشئ كورس أولاً لتمكن من إضافة امتحانات أو واجبات')}
                     </div>
                   ) : (
                     <select
@@ -811,7 +819,7 @@ export default function TeacherExamsPage() {
                       onChange={e => setNewCourseId(e.target.value)}
                       className={`w-full px-4 py-2.5 rounded-xl border ${formErrors.courseId ? 'border-red-500 bg-red-50 dark:bg-red-950/20' : (isDark ? 'bg-gray-750 border-gray-600 text-white' : 'bg-gray-50 border-gray-200')} focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm`}
                     >
-                      <option value="" disabled>اختر الكورس</option>
+                      <option value="" disabled>{t('اختر الكورس')}</option>
                       {courses.map(course => (
                         <option key={course.id} value={course.id}>{course.title}</option>
                       ))}
@@ -825,23 +833,23 @@ export default function TeacherExamsPage() {
               <div id="exam-sec-timing" className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                 <h3 className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  النوع والتوقيت
+                  {t('النوع والتوقيت')}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">نوع التقييم</label>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">{t('نوع التقييم')}</label>
                     <select 
                       value={newType}
                       onChange={e => setNewType(e.target.value)}
                       className={`w-full px-4 py-2.5 rounded-xl border ${isDark ? 'bg-gray-750 border-gray-600 text-white' : 'bg-gray-50 border-gray-200'} focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm`}
                     >
-                      <option value="امتحان">امتحان</option>
-                      <option value="اختبار">اختبار</option>
-                      <option value="واجب">واجب</option>
+                      <option value={t('امتحان')}>{t('امتحان')}</option>
+                      <option value={t('اختبار')}>{t('اختبار')}</option>
+                      <option value={t('واجب')}>{t('واجب')}</option>
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">المدة (بالدقائق)</label>
+                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">{t('المدة (بالدقائق)')}</label>
                     <input
                       type="number"
                       placeholder="60"
@@ -855,7 +863,7 @@ export default function TeacherExamsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className={`block text-xs font-semibold ${textSecondary}`}>موعد البداية (اختياري)</label>
+                    <label className={`block text-xs font-semibold ${textSecondary}`}>{t('موعد البداية (اختياري)')}</label>
                     <input
                       type="datetime-local"
                       value={newStartTime}
@@ -864,7 +872,7 @@ export default function TeacherExamsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className={`block text-xs font-semibold ${textSecondary}`}>موعد النهاية (اختياري)</label>
+                    <label className={`block text-xs font-semibold ${textSecondary}`}>{t('موعد النهاية (اختياري)')}</label>
                     <input
                       type="datetime-local"
                       value={newEndTime}
@@ -880,7 +888,7 @@ export default function TeacherExamsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    أسئلة الامتحان ({questions.length})
+                    {t('أسئلة الامتحان (')}{questions.length})
                   </h3>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button 
@@ -893,28 +901,28 @@ export default function TeacherExamsPage() {
                       }} 
                       className="bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-purple-200 flex items-center gap-1 transition-colors"
                     >
-                      <Brain className="w-3.5 h-3.5" /> توليد ذكي (AI)
+                      <Brain className="w-3.5 h-3.5" /> {t('توليد ذكي (AI)')}
                     </button>
                     <button 
                       type="button"
                       onClick={() => setShowBankPicker(true)} 
                       className="bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-indigo-200 transition-colors"
                     >
-                      اختر من البنك
+                      {t('اختر من البنك')}
                     </button>
                     <button 
                       type="button"
                       onClick={addQuestion} 
                       className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-emerald-200 flex items-center gap-1 transition-colors"
                     >
-                      <Plus className="w-3.5 h-3.5" /> إضافة سؤال
+                      <Plus className="w-3.5 h-3.5" /> {t('إضافة سؤال')}
                     </button>
                   </div>
                 </div>
 
                 {questions.length === 0 && (
                   <div className="text-center py-8 px-4 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700">
-                    <p className={`text-xs ${textSecondary}`}>لا توجد أسئلة مضافة بعد. اضغط «إضافة سؤال» أو اختر من البنك أو التوليد الذكي.</p>
+                    <p className={`text-xs ${textSecondary}`}>{t('لا توجد أسئلة مضافة بعد. اضغط «إضافة سؤال» أو اختر من البنك أو التوليد الذكي.')}</p>
                   </div>
                 )}
 
@@ -922,13 +930,13 @@ export default function TeacherExamsPage() {
                   {questions.map((q, qIndex) => (
                     <div key={qIndex} className={`p-4 rounded-2xl border transition-all ${isDark ? 'bg-gray-800/80 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
                       <div className="flex items-center justify-between mb-3">
-                        <span className="font-bold text-xs bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-lg">السؤال {qIndex + 1}</span>
+                        <span className="font-bold text-xs bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-2.5 py-1 rounded-lg">{t('السؤال')} {qIndex + 1}</span>
                         <div className="flex items-center gap-2">
                           <button 
                             type="button"
                             onClick={() => removeQuestion(qIndex)} 
                             className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 p-1.5 rounded-lg transition-colors"
-                            title="حذف السؤال"
+                            title={t('حذف السؤال')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -948,9 +956,9 @@ export default function TeacherExamsPage() {
                               type="button"
                               onClick={() => handleRemoveQuestionImage(qIndex)}
                               className="absolute top-2 start-2 bg-red-600 text-white p-1 rounded-lg hover:bg-red-700 shadow-md text-xs flex items-center gap-1 transition-colors"
-                              title="حذف الصورة"
+                              title={t('حذف الصورة')}
                             >
-                              <X className="w-3.5 h-3.5" /> حذف الصورة
+                              <X className="w-3.5 h-3.5" /> {t('حذف الصورة')}
                             </button>
                           </div>
                         ) : (
@@ -963,12 +971,12 @@ export default function TeacherExamsPage() {
                               {uploadingImageIndex === qIndex ? (
                                 <>
                                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                  <span>جاري الرفع...</span>
+                                  <span>{t('جاري الرفع...')}</span>
                                 </>
                               ) : (
                                 <>
                                   <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>إرفاق صورة / لقطة شاشة للسؤال</span>
+                                  <span>{t('إرفاق صورة / لقطة شاشة للسؤال')}</span>
                                 </>
                               )}
                               <input
@@ -990,7 +998,7 @@ export default function TeacherExamsPage() {
                       </div>
 
                       <input
-                        placeholder="نص السؤال (يدعم صيغ الرياضيات KaTeX/LaTeX)"
+                        placeholder={t('نص السؤال (يدعم صيغ الرياضيات KaTeX/LaTeX)')}
                         value={q.text}
                         onChange={e => updateQuestion(qIndex, 'text', e.target.value)}
                         className={`w-full mb-3 px-3.5 py-2.5 rounded-xl border ${isDark ? 'bg-gray-750 border-gray-600 text-white placeholder-gray-400' : 'bg-white border-gray-300'} text-xs focus:ring-2 focus:ring-emerald-500 outline-none`}
@@ -1017,7 +1025,7 @@ export default function TeacherExamsPage() {
 
                       {/* Explanation Input */}
                       <input
-                        placeholder="شرح الحل أو التوضيح (اختياري)"
+                        placeholder={t('شرح الحل أو التوضيح (اختياري)')}
                         value={q.explanation || ''}
                         onChange={e => updateQuestion(qIndex, 'explanation', e.target.value)}
                         className={`w-full px-3 py-2 rounded-lg border ${isDark ? 'bg-gray-700/60 border-gray-600 text-white placeholder-gray-400' : 'bg-white/80 border-gray-300 text-gray-700'} text-xs focus:ring-2 focus:ring-emerald-500 outline-none`}
@@ -1032,30 +1040,30 @@ export default function TeacherExamsPage() {
               <div id="exam-sec-advanced" className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-700">
                 <h3 className="text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  الإعدادات المتقدمة
+                  {t('الإعدادات المتقدمة')}
                 </h3>
 
                 <div className="space-y-2.5">
                   <label className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${isDark ? 'border-gray-700 hover:bg-gray-750' : 'border-gray-200 hover:bg-gray-50'} transition-colors`}>
                     <div>
-                      <p className={`text-xs font-bold ${textPrimary}`}>تفعيل مكافحة الغش</p>
-                      <p className={`text-[11px] ${textSecondary}`}>رصد مغادرة التبويب والسلوك المريب</p>
+                      <p className={`text-xs font-bold ${textPrimary}`}>{t('تفعيل مكافحة الغش')}</p>
+                      <p className={`text-[11px] ${textSecondary}`}>{t('رصد مغادرة التبويب والسلوك المريب')}</p>
                     </div>
                     <input type="checkbox" checked={newRequiresCamera} onChange={(e) => setNewRequiresCamera(e.target.checked)} className="w-4 h-4 text-emerald-600 rounded" />
                   </label>
 
                   <label className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${isDark ? 'border-gray-700 hover:bg-gray-750' : 'border-gray-200 hover:bg-gray-50'} transition-colors`}>
                     <div>
-                      <p className={`text-xs font-bold ${textPrimary}`}>أسئلة عشوائية</p>
-                      <p className={`text-[11px] ${textSecondary}`}>ترتيب مختلف للأسئلة لكل طالب</p>
+                      <p className={`text-xs font-bold ${textPrimary}`}>{t('أسئلة عشوائية')}</p>
+                      <p className={`text-[11px] ${textSecondary}`}>{t('ترتيب مختلف للأسئلة لكل طالب')}</p>
                     </div>
                     <input type="checkbox" className="w-4 h-4 text-emerald-600 rounded" />
                   </label>
 
                   <label className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer ${isDark ? 'border-gray-700 hover:bg-gray-750' : 'border-gray-200 hover:bg-gray-50'} transition-colors`}>
                     <div>
-                      <p className={`text-xs font-bold ${textPrimary}`}>التصحيح الفوري</p>
-                      <p className={`text-[11px] ${textSecondary}`}>إظهار النتيجة بعد التسليم مباشرة</p>
+                      <p className={`text-xs font-bold ${textPrimary}`}>{t('التصحيح الفوري')}</p>
+                      <p className={`text-[11px] ${textSecondary}`}>{t('إظهار النتيجة بعد التسليم مباشرة')}</p>
                     </div>
                     <input type="checkbox" className="w-4 h-4 text-emerald-600 rounded" />
                   </label>
@@ -1063,8 +1071,8 @@ export default function TeacherExamsPage() {
                   <div className={`p-3.5 rounded-xl border transition-colors ${newAllowExternalStudents ? 'border-purple-300 bg-purple-50/50 dark:bg-purple-950/20' : (isDark ? 'border-gray-700' : 'border-gray-200')}`}>
                     <label className="flex items-center justify-between cursor-pointer">
                       <div>
-                        <p className={`text-xs font-bold ${textPrimary}`}>السماح للطلاب الخارجيين</p>
-                        <p className={`text-[11px] ${textSecondary}`}>الدخول عبر كود أو رابط مباشر بدون تسجيل حساب</p>
+                        <p className={`text-xs font-bold ${textPrimary}`}>{t('السماح للطلاب الخارجيين')}</p>
+                        <p className={`text-[11px] ${textSecondary}`}>{t('الدخول عبر كود أو رابط مباشر بدون تسجيل حساب')}</p>
                       </div>
                       <input 
                         type="checkbox" 
@@ -1090,7 +1098,7 @@ export default function TeacherExamsPage() {
                 onClick={() => setShowCreate(false)} 
                 className={`px-5 py-2.5 rounded-xl text-xs font-bold border transition-colors ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-200 text-gray-600 hover:bg-gray-100'}`}
               >
-                إلغاء
+                {t('إلغاء')}
               </button>
               <button 
                 type="button"
@@ -1101,7 +1109,7 @@ export default function TeacherExamsPage() {
                 {isSubmitting ? (
                   <>
                     <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    <span>جاري الحفظ...</span>
+                    <span>{t('جاري الحفظ...')}</span>
                   </>
                 ) : (
                   <span>{editingExamId ? 'حفظ التعديلات' : 'إنشاء الامتحان'}</span>
@@ -1117,13 +1125,13 @@ export default function TeacherExamsPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowResults(false)}>
           <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-8 w-full max-w-2xl shadow-2xl`} onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-xl font-bold ${textPrimary}`}>نتائج: {selectedExamResults.title}</h2>
+              <h2 className={`text-xl font-bold ${textPrimary}`}>{t('نتائج:')} {selectedExamResults.title}</h2>
               <button onClick={() => setShowResults(false)} className={`text-gray-500 hover:text-gray-700 dark:hover:text-gray-300`}>✕</button>
             </div>
             
             <div className="max-h-96 overflow-y-auto pr-2 space-y-3">
               {(!selectedExamResults.attempts || selectedExamResults.attempts.length === 0) ? (
-                <p className={`text-center py-8 ${textSecondary}`}>لم يقم أي طالب بأداء هذا الامتحان بعد.</p>
+                <p className={`text-center py-8 ${textSecondary}`}>{t('لم يقم أي طالب بأداء هذا الامتحان بعد.')}</p>
               ) : (
                 selectedExamResults.attempts.map((attempt: any) => (
                   <div key={attempt.id} className={`p-4 rounded-xl border flex justify-between items-center ${isDark ? 'border-gray-700 bg-gray-750' : 'border-gray-200 bg-gray-50'}`}>
@@ -1148,7 +1156,7 @@ export default function TeacherExamsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className={`rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
             <div className={`p-6 border-b flex items-center justify-between ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-              <h2 className={`text-xl font-bold ${textPrimary}`}>اختيار أسئلة من البنك</h2>
+              <h2 className={`text-xl font-bold ${textPrimary}`}>{t('اختيار أسئلة من البنك')}</h2>
               <button onClick={() => setShowBankPicker(false)} className={`p-2 rounded-lg ${isDark ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}>
                 <Eye className="w-5 h-5 hidden" /> {/* Placeholder for close icon visually, using simple 'X' */}
                 <span>✕</span>
@@ -1157,7 +1165,7 @@ export default function TeacherExamsPage() {
             <div className={`p-4 border-b ${isDark ? 'border-gray-700 bg-gray-750' : 'border-gray-200 bg-gray-50'}`}>
               <input
                 type="text"
-                placeholder="تصفية بالوسم (Tag)..."
+                placeholder={t('تصفية بالوسم (Tag)...')}
                 value={bankTagFilter}
                 onChange={(e) => setBankTagFilter(e.target.value)}
                 className={`w-full px-4 py-2 rounded-xl border ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'} focus:ring-2 focus:ring-indigo-500`}
@@ -1165,7 +1173,7 @@ export default function TeacherExamsPage() {
             </div>
             <div className="p-6 overflow-y-auto flex-1 space-y-4">
               {bankQuestions.length === 0 ? (
-                <p className={`text-center py-8 ${textSecondary}`}>لا يوجد أسئلة مطابقة</p>
+                <p className={`text-center py-8 ${textSecondary}`}>{t('لا يوجد أسئلة مطابقة')}</p>
               ) : (
                 bankQuestions.map(q => (
                   <label key={q.id} className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${selectedBankQuestions.has(q.id) ? (isDark ? 'bg-indigo-900/30 border-indigo-500' : 'bg-indigo-50 border-indigo-200') : (isDark ? 'bg-gray-750 border-gray-700' : 'bg-white border-gray-200')}`}>
@@ -1196,14 +1204,14 @@ export default function TeacherExamsPage() {
             </div>
             <div className={`p-4 border-t flex gap-3 justify-end ${isDark ? 'border-gray-700 bg-gray-750' : 'border-gray-200 bg-gray-50'}`}>
               <button onClick={() => setShowBankPicker(false)} className={`px-4 py-2 rounded-xl border ${isDark ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'} hover:opacity-80`}>
-                إلغاء
+                {t('إلغاء')}
               </button>
               <button 
                 onClick={handleAddFromBank}
                 disabled={selectedBankQuestions.size === 0}
                 className="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50"
               >
-                إضافة ({selectedBankQuestions.size}) أسئلة
+                {t('إضافة (')}{selectedBankQuestions.size}{t(') أسئلة')}
               </button>
             </div>
           </div>
@@ -1217,7 +1225,7 @@ export default function TeacherExamsPage() {
             <div className={`p-6 border-b flex items-center justify-between ${isDark ? 'border-gray-700' : 'border-gray-100'}`}>
               <h2 className={`text-2xl font-bold flex items-center gap-2 ${textPrimary}`}>
                 <Brain className="w-6 h-6 text-purple-600" />
-                توليد أسئلة بالذكاء الاصطناعي
+                {t('توليد أسئلة بالذكاء الاصطناعي')}
               </h2>
             </div>
             
@@ -1226,30 +1234,30 @@ export default function TeacherExamsPage() {
                 <>
                   <div className="grid gap-6">
                     <div>
-                      <label className={`block text-sm font-medium mb-2 ${textPrimary}`}>الموضوع أو المادة</label>
+                      <label className={`block text-sm font-medium mb-2 ${textPrimary}`}>{t('الموضوع أو المادة')}</label>
                       <input
                         type="text"
-                        placeholder="مثال: الجبر الخطي، المعادلات التربيعية..."
+                        placeholder={t('مثال: الجبر الخطي، المعادلات التربيعية...')}
                         value={aiForm.topic}
                         onChange={(e) => setAiForm({ ...aiForm, topic: e.target.value })}
                         className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'}`}
                       />
                     </div>
                     <div>
-                      <label className={`block text-sm font-medium mb-2 ${textPrimary}`}>مستوى الصعوبة</label>
+                      <label className={`block text-sm font-medium mb-2 ${textPrimary}`}>{t('مستوى الصعوبة')}</label>
                       <select
                         value={aiForm.difficulty}
                         onChange={(e) => setAiForm({ ...aiForm, difficulty: e.target.value })}
                         className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-200'}`}
                       >
-                        <option value="سهل">سهل</option>
-                        <option value="متوسط">متوسط</option>
-                        <option value="صعب">صعب</option>
-                        <option value="تحدي">تحدي</option>
+                        <option value={t('سهل')}>{t('سهل')}</option>
+                        <option value={t('متوسط')}>{t('متوسط')}</option>
+                        <option value={t('صعب')}>{t('صعب')}</option>
+                        <option value={t('تحدي')}>{t('تحدي')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className={`block text-sm font-medium mb-2 ${textPrimary}`}>عدد الأسئلة (الحد الأقصى 20)</label>
+                      <label className={`block text-sm font-medium mb-2 ${textPrimary}`}>{t('عدد الأسئلة (الحد الأقصى 20)')}</label>
                       <input
                         type="number"
                         min="1"
@@ -1265,7 +1273,7 @@ export default function TeacherExamsPage() {
               ) : (
                 <div className="space-y-6">
                   <div className="bg-green-50 text-green-800 p-4 rounded-xl text-sm border border-green-200">
-                    تم التوليد بنجاح! راجع الأسئلة أو قم بتعديلها قبل إضافتها للامتحان.
+                    {t('تم التوليد بنجاح! راجع الأسئلة أو قم بتعديلها قبل إضافتها للامتحان.')}
                   </div>
                   {generatedQuestions.map((q, qIndex) => (
                     <div key={qIndex} className="relative">
@@ -1280,7 +1288,7 @@ export default function TeacherExamsPage() {
                               setGeneratedQuestions(updated);
                             }}
                             className={`w-full px-4 py-2 mb-3 border rounded-lg font-bold ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                            placeholder="نص السؤال"
+                            placeholder={t('نص السؤال')}
                           />
                           <input
                             type="text"
@@ -1291,7 +1299,7 @@ export default function TeacherExamsPage() {
                               setGeneratedQuestions(updated);
                             }}
                             className={`w-full px-4 py-2 mb-3 border rounded-lg font-mono text-left ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                            placeholder="معادلة LaTeX (اختياري)"
+                            placeholder={t('معادلة LaTeX (اختياري)')}
                             dir="ltr"
                           />
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1320,7 +1328,7 @@ export default function TeacherExamsPage() {
                           </div>
                           <div className="mt-3 flex justify-end">
                             <button onClick={() => setEditingGeneratedQuestion(null)} className="px-4 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm font-bold">
-                              تم التعديل
+                              {t('تم التعديل')}
                             </button>
                           </div>
                         </div>
@@ -1331,7 +1339,7 @@ export default function TeacherExamsPage() {
                                onClick={() => setEditingGeneratedQuestion(qIndex)}
                                className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-md font-bold hover:bg-purple-200 transition-colors"
                              >
-                               تعديل
+                               {t('تعديل')}
                              </button>
                              <button
                                onClick={() => handleRegenerateQuestion(qIndex)}
@@ -1341,7 +1349,7 @@ export default function TeacherExamsPage() {
                                {regeneratingIndex === qIndex ? (
                                  <Loader2 className="w-3 h-3 animate-spin" />
                                ) : '↺'}
-                               إعادة توليد
+                               {t('إعادة توليد')}
                              </button>
                            </div>
                            <QuestionPreview question={q} showSolution={true} isTeacher={true} />
@@ -1353,8 +1361,8 @@ export default function TeacherExamsPage() {
                   <label className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer ${isDark ? 'bg-gray-750 border-gray-700 hover:bg-gray-700' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}>
                     <input type="checkbox" checked={saveToBank} onChange={(e) => setSaveToBank(e.target.checked)} className="w-5 h-5 text-purple-600 rounded" />
                     <div>
-                      <p className={`font-medium ${textPrimary}`}>حفظ الأسئلة في بنك الأسئلة أيضاً</p>
-                      <p className={`text-xs ${textSecondary}`}>حتى تتمكن من إعادة استخدامها لاحقاً</p>
+                      <p className={`font-medium ${textPrimary}`}>{t('حفظ الأسئلة في بنك الأسئلة أيضاً')}</p>
+                      <p className={`text-xs ${textSecondary}`}>{t('حتى تتمكن من إعادة استخدامها لاحقاً')}</p>
                     </div>
                   </label>
                 </div>
@@ -1366,7 +1374,7 @@ export default function TeacherExamsPage() {
                 onClick={() => setShowAiModal(false)}
                 className={`px-6 py-2 rounded-xl border ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-100'}`}
               >
-                إلغاء
+                {t('إلغاء')}
               </button>
               
               {!generatedQuestions ? (
@@ -1378,12 +1386,12 @@ export default function TeacherExamsPage() {
                   {aiLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>جاري التوليد...</span>
+                      <span>{t('جاري التوليد...')}</span>
                     </>
                   ) : (
                     <>
                       <Brain className="w-5 h-5" />
-                      <span>توليد الأسئلة</span>
+                      <span>{t('توليد الأسئلة')}</span>
                     </>
                   )}
                 </button>
@@ -1396,12 +1404,12 @@ export default function TeacherExamsPage() {
                   {aiLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>جاري الإضافة...</span>
+                      <span>{t('جاري الإضافة...')}</span>
                     </>
                   ) : (
                     <>
                       <Plus className="w-5 h-5" />
-                      <span>إضافة للامتحان</span>
+                      <span>{t('إضافة للامتحان')}</span>
                     </>
                   )}
                 </button>

@@ -29,6 +29,8 @@ vi.mock('../contexts/AuthContext', () => ({
       case 'TEACHER': return '/teacher/home';
       case 'PARENT': return '/parent/home';
       case 'ADMIN': return '/admin/home';
+      case 'PRIMARY_MANAGER': return '/manager/home';
+      case 'ACCOUNTANT': return '/accountant/home';
       default: return '/';
     }
   },
@@ -61,7 +63,7 @@ describe('Phase 4: Auth Pages, Splash Screen & Theme Verification', () => {
       expect(screen.queryByText(/يمكنك الدخول بأي بريد إلكتروني لتجربة المنصة/i)).not.toBeInTheDocument();
     });
 
-    it('renders all 5 user roles on initial step', () => {
+    it('renders all institutional user roles on unified login portal', () => {
       render(
         <MemoryRouter>
           <ThemeProvider>
@@ -70,12 +72,13 @@ describe('Phase 4: Auth Pages, Splash Screen & Theme Verification', () => {
         </MemoryRouter>
       );
 
+      expect(screen.getByText(/إدارة المنظومة/i)).toBeInTheDocument();
+      expect(screen.getByText(/محاسب الفرع/i)).toBeInTheDocument();
       expect(screen.getByText('طالب أونلاين')).toBeInTheDocument();
       expect(screen.getByText('طالب سنتر')).toBeInTheDocument();
-      expect(screen.getByText('معلم / محاضر')).toBeInTheDocument();
+      expect(screen.getByText(/معلم \/ محاضر/i)).toBeInTheDocument();
       expect(screen.getByText('ولي أمر')).toBeInTheDocument();
-      expect(screen.getByText('إدارة المنظومة')).toBeInTheDocument();
-      expect(screen.getByText('تسجيل دخول المدير العام للإدارة')).toBeInTheDocument();
+      expect(screen.queryByText(/Platform Super Admin/i)).not.toBeInTheDocument();
     });
 
     it('transitions to credentials form upon selecting a role and allows going back', () => {

@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../../contexts/LanguageContext';
 import { useState } from 'react';
 import { BookOpen, Layers, CheckCircle2, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +15,7 @@ interface StageData {
 }
 
 export default function CurriculumNavigator() {
+  const { t, isRtl } = useLanguage();
   const navigate = useNavigate();
 
   const stages: StageData[] = [
@@ -88,18 +90,18 @@ export default function CurriculumNavigator() {
 
   return (
     <section id="curriculum" className="py-20 lg:py-28 bg-[#fcfcfd] dark:bg-[#0c0f17] border-b border-slate-200/80 dark:border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" dir="rtl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" dir={isRtl ? 'rtl' : 'ltr'}>
         {/* Section Header */}
-        <div className="text-right max-w-3xl mb-12">
+        <div className={`${isRtl ? 'text-right' : 'text-left'} max-w-3xl mb-12`}>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold mb-3">
             <Layers className="w-3.5 h-3.5" />
-            <span>المسارات والمراحل التعليمية</span>
+            <span>{t('المسارات والمراحل التعليمية')}</span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight leading-snug font-sans">
-            مناهج دراسية متكاملة مصممة حسب معايير وزارة التربية والتعليم
+            {t('مناهج دراسية متكاملة مصممة حسب معايير وزارة التربية والتعليم')}
           </h2>
           <p className="mt-3 text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
-            استكشف المسارات الأكاديمية والمحتوى الدراسي المتاح لكل مرحلة مع بنوك أسئلة وامتحانات مخصصة لكل صف.
+            {t('استكشف المسارات الأكاديمية والمحتوى الدراسي المتاح لكل مرحلة مع بنوك أسئلة وامتحانات مخصصة لكل صف.')}
           </p>
         </div>
 
@@ -115,7 +117,7 @@ export default function CurriculumNavigator() {
                   : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800'
               }`}
             >
-              <span>{stage.name}</span>
+              <span>{t(stage.name)}</span>
             </button>
           ))}
         </div>
@@ -125,23 +127,23 @@ export default function CurriculumNavigator() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800/80">
             <div>
               <div className="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-400 mb-2">
-                {currentStage.badge}
+                {t(currentStage.badge)}
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                {currentStage.name}
+                {t(currentStage.name)}
               </h3>
             </div>
             <button
               onClick={() => navigate('/login')}
               className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#9e1b1b] dark:text-red-400 hover:underline cursor-pointer self-start sm:self-auto"
             >
-              <span>التحق بدورات هذا الصف الآن</span>
-              <ChevronLeft className="w-4 h-4" />
+              <span>{t('التحق بدورات هذا الصف الآن')}</span>
+              <ChevronLeft className={`w-4 h-4 ${isRtl ? '' : 'rotate-180'}`} />
             </button>
           </div>
 
           <p className="py-4 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-3xl">
-            {currentStage.description}
+            {t(currentStage.description)}
           </p>
 
           {/* Branches Grid */}
@@ -153,13 +155,13 @@ export default function CurriculumNavigator() {
               >
                 <div className="flex items-center gap-2 mb-3.5 text-slate-900 dark:text-white font-bold text-sm sm:text-base">
                   <BookOpen className="w-4 h-4 text-[#9e1b1b] dark:text-red-400" />
-                  <span>{branch.title}</span>
+                  <span>{t(branch.title)}</span>
                 </div>
                 <ul className="space-y-2">
                   {branch.topics.map((topic, tIdx) => (
                     <li key={tIdx} className="flex items-center gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span>{topic}</span>
+                      <span>{t(topic)}</span>
                     </li>
                   ))}
                 </ul>

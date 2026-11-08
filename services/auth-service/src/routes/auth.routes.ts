@@ -11,7 +11,11 @@ import {
   loginSchema, 
   registerSchema, 
   changePasswordSchema,
-  validateGuestExamCode 
+  validateGuestExamCode,
+  verifyInvitation,
+  acceptInvitation,
+  verifyInvitationSchema,
+  acceptInvitationSchema
 } from '../controllers/auth.controller.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 import { loginRateLimiter, registerRateLimiter, passwordResetLimiter, passwordChangeLimiter } from '../middlewares/rateLimiter.js';
@@ -29,6 +33,8 @@ router.post('/change-password', verifyToken, passwordChangeLimiter, validate(cha
 router.post('/forgot-password', passwordResetLimiter, forgotPassword);
 router.post('/reset-password', passwordResetLimiter, resetPassword);
 router.post('/external-exam', loginRateLimiter, validateGuestExamCode);
+router.post('/invitation/verify', loginRateLimiter, validate(verifyInvitationSchema), verifyInvitation);
+router.post('/invitation/accept', loginRateLimiter, validate(acceptInvitationSchema), acceptInvitation);
 
 export default router;
 

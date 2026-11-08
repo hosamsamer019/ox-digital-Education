@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../../contexts/LanguageContext';
 import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, GraduationCap, Sparkles, CheckCircle2 } from 'lucide-react';
@@ -7,6 +8,7 @@ import QuickExamTerminal from './QuickExamTerminal';
 import MathGridBackground from '../ui/MathGridBackground';
 
 export default function EditorialHero() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
   const textContentRef = useRef<HTMLDivElement>(null);
@@ -59,20 +61,20 @@ export default function EditorialHero() {
             {/* Academic Credential Badge */}
             <div className="hero-fade-up inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-medium mb-5 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-[#9e1b1b]" />
-              <span>المنظومة الأكاديمية الذكية للتعليم وإدارة التقييمات</span>
+              <span>{t('المنظومة الأكاديمية الذكية للتعليم وإدارة التقييمات')}</span>
             </div>
 
             {/* Display Primary Heading (Sole H1 on Page) */}
             <h1 className="hero-fade-up text-3xl sm:text-5xl lg:text-[3.25rem] font-bold text-slate-900 dark:text-white leading-[1.25] sm:leading-[1.2] mb-5 font-sans tracking-tight">
-              التعليم الأكاديمي والذكي بمعايير رصينة،
+              {t('التعليم الأكاديمي والذكي بمعايير رصينة،')}
               <span className="block text-slate-700 dark:text-slate-300 font-semibold text-2xl sm:text-4xl lg:text-[2.5rem] mt-1 sm:mt-2">
-                وتقنيات تقييم متقدمة لا تقبل المساومة.
+                {t('وتقنيات تقييم متقدمة لا تقبل المساومة.')}
               </span>
             </h1>
 
             {/* Subtitle Statement */}
             <p className="hero-fade-up text-slate-600 dark:text-slate-300 text-sm sm:text-base lg:text-lg leading-relaxed max-w-2xl mb-8 font-normal font-sans">
-              منصة التعليم الذكي المتكاملة، تجمع بين الشرح المنهجي لمختلف المواد والمراحل، محركات الصياغة العلمية والرياضية الدقيقة، تتبع المشاهدة، وإدارة بنوك التقييم الإلكتروني المؤمنة.
+              {t('منصة التعليم الذكي المتكاملة، تجمع بين الشرح المنهجي لمختلف المواد والمراحل، محركات الصياغة العلمية والرياضية الدقيقة، تتبع المشاهدة، وإدارة بنوك التقييم الإلكتروني المؤمنة.')}
             </p>
 
             {/* Primary Action Gateways */}
@@ -81,7 +83,7 @@ export default function EditorialHero() {
                 onClick={() => navigate('/login')}
                 className="flex items-center justify-center gap-2.5 px-6 sm:px-7 py-3.5 rounded-xl bg-[#9e1b1b] hover:bg-[#b91c1c] text-white font-bold text-sm sm:text-base shadow-lg shadow-red-950/20 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
-                <span>ابدأ كطالب في المنصة</span>
+                <span>{t('ابدأ كطالب في المنصة')}</span>
                 <ArrowLeft className="w-4 h-4 flex-shrink-0" />
               </button>
 
@@ -90,23 +92,23 @@ export default function EditorialHero() {
                 className="flex items-center justify-center gap-2 px-6 sm:px-7 py-3.5 rounded-xl bg-white hover:bg-slate-100 text-slate-800 hover:text-slate-900 border border-slate-300 dark:bg-slate-900/90 dark:hover:bg-slate-800 dark:text-slate-200 dark:hover:text-white dark:border-slate-700/80 font-semibold text-sm sm:text-base transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
               >
                 <GraduationCap className="w-4 h-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
-                <span>دخول المعلمين والمراكز</span>
+                <span>{t('دخول المعلمين والمراكز')}</span>
               </button>
             </div>
 
             {/* Concrete Proof Pillars */}
             <div className="hero-fade-up w-full grid grid-cols-2 sm:grid-cols-3 gap-4 pt-6 border-t border-slate-200 dark:border-slate-800/80">
               <div className="text-right">
-                <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">تتبع المحاضرات</span>
-                <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-mono">100% ثانية بثانية</span>
+                <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">{t('تتبع المحاضرات')}</span>
+                <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-mono">{t('100% ثانية بثانية')}</span>
               </div>
               <div className="text-right">
-                <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">نظام النزاهة</span>
-                <span className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono">رصد محاولات الغش</span>
+                <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">{t('نظام النزاهة')}</span>
+                <span className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono">{t('رصد محاولات الغش')}</span>
               </div>
               <div className="col-span-2 sm:col-span-1 text-right">
-                <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">صياغة المعادلات</span>
-                <span className="text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 font-mono">محرك KaTeX الرياضي</span>
+                <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">{t('صياغة المعادلات')}</span>
+                <span className="text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 font-mono">{t('محرك KaTeX الرياضي')}</span>
               </div>
             </div>
           </div>

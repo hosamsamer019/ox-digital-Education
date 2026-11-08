@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   BarChart,
@@ -27,6 +28,7 @@ import { useSelectedChild } from './useSelectedChild';
 import { ChildSelector } from './ChildSelector';
 
 export const ParentReportsPage: React.FC = () => {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
 
   const {
@@ -80,12 +82,12 @@ export const ParentReportsPage: React.FC = () => {
         setChildData(res.data);
       } else {
         setChildData(null);
-        setReportsError('تعذر تحميل التقارير الأكاديمية للطالب المحدد.');
+        setReportsError(t('تعذر تحميل التقارير الأكاديمية للطالب المحدد.'));
       }
     } catch (err: any) {
       if (activeChildIdRef.current === childId) {
         console.error('Failed to fetch child reports:', err);
-        setReportsError('حدث خطأ أثناء الاتصال بالخادم لجلب التقارير.');
+        setReportsError(t('حدث خطأ أثناء الاتصال بالخادم لجلب التقارير.'));
       }
     } finally {
       if (activeChildIdRef.current === childId) {
@@ -103,7 +105,7 @@ export const ParentReportsPage: React.FC = () => {
   }, [selectedChildId, fetchReports]);
 
   if (childrenLoading) {
-    return <LoadingState message="جاري تحميل قائمة الأبناء والتقارير..." />;
+    return <LoadingState message={t('جاري تحميل قائمة الأبناء والتقارير...')} />;
   }
 
   return (
@@ -116,14 +118,14 @@ export const ParentReportsPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#9e1b1b]/10 text-[#9e1b1b] border border-[#9e1b1b]/20">
-              التقارير والتحليلات البيانية
+              {t('التقارير والتحليلات البيانية')}
             </span>
           </div>
           <h1 className={`text-2xl sm:text-3xl font-extrabold ${textPrimary}`}>
-            التقارير التحليلية لمستوى الطالب
+            {t('التقارير التحليلية لمستوى الطالب')}
           </h1>
           <p className={`text-xs sm:text-sm mt-0.5 ${textSecondary}`}>
-            رصد بياني لمسار درجات الاختبارات، إنجاز الواجبات، ومؤشرات التطور الأكاديمي
+            {t('رصد بياني لمسار درجات الاختبارات، إنجاز الواجبات، ومؤشرات التطور الأكاديمي')}
           </p>
         </div>
 
@@ -138,7 +140,7 @@ export const ParentReportsPage: React.FC = () => {
             }`}
           >
             <RefreshCw className={`w-4 h-4 ${reportsLoading ? 'animate-spin text-[#9e1b1b]' : 'text-slate-400'}`} />
-            <span>تحديث التقارير</span>
+            <span>{t('تحديث التقارير')}</span>
           </button>
         )}
       </div>
@@ -147,12 +149,12 @@ export const ParentReportsPage: React.FC = () => {
         <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 text-amber-500 text-xs sm:text-sm">
           <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="font-semibold">{childrenError}</p>
+            <p className="font-semibold">{t(childrenError)}</p>
             <button
               onClick={() => refetchChildren()}
               className="mt-1.5 underline font-bold cursor-pointer hover:text-amber-400"
             >
-              إعادة المحاولة
+              {t('إعادة المحاولة')}
             </button>
           </div>
         </div>
@@ -161,8 +163,8 @@ export const ParentReportsPage: React.FC = () => {
       {children.length === 0 && !childrenLoading && !childrenError ? (
         <div className="my-8">
           <EmptyState
-            message="لا يوجد أبناء مسجلين بحسابك"
-            subMessage="يرجى مراجعة إدارة المنظومة التعليمية لربط الحسابات الأكاديمية لأبنائك."
+            message={t('لا يوجد أبناء مسجلين بحسابك')}
+            subMessage={t('يرجى مراجعة إدارة المنظومة التعليمية لربط الحسابات الأكاديمية لأبنائك.')}
           />
         </div>
       ) : (
@@ -184,7 +186,7 @@ export const ParentReportsPage: React.FC = () => {
                     onClick={() => fetchReports(selectedChildId)}
                     className="mt-1.5 underline font-bold cursor-pointer hover:text-amber-400"
                   >
-                    إعادة تحميل التقارير
+                    {t('إعادة تحميل التقارير')}
                   </button>
                 )}
               </div>
@@ -194,7 +196,7 @@ export const ParentReportsPage: React.FC = () => {
           {reportsLoading ? (
             <div className={`${cardBg} border rounded-2xl p-10 text-center mb-8`}>
               <RefreshCw className="w-8 h-8 text-[#9e1b1b] animate-spin mx-auto mb-3" />
-              <p className={`text-sm font-semibold ${textPrimary}`}>جاري توليد الرسوم والتقارير الأكاديمية...</p>
+              <p className={`text-sm font-semibold ${textPrimary}`}>{t('جاري توليد الرسوم والتقارير الأكاديمية...')}</p>
             </div>
           ) : (
             childData && (
@@ -205,7 +207,7 @@ export const ParentReportsPage: React.FC = () => {
                   <div className={`${cardBg} border rounded-2xl p-5 relative overflow-hidden group hover:border-[#9e1b1b]/40 transition-all`}>
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className={`text-xs font-semibold ${textSecondary}`}>متوسط درجات التقييمات المعتمدة</p>
+                        <p className={`text-xs font-semibold ${textSecondary}`}>{t('متوسط درجات التقييمات المعتمدة')}</p>
                         <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1.5 ${textPrimary}`}>
                           {childData?.overview?.overallRate != null
                             ? childData.overview.overallRate
@@ -227,10 +229,10 @@ export const ParentReportsPage: React.FC = () => {
                   <div className={`${cardBg} border rounded-2xl p-5 relative overflow-hidden group hover:border-[#9e1b1b]/40 transition-all`}>
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className={`text-xs font-semibold ${textSecondary}`}>إجمالي الاختبارات</p>
+                        <p className={`text-xs font-semibold ${textSecondary}`}>{t('إجمالي الاختبارات')}</p>
                         <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1.5 ${textPrimary}`}>
                           {childData?.overview?.examsCompleted ?? '—'}
-                          <span className="text-xs font-normal text-slate-400 ms-1.5">اختبار</span>
+                          <span className="text-xs font-normal text-slate-400 ms-1.5">{t('اختبار')}</span>
                         </h3>
                       </div>
                       <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0 border border-blue-500/20">
@@ -238,7 +240,7 @@ export const ParentReportsPage: React.FC = () => {
                       </div>
                     </div>
                     <p className="text-[11px] text-slate-400 mt-3 pt-2.5 border-t border-slate-200/50 dark:border-slate-800/50">
-                      اختبارات إلكترونية وميدانية منجزة
+                      {t('اختبارات إلكترونية وميدانية منجزة')}
                     </p>
                   </div>
 
@@ -246,10 +248,10 @@ export const ParentReportsPage: React.FC = () => {
                   <div className={`${cardBg} border rounded-2xl p-5 relative overflow-hidden group hover:border-[#9e1b1b]/40 transition-all`}>
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className={`text-xs font-semibold ${textSecondary}`}>إجمالي تسليمات الواجبات</p>
+                        <p className={`text-xs font-semibold ${textSecondary}`}>{t('إجمالي تسليمات الواجبات')}</p>
                         <h3 className={`text-2xl sm:text-3xl font-extrabold mt-1.5 ${textPrimary}`}>
                           {childData?.overview?.homeworksCompleted ?? '—'}
-                          <span className="text-xs font-normal text-slate-400 ms-1.5">واجب</span>
+                          <span className="text-xs font-normal text-slate-400 ms-1.5">{t('واجب')}</span>
                         </h3>
                       </div>
                       <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 border border-emerald-500/20">
@@ -257,7 +259,7 @@ export const ParentReportsPage: React.FC = () => {
                       </div>
                     </div>
                     <p className="text-[11px] text-slate-400 mt-3 pt-2.5 border-t border-slate-200/50 dark:border-slate-800/50">
-                      تطبيقات أسبوعية تم تصحيحها
+                      {t('تطبيقات أسبوعية تم تصحيحها')}
                     </p>
                   </div>
                 </div>
@@ -269,7 +271,7 @@ export const ParentReportsPage: React.FC = () => {
                     <div className="flex items-center gap-2 mb-4">
                       <div className="w-2.5 h-2.5 rounded-full bg-[#9e1b1b]" />
                       <h2 className={`font-bold text-base sm:text-lg ${textPrimary}`}>
-                        تطور درجات الامتحانات
+                        {t('تطور درجات الامتحانات')}
                       </h2>
                     </div>
 
@@ -293,13 +295,13 @@ export const ParentReportsPage: React.FC = () => {
                               axisLine={false}
                             />
                             <Tooltip contentStyle={tooltipStyle} />
-                            <Bar dataKey="score" fill="#9e1b1b" radius={[6, 6, 0, 0]} barSize={26} name="الدرجة" />
+                            <Bar dataKey="score" fill="#9e1b1b" radius={[6, 6, 0, 0]} barSize={26} name={t('الدرجة')} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
                     ) : (
                       <div className="flex items-center justify-center h-[260px] text-xs sm:text-sm text-slate-400">
-                        لا توجد نتائج اختبارات مسجلة بعد لهذا الطالب.
+                        {t('لا توجد نتائج اختبارات مسجلة بعد لهذا الطالب.')}
                       </div>
                     )}
                   </div>
@@ -309,7 +311,7 @@ export const ParentReportsPage: React.FC = () => {
                     <div className="flex items-center gap-2 mb-4">
                       <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                       <h2 className={`font-bold text-base sm:text-lg ${textPrimary}`}>
-                        مسار درجات الواجبات والتطبيقات
+                        {t('مسار درجات الواجبات والتطبيقات')}
                       </h2>
                     </div>
 
@@ -340,14 +342,14 @@ export const ParentReportsPage: React.FC = () => {
                               strokeWidth={3}
                               dot={{ r: 4, strokeWidth: 2, fill: isDark ? '#0f131d' : '#ffffff' }}
                               activeDot={{ r: 6 }}
-                              name="الدرجة"
+                              name={t('الدرجة')}
                             />
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
                     ) : (
                       <div className="flex items-center justify-center h-[260px] text-xs sm:text-sm text-slate-400">
-                        لا توجد نتائج واجبات مسجلة بعد لهذا الطالب.
+                        {t('لا توجد نتائج واجبات مسجلة بعد لهذا الطالب.')}
                       </div>
                     )}
                   </div>
@@ -358,7 +360,7 @@ export const ParentReportsPage: React.FC = () => {
                   <div className="flex items-center gap-2 mb-5">
                     <FileText className="w-5 h-5 text-[#9e1b1b]" />
                     <h2 className={`font-bold text-base sm:text-lg ${textPrimary}`}>
-                      سجل النتائج التفصيلي
+                      {t('سجل النتائج التفصيلي')}
                     </h2>
                   </div>
 
@@ -369,10 +371,10 @@ export const ParentReportsPage: React.FC = () => {
                         <table className="w-full text-right text-xs sm:text-sm">
                           <thead>
                             <tr className={`border-b ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
-                              <th className="py-3 px-4 font-bold">عنوان التقييم</th>
-                              <th className="py-3 px-4 font-bold">النوع</th>
-                              <th className="py-3 px-4 font-bold">الدرجة</th>
-                              <th className="py-3 px-4 font-bold">تاريخ التسليم</th>
+                              <th className="py-3 px-4 font-bold">{t('عنوان التقييم')}</th>
+                              <th className="py-3 px-4 font-bold">{t('النوع')}</th>
+                              <th className="py-3 px-4 font-bold">{t('الدرجة')}</th>
+                              <th className="py-3 px-4 font-bold">{t('تاريخ التسليم')}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -409,7 +411,7 @@ export const ParentReportsPage: React.FC = () => {
                                   <td className="py-3.5 px-4">
                                     {isPending ? (
                                       <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                        قيد التصحيح
+                                        {t('قيد التصحيح')}
                                       </span>
                                     ) : (
                                       <span
@@ -471,7 +473,7 @@ export const ParentReportsPage: React.FC = () => {
 
                                 {isPending ? (
                                   <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                    قيد التصحيح
+                                    {t('قيد التصحيح')}
                                   </span>
                                 ) : (
                                   <span
@@ -494,7 +496,7 @@ export const ParentReportsPage: React.FC = () => {
                     </>
                   ) : (
                     <div className="text-center py-10 text-xs sm:text-sm text-slate-400">
-                      لا توجد سجلات نتائج متوفرة لهذا الطالب حالياً.
+                      {t('لا توجد سجلات نتائج متوفرة لهذا الطالب حالياً.')}
                     </div>
                   )}
                 </div>

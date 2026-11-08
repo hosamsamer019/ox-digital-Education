@@ -14,7 +14,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const verifyToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   const token = (authHeader && authHeader.split(' ')[1]) || (req.query.token as string);
 
@@ -61,6 +61,56 @@ export const verifyToken = (req: AuthRequest, res: Response, next: NextFunction)
       
       if ((!isAssessmentsEndpoint && !isExamsEndpoint) || !isMatchingAssessment) {
         return res.status(403).json({ message: 'Forbidden: External student accounts have strictly scoped exam access.' });
+      }
+    }
+
+    // Phase 5.2.3: Authoritative Database Account State Verification for standard registered users (Fail-Closed)
+    if (!decoded.isGuest && !decoded.isExternalStudent && decoded.purpose !== 'video-stream') {
+      const userId = decoded.userId || decoded.id;
+      if (!userId) {
+        return res.status(401).json({
+          message: 'Unauthorized: Invalid token payload, missing user ID',
+          code: 'UNAUTHORIZED_NO_USER_ID'
+        });
+      }
+
+      const { verifyAuthoritativeAccountState } = await import('@smartmath/database');
+      const authResult = await verifyAuthoritativeAccountState(userId);
+
+      if (!authResult.success) {
+        return res.status(authResult.status || 401).json({
+          message: authResult.message,
+          code: authResult.code
+        });
+      }
+
+      const dbUser = authResult.user!;
+      req.user = {
+        ...decoded,
+        userId: dbUser.id,
+        role: dbUser.role,
+        email: dbUser.email,
+        institutionId: dbUser.institutionId,
+        branchId: dbUser.branchId,
+        isPrimaryManager: dbUser.isPrimaryManager,
+        mustChangePassword: dbUser.mustChangePassword
+      };
+
+      if (dbUser.mustChangePassword) {
+        return res.status(403).json({
+          message: 'Forbidden: Temporary password must be replaced before accessing application resources.',
+          code: 'PASSWORD_CHANGE_REQUIRED'
+        });
+      }
+
+      // Phase 5.5: Monthly Fee Financial Access Restriction Enforcement
+      if (dbUser.role === 'CENTER_STUDENT' && dbUser.financialAccessStatus === 'RESTRICTED') {
+        return res.status(403).json({
+          message: 'تم تعليق الوصول التعليمي بسبب تأخر الرسوم الشهرية. يرجى مراجعة الخزينة لسداد الرسوم المستحقة واستعادة الخدمة فوراً.',
+          code: 'FINANCIAL_RESTRICTED',
+          financialAccessStatus: 'RESTRICTED',
+          requiresPayment: true
+        });
       }
     }
 

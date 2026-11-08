@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -27,6 +28,7 @@ export function FormSectionNavigation({
   className = '',
   variant = 'pills'
 }: FormSectionNavigationProps) {
+  const { t } = useLanguage();
   const [activeId, setActiveId] = useState<string>(controlledActiveId || sections[0]?.id || '');
   const { isDark } = useTheme();
 
@@ -108,7 +110,7 @@ export function FormSectionNavigation({
 
   return (
     <nav
-      aria-label="أقسام النموذج"
+      aria-label={t('أقسام النموذج')}
       className={`sticky top-0 z-20 py-2 px-3 backdrop-blur-md rounded-2xl border transition-all duration-200 ${
         isDark
           ? 'bg-gray-800/90 border-gray-700/80 shadow-lg shadow-black/20'

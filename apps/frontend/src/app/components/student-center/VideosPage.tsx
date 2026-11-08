@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Play, Eye, Clock, CheckCircle, BookOpen } from 'lucide-react';
@@ -5,6 +6,7 @@ import { courseService } from '../../services/course.service';
 import { getVideoThumbnailUrl } from '../../utils/videoUtils';
 
 export default function VideosPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [videos, setVideos] = useState<any[]>([]);
@@ -23,8 +25,8 @@ export default function VideosPage() {
     return (
       <div className="p-8 flex items-center justify-center min-h-[60vh]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
-          <span className="text-base font-bold text-gray-500">جاري تحميل الفيديوهات...</span>
+          <div className="w-8 h-8 border-4 border-slate-300 dark:border-slate-800 border-t-[#9e1b1b] rounded-full animate-spin motion-reduce:animate-none" />
+          <span className="text-base font-bold text-gray-500">{t('جاري تحميل الفيديوهات...')}</span>
         </div>
       </div>
     );
@@ -33,15 +35,15 @@ export default function VideosPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8" dir="rtl">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">الفيديوهات التعليمية</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400">شاهد الدروس وسجل تقدمك مباشرة داخل المنصة</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('الفيديوهات التعليمية')}</h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{t('شاهد الدروس وسجل تقدمك مباشرة داخل المنصة')}</p>
       </div>
 
       {videos.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-12 text-center">
           <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-lg font-bold text-gray-700 dark:text-gray-200">لا توجد فيديوهات تعليمية متاحة حالياً</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">سيتم إضافة الدروس التعليمية قريباً</p>
+          <p className="text-lg font-bold text-gray-700 dark:text-gray-200">{t('لا توجد فيديوهات تعليمية متاحة حالياً')}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('سيتم إضافة الدروس التعليمية قريباً')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
@@ -80,7 +82,7 @@ export default function VideosPage() {
                   {isWatched ? (
                     <div className="absolute top-2.5 right-2.5 bg-emerald-600 text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow">
                       <CheckCircle className="w-3.5 h-3.5" />
-                      <span>مكتمل</span>
+                      <span>{t('مكتمل')}</span>
                     </div>
                   ) : progressPct > 0 ? (
                     <div className="absolute top-2.5 right-2.5 bg-emerald-600 text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow font-mono">
@@ -105,7 +107,7 @@ export default function VideosPage() {
                     className="mt-4 w-full py-2.5 px-4 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold rounded-xl text-xs sm:text-sm group-hover:bg-emerald-600 group-hover:text-white dark:group-hover:bg-emerald-600 dark:group-hover:text-white transition-all duration-200 flex items-center justify-center gap-2"
                   >
                     <Play className="w-4 h-4 fill-current" />
-                    <span>مشاهدة الدرس في المنصة</span>
+                    <span>{t('مشاهدة الدرس في المنصة')}</span>
                   </button>
                 </div>
               </div>

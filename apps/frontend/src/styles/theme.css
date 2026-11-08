@@ -1,81 +1,295 @@
 @custom-variant dark (&:is(.dark *));
 
-:root {
+/* =========================================================================
+   1. DEFAULT THEME: Classic Academic Crimson (Light Theme)
+   ========================================================================= */
+:root,
+[data-theme="default"] {
   --font-size: 16px;
-  --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
   --primary: #b62626;
   --primary-foreground: #ffffff;
-  --secondary: oklch(0.95 0.0058 264.53);
-  --secondary-foreground: #030213;
-  --muted: #ececf0;
-  --muted-foreground: #717182;
-  --accent: #e9ebef;
-  --accent-foreground: #030213;
-  --destructive: #d4183d;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+  --accent: #fee2e2;
+  --accent-foreground: #991b1b;
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.1);
-  --input: transparent;
-  --input-background: #f3f3f5;
+  --border: #e2e8f0;
+  --input: #ffffff;
+  --input-background: #f8fafc;
   --switch-background: #cbced4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  --ring: #b62626;
+  --chart-1: #b62626;
+  --chart-2: #2563eb;
+  --chart-3: #059669;
+  --chart-4: #d97706;
+  --chart-5: #7c3aed;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #030213;
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #b62626;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f8fafc;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #b62626;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: #b62626;
+/* =========================================================================
+   2. DARK THEME: Refined Midnight with Crimson Accent (Dark Mode)
+   ========================================================================= */
+.dark,
+[data-theme="dark"] {
+  --background: #0b0f19;
+  --foreground: #f8fafc;
+  --card: #111827;
+  --card-foreground: #f8fafc;
+  --popover: #111827;
+  --popover-foreground: #f8fafc;
+  --primary: #e03131;
   --primary-foreground: #ffffff;
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --secondary: #1f2937;
+  --secondary-foreground: #f8fafc;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --accent: #1f2937;
+  --accent-foreground: #f8fafc;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #1e293b;
+  --input: #1e293b;
+  --input-background: #0f172a;
+  --ring: #e03131;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --chart-1: #e03131;
+  --chart-2: #3b82f6;
+  --chart-3: #10b981;
+  --chart-4: #f59e0b;
+  --chart-5: #8b5cf6;
+  --sidebar: #0f172a;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #e03131;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1e293b;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #e03131;
+}
+
+/* =========================================================================
+   3. LIGHT MINIMAL THEME: Pure Neutral Monochrome (Light Theme)
+   ========================================================================= */
+[data-theme="light"] {
+  --background: #ffffff;
+  --foreground: #09090b;
+  --card: #ffffff;
+  --card-foreground: #09090b;
+  --popover: #ffffff;
+  --popover-foreground: #09090b;
+  --primary: #18181b;
+  --primary-foreground: #ffffff;
+  --secondary: #f4f4f5;
+  --secondary-foreground: #18181b;
+  --muted: #f4f4f5;
+  --muted-foreground: #52525b;
+  --accent: #f4f4f5;
+  --accent-foreground: #18181b;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e4e4e7;
+  --input: #ffffff;
+  --input-background: #f4f4f5;
+  --ring: #18181b;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #09090b;
+  --sidebar-primary: #18181b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f4f4f5;
+  --sidebar-accent-foreground: #18181b;
+  --sidebar-border: #e4e4e7;
+  --sidebar-ring: #18181b;
+}
+
+/* =========================================================================
+   4. ROYAL BLUE THEME: Deep Navy Night with Blue Accents (Dark Theme)
+   ========================================================================= */
+[data-theme="blue"],
+[data-theme="navy"] {
+  --background: #070d1e;
+  --foreground: #f8fafc;
+  --card: #0f1b38;
+  --card-foreground: #f8fafc;
+  --popover: #0f1b38;
+  --popover-foreground: #f8fafc;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #172554;
+  --secondary-foreground: #f8fafc;
+  --muted: #172554;
+  --muted-foreground: #93c5fd;
+  --accent: #1d4ed8;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #1e3a8a;
+  --input: #172554;
+  --input-background: #0b142c;
+  --ring: #3b82f6;
+  --sidebar: #0a1329;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #2563eb;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #172554;
+  --sidebar-accent-foreground: #f8fafc;
+  --sidebar-border: #1e3a8a;
+  --sidebar-ring: #3b82f6;
+}
+
+/* =========================================================================
+   5. EMERALD GREEN THEME: Forest Night with Emerald Accents (Dark Theme)
+   ========================================================================= */
+[data-theme="green"] {
+  --background: #05130b;
+  --foreground: #f0fdf4;
+  --card: #0b2416;
+  --card-foreground: #f0fdf4;
+  --popover: #0b2416;
+  --popover-foreground: #f0fdf4;
+  --primary: #059669;
+  --primary-foreground: #ffffff;
+  --secondary: #064e3b;
+  --secondary-foreground: #f0fdf4;
+  --muted: #064e3b;
+  --muted-foreground: #86efac;
+  --accent: #047857;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #134e4a;
+  --input: #064e3b;
+  --input-background: #071a10;
+  --ring: #10b981;
+  --sidebar: #071a10;
+  --sidebar-foreground: #f0fdf4;
+  --sidebar-primary: #059669;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #064e3b;
+  --sidebar-accent-foreground: #f0fdf4;
+  --sidebar-border: #134e4a;
+  --sidebar-ring: #10b981;
+}
+
+/* =========================================================================
+   6. DEEP VIOLET THEME: Midnight Purple with Violet Accents (Dark Theme)
+   ========================================================================= */
+[data-theme="purple"] {
+  --background: #0d0517;
+  --foreground: #faf5ff;
+  --card: #180c2a;
+  --card-foreground: #faf5ff;
+  --popover: #180c2a;
+  --popover-foreground: #faf5ff;
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --secondary: #2e1065;
+  --secondary-foreground: #faf5ff;
+  --muted: #2e1065;
+  --muted-foreground: #d8b4fe;
+  --accent: #6d28d9;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #3b1d6e;
+  --input: #2e1065;
+  --input-background: #11071f;
+  --ring: #8b5cf6;
+  --sidebar: #11071f;
+  --sidebar-foreground: #faf5ff;
+  --sidebar-primary: #7c3aed;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2e1065;
+  --sidebar-accent-foreground: #faf5ff;
+  --sidebar-border: #3b1d6e;
+  --sidebar-ring: #8b5cf6;
+}
+
+/* =========================================================================
+   7. WARM ORANGE THEME: Amber Espresso Night with Warm Gold (Dark Theme)
+   ========================================================================= */
+[data-theme="warm-orange"],
+[data-theme="sepia"] {
+  --background: #140d05;
+  --foreground: #fffbeb;
+  --card: #22160a;
+  --card-foreground: #fffbeb;
+  --popover: #22160a;
+  --popover-foreground: #fffbeb;
+  --primary: #d97706;
+  --primary-foreground: #ffffff;
+  --secondary: #3a2412;
+  --secondary-foreground: #fffbeb;
+  --muted: #3a2412;
+  --muted-foreground: #fcd34d;
+  --accent: #b45309;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #4a3018;
+  --input: #3a2412;
+  --input-background: #191007;
+  --ring: #f59e0b;
+  --sidebar: #191007;
+  --sidebar-foreground: #fffbeb;
+  --sidebar-primary: #d97706;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #3a2412;
+  --sidebar-accent-foreground: #fffbeb;
+  --sidebar-border: #4a3018;
+  --sidebar-ring: #f59e0b;
+}
+
+/* =========================================================================
+   LEGACY ALIAS: HIGH CONTRAST (Maps to Pure Dark)
+   ========================================================================= */
+[data-theme="high-contrast"] {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #09090b;
+  --card-foreground: #ffffff;
+  --popover: #000000;
+  --popover-foreground: #ffffff;
+  --primary: #facc15;
+  --primary-foreground: #000000;
+  --secondary: #27272a;
+  --secondary-foreground: #ffffff;
+  --muted: #27272a;
+  --muted-foreground: #e4e4e7;
+  --accent: #facc15;
+  --accent-foreground: #000000;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #facc15;
+  --input: #27272a;
+  --ring: #facc15;
+  --sidebar: #000000;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #facc15;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #27272a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #facc15;
+  --sidebar-ring: #facc15;
 }
 
 @theme inline {
@@ -135,11 +349,6 @@
     scroll-behavior: smooth;
     scroll-padding-top: 5.5rem;
   }
-
-  /**
-  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
-  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
-  */
 
   h1 {
     font-size: var(--text-2xl);

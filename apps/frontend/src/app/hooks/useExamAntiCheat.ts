@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { examService } from '../services/exam.service';
 import { toast } from 'sonner';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface UseExamAntiCheatProps {
   assessmentId: string | null;
@@ -22,6 +23,7 @@ export function useExamAntiCheat({
   onDisqualified,
   initialViolationCount = 0
 }: UseExamAntiCheatProps) {
+  const { t } = useLanguage();
   const [violationCount, setViolationCount] = useState(initialViolationCount);
   const [showMultiTabWarning, setShowMultiTabWarning] = useState(false);
   const lastViolationTimestampRef = useRef<number>(0);
@@ -64,7 +66,8 @@ export function useExamAntiCheat({
           if (nextCount >= 3 || res.data?.status === 'CHEATING' || res.data?.isDisqualified) {
             onDisqualifiedRef.current();
           } else {
-            toast.warning(`تحذير: تم رصد مغادرة شاشة الامتحان! مخالفة (${nextCount} من 3). سيتم إلغاء الامتحان فوراً عند المخالفة الثالثة!`);
+            const toastTemplate = t('antiCheatWarningToast', 'تحذير: تم رصد مغادرة شاشة الامتحان! مخالفة ({count} من 3). سيتم إلغاء الامتحان فوراً عند المخالفة الثالثة!');
+            toast.warning(toastTemplate.replace('{count}', String(nextCount)));
           }
           return nextCount;
         });

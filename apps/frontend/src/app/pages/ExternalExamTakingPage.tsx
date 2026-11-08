@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../contexts/LanguageContext';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useExamAntiCheat } from '../hooks/useExamAntiCheat';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -36,6 +37,7 @@ interface Question {
 const BC_CHANNEL = 'external-exam-tab-sync';
 
 export default function ExternalExamTakingPage() {
+  const { t } = useLanguage();
   const { assessmentId } = useParams<{ assessmentId: string }>();
   const navigate = useNavigate();
   const { isDark } = useTheme();
@@ -95,7 +97,7 @@ export default function ExternalExamTakingPage() {
     const userStr = localStorage.getItem('edu-user');
     
     if (!token || !userStr) {
-      toast.error('يرجى تسجيل الدخول أولاً للوصول إلى الامتحان');
+      toast.error(t('يرجى تسجيل الدخول أولاً للوصول إلى الامتحان'));
       navigate('/external-exam', { replace: true });
       return;
     }
@@ -108,16 +110,16 @@ export default function ExternalExamTakingPage() {
       // Parse JWT payload (base64) without verifying signature — server verifies
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload?.assessmentId && assessmentId && payload.assessmentId !== assessmentId) {
-        toast.error('رابط الامتحان غير صحيح. يرجى إدخال كود الامتحان من جديد.');
+        toast.error(t('رابط الامتحان غير صحيح. يرجى إدخال كود الامتحان من جديد.'));
         navigate('/external-exam', { replace: true });
         return;
       }
     } catch {
-      setStudentName('طالب خارجي');
+      setStudentName(t('طالب خارجي'));
     }
 
     if (!assessmentId) {
-      setError('معرف الامتحان غير صالح');
+      setError(t('معرف الامتحان غير صالح'));
       setLoading(false);
       return;
     }
@@ -197,14 +199,14 @@ export default function ExternalExamTakingPage() {
       console.error('Failed to initialize external exam:', err);
       const code = err.response?.data?.code;
       if (code === 'ATTEMPT_ALREADY_FINISHED') {
-        toast.info('لقد قمت بتسليم هذا الامتحان مسبقاً.');
+        toast.info(t('لقد قمت بتسليم هذا الامتحان مسبقاً.'));
         setViewState('submitted');
       } else if (code === 'ASSESSMENT_CLOSED') {
-        setError('انتهى موعد تسليم الامتحان.');
+        setError(t('انتهى موعد تسليم الامتحان.'));
       } else if (code === 'ASSESSMENT_NOT_OPEN') {
-        setError('لم يبدأ موعد فتح الامتحان بعد.');
+        setError(t('لم يبدأ موعد فتح الامتحان بعد.'));
       } else if (err.response?.status === 403) {
-        setError('غير مصرح لك بدخول هذا الامتحان.');
+        setError(t('غير مصرح لك بدخول هذا الامتحان.'));
       } else {
         setError(err.response?.data?.message || 'فشل في تحميل الامتحان، يرجى المحاولة مرة أخرى.');
       }
@@ -275,7 +277,7 @@ export default function ExternalExamTakingPage() {
       // If server says time expired, transition to submitted state
       if (e.response?.data?.code === 'EXAM_TIME_EXPIRED') {
         setSaveStatus('error');
-        toast.error('انتهى وقت الامتحان — جاري تسليم الإجابات...');
+        toast.error(t('انتهى وقت الامتحان — جاري تسليم الإجابات...'));
         submitExamPayload(true);
         return;
       }
@@ -288,7 +290,7 @@ export default function ExternalExamTakingPage() {
   const handleDisqualification = useCallback(() => {
     cleanupExam();
     setViewState('disqualified');
-    toast.error('تم إلغاء الامتحان لرصد مخالفات متعددة.');
+    toast.error(t('تم إلغاء الامتحان لرصد مخالفات متعددة.'));
   }, []);
 
   const { violationCount, showMultiTabWarning, setShowMultiTabWarning } = useExamAntiCheat({
@@ -306,7 +308,7 @@ export default function ExternalExamTakingPage() {
       document.documentElement.requestFullscreen().then(() => {
         setIsFullscreen(true);
       }).catch(() => {
-        toast.error('تعذر تفعيل وضع ملء الشاشة');
+        toast.error(t('تعذر تفعيل وضع ملء الشاشة'));
       });
     } else {
       document.exitFullscreen().then(() => {
@@ -317,7 +319,7 @@ export default function ExternalExamTakingPage() {
 
   // 7. Submission Handlers
   const handleTimeExpired = () => {
-    toast.error('انتهى الوقت المخصص للامتحان! جاري التسليم التلقائي...');
+    toast.error(t('انتهى الوقت المخصص للامتحان! جاري التسليم التلقائي...'));
     submitExamPayload(true);
   };
 
@@ -355,11 +357,11 @@ export default function ExternalExamTakingPage() {
     } catch (err: any) {
       console.error('Exam submission error:', err);
       if (err.response?.data?.code === 'ATTEMPT_ALREADY_FINISHED') {
-        toast.info('تم تسليم هذا الامتحان مسبقاً.');
+        toast.info(t('تم تسليم هذا الامتحان مسبقاً.'));
         setWasAutoSubmit(isAuto);
         setViewState('submitted');
       } else {
-        toast.error('حدث خطأ أثناء تسليم الامتحان، جاري محاولة استرجاع النتيجة.');
+        toast.error(t('حدث خطأ أثناء تسليم الامتحان، جاري محاولة استرجاع النتيجة.'));
         setWasAutoSubmit(isAuto);
         setViewState('submitted');
       }
@@ -402,9 +404,9 @@ export default function ExternalExamTakingPage() {
   if (loading || viewState === 'loading') {
     return (
       <div className={`min-h-screen flex flex-col items-center justify-center p-4 ${isDark ? 'bg-gray-950 text-white' : 'bg-slate-50 text-gray-900'}`} dir="rtl">
-        <div className="w-14 h-14 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
-        <h2 className="text-lg font-bold">جاري تحضير الامتحان والبيئة الآمنة...</h2>
-        <p className="text-xs text-gray-400 mt-1">يرجى الانتظار لحظات</p>
+        <div className="w-14 h-14 border-4 border-slate-300 dark:border-slate-800 border-t-[#9e1b1b] rounded-full animate-spin motion-reduce:animate-none mb-4" />
+        <h2 className="text-lg font-bold">{t('جاري تحضير الامتحان والبيئة الآمنة...')}</h2>
+        <p className="text-xs text-gray-400 mt-1">{t('يرجى الانتظار لحظات')}</p>
       </div>
     );
   }
@@ -417,7 +419,7 @@ export default function ExternalExamTakingPage() {
           <div className="w-16 h-16 bg-red-100 dark:bg-red-950/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
           </div>
-          <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">تعذر الدخول إلى الامتحان</h2>
+          <h2 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">{t('تعذر الدخول إلى الامتحان')}</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">{error}</p>
           <button
             onClick={async () => {
@@ -426,7 +428,7 @@ export default function ExternalExamTakingPage() {
             }}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl transition-colors text-sm"
           >
-            العودة لصفحة كود الامتحان
+            {t('العودة لصفحة كود الامتحان')}
           </button>
         </div>
       </div>
@@ -441,14 +443,14 @@ export default function ExternalExamTakingPage() {
           <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5 animate-pulse">
             <ShieldAlert className="w-10 h-10 text-red-600" />
           </div>
-          <h1 className="text-2xl font-black text-red-600 dark:text-red-400 mb-2">تم إلغاء الامتحان (رصد غش)</h1>
+          <h1 className="text-2xl font-black text-red-600 dark:text-red-400 mb-2">{t('تم إلغاء الامتحان (رصد غش)')}</h1>
           <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
-            تم رصد مخالفات متعددة لشروط الامتحان (الخروج من الصفحة أو تبديل النوافذ 3 مرات). تم إغلاق الجلسة واحتساب درجة (0) للمحاولة وإبلاغ مدرس المادة.
+            {t('تم رصد مخالفات متعددة لشروط الامتحان (الخروج من الصفحة أو تبديل النوافذ 3 مرات). تم إغلاق الجلسة واحتساب درجة (0) للمحاولة وإبلاغ مدرس المادة.')}
           </p>
           <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 rounded-2xl p-4 text-xs text-red-700 dark:text-red-300 mb-6 text-right">
-            <div><strong>اسم الطالب:</strong> {studentName}</div>
-            <div className="mt-1"><strong>الامتحان:</strong> {exam?.title}</div>
-            <div className="mt-1"><strong>عدد المخالفات:</strong> 3 مخالفات</div>
+            <div><strong>{t('اسم الطالب:')}</strong> {studentName}</div>
+            <div className="mt-1"><strong>{t('الامتحان:')}</strong> {exam?.title}</div>
+            <div className="mt-1"><strong>{t('عدد المخالفات:')}</strong> {t('3 مخالفات')}</div>
           </div>
           <button
             onClick={async () => {
@@ -457,7 +459,7 @@ export default function ExternalExamTakingPage() {
             }}
             className="w-full bg-gray-800 hover:bg-gray-700 text-white font-bold py-3 rounded-xl transition-colors text-sm"
           >
-            الخروج من الصفحة
+            {t('الخروج من الصفحة')}
           </button>
         </div>
       </div>
@@ -484,29 +486,29 @@ export default function ExternalExamTakingPage() {
               {passed ? <CheckCircle className="w-10 h-10" /> : <AlertTriangle className="w-10 h-10" />}
             </div>
 
-            <h1 className="text-2xl font-black mb-1 text-gray-900 dark:text-white">تم تسليم الامتحان بنجاح</h1>
+            <h1 className="text-2xl font-black mb-1 text-gray-900 dark:text-white">{t('تم تسليم الامتحان بنجاح')}</h1>
 
             {/* Auto-submit time-expired banner */}
             {wasAutoSubmit && (
               <div className="mt-3 mb-4 px-5 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-sm font-bold text-amber-700 dark:text-amber-300 flex items-center justify-center gap-2">
                 <Clock className="w-4 h-4 shrink-0" />
-                انتهى وقت الامتحان وتم تسليم إجاباتك تلقائيًا.
+                {t('انتهى وقت الامتحان وتم تسليم إجاباتك تلقائيًا.')}
               </div>
             )}
 
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">المنصة التعليمية الذكية — نتائج الامتحان الخارجي</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">{t('المنصة التعليمية الذكية — نتائج الامتحان الخارجي')}</p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 my-6 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 text-right text-xs">
               <div>
-                <span className="text-gray-500 block mb-0.5">الطالب:</span>
+                <span className="text-gray-500 block mb-0.5">{t('الطالب:')}</span>
                 <span className="font-bold text-gray-900 dark:text-white">{studentName}</span>
               </div>
               <div>
-                <span className="text-gray-500 block mb-0.5">الامتحان:</span>
+                <span className="text-gray-500 block mb-0.5">{t('الامتحان:')}</span>
                 <span className="font-bold text-gray-900 dark:text-white truncate block">{exam?.title}</span>
               </div>
               <div>
-                <span className="text-gray-500 block mb-0.5">الحالة:</span>
+                <span className="text-gray-500 block mb-0.5">{t('الحالة:')}</span>
                 <span className={`font-bold ${passed ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>
                   {passed ? 'ناجح' : 'لم يحقق درجة النجاح'}
                 </span>
@@ -514,12 +516,12 @@ export default function ExternalExamTakingPage() {
             </div>
 
             <div className="my-8 py-6 rounded-2xl bg-gradient-to-tr from-purple-600/10 via-indigo-600/10 to-blue-600/10 border border-purple-500/20">
-              <div className="text-xs font-bold text-purple-600 dark:text-purple-400 mb-1 uppercase tracking-wider">النسبة المئوية المحسوبة</div>
+              <div className="text-xs font-bold text-purple-600 dark:text-purple-400 mb-1 uppercase tracking-wider">{t('النسبة المئوية المحسوبة')}</div>
               <div className="text-5xl font-black text-purple-600 dark:text-purple-400 tracking-tight">
                 {Math.round(percentage)}%
               </div>
               <div className="text-xs text-gray-500 mt-2">
-                الدرجة: {scoreVal} {finalResult?.totalPoints ? `من ${finalResult.totalPoints}` : 'نقطة'} (درجة النجاح: {passingScore}%)
+                {t('الدرجة:')} {scoreVal} {finalResult?.totalPoints ? `من ${finalResult.totalPoints}` : 'نقطة'} {t('(درجة النجاح:')} {passingScore}%)
               </div>
             </div>
 
@@ -532,7 +534,7 @@ export default function ExternalExamTakingPage() {
                 className="w-full sm:w-auto px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-colors text-sm shadow-md flex items-center justify-center gap-2"
               >
                 <LogOut className="w-4 h-4" />
-                إنهاء والخروج
+                {t('إنهاء والخروج')}
               </button>
             </div>
           </div>
@@ -542,18 +544,18 @@ export default function ExternalExamTakingPage() {
             <div className={`rounded-3xl border p-6 sm:p-8 shadow-xl ${isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
                 <BookOpen className="w-5 h-5 text-purple-600" />
-                مراجعة إجابات الامتحان ({reviewData.questions.length} أسئلة)
+                {t('مراجعة إجابات الامتحان (')}{reviewData.questions.length} {t('أسئلة)')}
               </h3>
 
               <div className="space-y-6">
                 {reviewData.questions.map((q: any, i: number) => (
                   <div key={q.id || i} className="p-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 text-right">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-purple-600 dark:text-purple-400">سؤال {i + 1}</span>
+                      <span className="text-xs font-bold text-purple-600 dark:text-purple-400">{t('سؤال')} {i + 1}</span>
                       <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
                         q.isCorrect ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300'
                       }`}>
-                        {q.isCorrect ? 'إجابة صحيحة' : 'إجابة خاطئة'} ({q.pointsEarned || 0} / {q.points || 1} نقطة)
+                        {q.isCorrect ? 'إجابة صحيحة' : 'إجابة خاطئة'} ({q.pointsEarned || 0} / {q.points || 1} {t('نقطة)')}
                       </span>
                     </div>
 
@@ -573,11 +575,11 @@ export default function ExternalExamTakingPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-medium">
                       <div className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-                        <span className="text-gray-500 block mb-1">إجابتك:</span>
+                        <span className="text-gray-500 block mb-1">{t('إجابتك:')}</span>
                         <span className="font-bold text-gray-900 dark:text-white">{q.studentAnswer !== null && q.studentAnswer !== undefined ? String(q.studentAnswer) : 'لم يتم الإجابة'}</span>
                       </div>
                       <div className="p-2.5 rounded-xl bg-white dark:bg-gray-900 border border-green-200 dark:border-green-800">
-                        <span className="text-green-600 dark:text-green-400 block mb-1 font-bold">الإجابة الصحيحة:</span>
+                        <span className="text-green-600 dark:text-green-400 block mb-1 font-bold">{t('الإجابة الصحيحة:')}</span>
                         <span className="font-bold text-green-700 dark:text-green-300">{String(q.correctAnswer ?? 'غير معلن')}</span>
                       </div>
                     </div>
@@ -595,9 +597,9 @@ export default function ExternalExamTakingPage() {
   if (viewState === 'submitting') {
     return (
       <div className={`min-h-screen flex flex-col items-center justify-center p-4 ${isDark ? 'bg-gray-950 text-white' : 'bg-slate-50 text-gray-900'}`} dir="rtl">
-        <div className="w-14 h-14 border-4 border-green-600 border-t-transparent rounded-full animate-spin mb-4" />
-        <h2 className="text-lg font-bold">جاري تسليم إجاباتك...</h2>
-        <p className="text-xs text-gray-400 mt-1">يرجى الانتظار، لا تغلق الصفحة</p>
+        <div className="w-14 h-14 border-4 border-slate-300 dark:border-slate-800 border-t-[#9e1b1b] rounded-full animate-spin motion-reduce:animate-none mb-4" />
+        <h2 className="text-lg font-bold">{t('جاري تسليم إجاباتك...')}</h2>
+        <p className="text-xs text-gray-400 mt-1">{t('يرجى الانتظار، لا تغلق الصفحة')}</p>
       </div>
     );
   }
@@ -612,9 +614,9 @@ export default function ExternalExamTakingPage() {
       {showMultiTabWarning && (
         <div className="fixed top-0 inset-x-0 z-50 bg-amber-500 text-white text-xs font-bold py-2 px-4 text-center flex items-center justify-center gap-2">
           <MonitorOff className="w-4 h-4 shrink-0" />
-          تم الكشف عن تبويب آخر مفتوح — قد يتسبب في مخالفات
+          {t('تم الكشف عن تبويب آخر مفتوح — قد يتسبب في مخالفات')}
           <button onClick={() => setShowMultiTabWarning(false)} className="mr-2 underline text-white/80">
-            إغلاق
+            {t('إغلاق')}
           </button>
         </div>
       )}
@@ -655,18 +657,18 @@ export default function ExternalExamTakingPage() {
           <div className="hidden md:flex items-center gap-1 text-[11px] font-medium text-gray-400 pl-2">
             {saveStatus === 'saving' && (
               <>
-                <div className="w-2.5 h-2.5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
-                <span>جارٍ الحفظ...</span>
+                <div className="w-2.5 h-2.5 border-2 border-[#9e1b1b] border-t-transparent rounded-full animate-spin motion-reduce:animate-none" />
+                <span>{t('جارٍ الحفظ...')}</span>
               </>
             )}
             {saveStatus === 'saved' && (
               <>
                 <Check className="w-3.5 h-3.5 text-green-500" />
-                <span>تم الحفظ</span>
+                <span>{t('تم الحفظ')}</span>
               </>
             )}
             {saveStatus === 'error' && (
-              <span className="text-amber-500">تعذر الحفظ (سيتم الإعادة)</span>
+              <span className="text-amber-500">{t('تعذر الحفظ (سيتم الإعادة)')}</span>
             )}
           </div>
 
@@ -674,7 +676,7 @@ export default function ExternalExamTakingPage() {
           {violationCount > 0 && (
             <div className="hidden sm:flex items-center gap-1 text-[11px] font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-950/40 px-2 py-1 rounded-lg">
               <ShieldAlert className="w-3.5 h-3.5" />
-              <span>مخالفات: {violationCount}/3</span>
+              <span>{t('مخالفات:')} {violationCount}/3</span>
             </div>
           )}
 
@@ -698,7 +700,7 @@ export default function ExternalExamTakingPage() {
             className="bg-gradient-to-l from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
-            تسليم الامتحان
+            {t('تسليم الامتحان')}
           </button>
         </div>
       </header>
@@ -715,11 +717,11 @@ export default function ExternalExamTakingPage() {
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-2">
                   <span className="px-3 py-1 bg-purple-600 text-white rounded-lg text-xs font-bold">
-                    السؤال {currentQuestionIdx + 1} من {totalQuestions}
+                    {t('السؤال')} {currentQuestionIdx + 1} {t('من')} {totalQuestions}
                   </span>
                   {currentQ.points && (
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-lg">
-                      {currentQ.points} نقطة
+                      {currentQ.points} {t('نقطة')}
                     </span>
                   )}
                 </div>
@@ -727,7 +729,7 @@ export default function ExternalExamTakingPage() {
                 {answers[String(currentQ.id)] !== undefined && (
                   <span className="text-xs font-semibold text-green-600 dark:text-green-400 flex items-center gap-1">
                     <Check className="w-3.5 h-3.5" />
-                    تمت الإجابة
+                    {t('تمت الإجابة')}
                   </span>
                 )}
               </div>
@@ -758,7 +760,7 @@ export default function ExternalExamTakingPage() {
               {/* Given Information */}
               {currentQ.given && currentQ.given.length > 0 && (
                 <div className="mb-4 p-3.5 rounded-xl bg-purple-500/5 border border-purple-500/10 text-xs">
-                  <p className="font-bold text-purple-700 dark:text-purple-300 mb-1.5">المعطيات:</p>
+                  <p className="font-bold text-purple-700 dark:text-purple-300 mb-1.5">{t('المعطيات:')}</p>
                   <ul className="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-300">
                     {currentQ.given.map((g, gi) => (
                       <li key={gi}><MathRenderer expression={g} /></li>
@@ -777,7 +779,7 @@ export default function ExternalExamTakingPage() {
               {/* Required */}
               {currentQ.required && (
                 <div className="mb-5 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-xs font-semibold text-amber-700 dark:text-amber-300">
-                  المطلوب: {currentQ.required}
+                  {t('المطلوب:')} {currentQ.required}
                 </div>
               )}
 
@@ -819,12 +821,12 @@ export default function ExternalExamTakingPage() {
               ) : (
                 /* Short answer / Numeric input */
                 <div className="my-6">
-                  <label className="block text-xs font-bold mb-2 text-gray-600 dark:text-gray-300">إجابتك:</label>
+                  <label className="block text-xs font-bold mb-2 text-gray-600 dark:text-gray-300">{t('إجابتك:')}</label>
                   <input
                     type="text"
                     value={answers[String(currentQ.id)] || ''}
                     onChange={(e) => handleAnswerSelect(currentQ.id, e.target.value)}
-                    placeholder="أدخل الإجابة هنا..."
+                    placeholder={t('أدخل الإجابة هنا...')}
                     className={`w-full px-4 py-3 rounded-xl border text-sm outline-none transition-all ${
                       isDark
                         ? 'bg-gray-800 border-gray-700 text-white focus:border-purple-500'
@@ -843,11 +845,11 @@ export default function ExternalExamTakingPage() {
                   className="px-4 py-2.5 rounded-xl border text-xs sm:text-sm font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <ChevronRight className="w-4 h-4" />
-                  السابق
+                  {t('السابق')}
                 </button>
 
                 <div className="text-xs text-gray-500 font-medium">
-                  {answeredCount} من {totalQuestions} مُجاب عنها
+                  {answeredCount} {t('من')} {totalQuestions} {t('مُجاب عنها')}
                 </div>
 
                 {currentQuestionIdx < totalQuestions - 1 ? (
@@ -856,7 +858,7 @@ export default function ExternalExamTakingPage() {
                     onClick={() => setCurrentQuestionIdx(prev => Math.min(totalQuestions - 1, prev + 1))}
                     className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition-colors flex items-center gap-1.5"
                   >
-                    التالي
+                    {t('التالي')}
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                 ) : (
@@ -866,13 +868,13 @@ export default function ExternalExamTakingPage() {
                     className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition-colors flex items-center gap-1.5"
                   >
                     <Send className="w-4 h-4" />
-                    إنهاء الامتحان
+                    {t('إنهاء الامتحان')}
                   </button>
                 )}
               </div>
             </div>
           ) : (
-            <div className="text-center py-12 text-gray-500">لا توجد أسئلة متاحة في هذا الامتحان.</div>
+            <div className="text-center py-12 text-gray-500">{t('لا توجد أسئلة متاحة في هذا الامتحان.')}</div>
           )}
         </div>
 
@@ -882,7 +884,7 @@ export default function ExternalExamTakingPage() {
             isDark ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'
           }`}>
             <h3 className="text-xs font-bold uppercase tracking-wider mb-3 text-gray-500 dark:text-gray-400">
-              خريطة الأسئلة ({answeredCount}/{totalQuestions})
+              {t('خريطة الأسئلة (')}{answeredCount}/{totalQuestions})
             </h3>
 
             <div className="grid grid-cols-5 gap-2">
@@ -912,15 +914,15 @@ export default function ExternalExamTakingPage() {
             <div className="mt-5 pt-4 border-t border-gray-200 dark:border-gray-800 space-y-2 text-[11px] text-gray-500 dark:text-gray-400">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded bg-purple-600" />
-                <span>السؤال الحالي</span>
+                <span>{t('السؤال الحالي')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded bg-green-500/20 border border-green-500" />
-                <span>تمت الإجابة</span>
+                <span>{t('تمت الإجابة')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded bg-gray-200 dark:bg-gray-700" />
-                <span>لم تتم الإجابة</span>
+                <span>{t('لم تتم الإجابة')}</span>
               </div>
             </div>
           </div>
@@ -937,22 +939,22 @@ export default function ExternalExamTakingPage() {
               <Send className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
 
-            <h3 className="text-xl font-bold text-center mb-2">تأكيد إنهاء وتسليم الامتحان</h3>
+            <h3 className="text-xl font-bold text-center mb-2">{t('تأكيد إنهاء وتسليم الامتحان')}</h3>
             <p className="text-xs text-center text-gray-500 dark:text-gray-400 leading-relaxed mb-6">
-              هل أنت متأكد من رغبتك في تسليم الامتحان؟ بعد التسليم لن تتمكن من تعديل إجاباتك أو إعادة الدخول.
+              {t('هل أنت متأكد من رغبتك في تسليم الامتحان؟ بعد التسليم لن تتمكن من تعديل إجاباتك أو إعادة الدخول.')}
             </p>
 
             <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 text-xs mb-6 space-y-1.5 text-right">
               <div className="flex justify-between">
-                <span className="text-gray-500">إجمالي الأسئلة:</span>
+                <span className="text-gray-500">{t('إجمالي الأسئلة:')}</span>
                 <span className="font-bold">{totalQuestions}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">الأسئلة المُجاب عليها:</span>
+                <span className="text-gray-500">{t('الأسئلة المُجاب عليها:')}</span>
                 <span className="font-bold text-green-600 dark:text-green-400">{answeredCount}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">الأسئلة المتبقية:</span>
+                <span className="text-gray-500">{t('الأسئلة المتبقية:')}</span>
                 <span className="font-bold text-amber-600 dark:text-amber-400">{totalQuestions - answeredCount}</span>
               </div>
             </div>
@@ -963,14 +965,14 @@ export default function ExternalExamTakingPage() {
                 onClick={() => setShowSubmitModal(false)}
                 className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-gray-700 font-bold text-xs hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               >
-                متابعة الحل
+                {t('متابعة الحل')}
               </button>
               <button
                 type="button"
                 onClick={() => submitExamPayload(false)}
                 className="flex-1 py-3 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold text-xs shadow-md transition-colors"
               >
-                تأكيد التسليم
+                {t('تأكيد التسليم')}
               </button>
             </div>
           </div>

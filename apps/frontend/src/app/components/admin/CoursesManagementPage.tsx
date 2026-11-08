@@ -1,8 +1,10 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useEffect, useState } from 'react';
 import { Plus, Edit, Trash2, X } from 'lucide-react';
 import { courseService } from '../../services/course.service';
 
 export default function CoursesManagementPage() {
+  const { t } = useLanguage();
   const [showModal, setShowModal] = useState(false);
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,7 @@ export default function CoursesManagementPage() {
     } catch (err: any) {
       console.error('Failed to fetch courses', err);
       if (err.response?.status === 403) {
-        showToast('غير مصرح لك بعرض الدورات', 'error');
+        showToast(t('غير مصرح لك بعرض الدورات'), 'error');
       }
     } finally {
       setLoading(false);
@@ -39,17 +41,17 @@ export default function CoursesManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if(confirm('هل أنت متأكد من الحذف؟')) {
+    if(confirm(t('هل أنت متأكد من الحذف؟'))) {
       try {
         await courseService.deleteCourse(id);
         setCourses(c => c.filter(x => x.id !== id));
-        showToast('تم الحذف بنجاح', 'success');
+        showToast(t('تم الحذف بنجاح'), 'success');
       } catch (err: any) {
         console.error('Delete failed', err);
         if (err.response?.status === 403) {
-          showToast('غير مصرح لك بحذف هذه الدورة', 'error');
+          showToast(t('غير مصرح لك بحذف هذه الدورة'), 'error');
         } else {
-          showToast('فشل الحذف', 'error');
+          showToast(t('فشل الحذف'), 'error');
         }
       }
     }
@@ -61,10 +63,10 @@ export default function CoursesManagementPage() {
       setValidationErrors({});
       if (editingCourse) {
         await courseService.updateCourse(editingCourse.id, formData);
-        showToast('تم التعديل بنجاح', 'success');
+        showToast(t('تم التعديل بنجاح'), 'success');
       } else {
         await courseService.createCourse(formData);
-        showToast('تمت الإضافة بنجاح', 'success');
+        showToast(t('تمت الإضافة بنجاح'), 'success');
       }
       setShowModal(false);
       setEditingCourse(null);
@@ -80,7 +82,7 @@ export default function CoursesManagementPage() {
           }
         });
         setValidationErrors(errors);
-        showToast('يرجى مراجعة الحقول المطلوبة', 'error');
+        showToast(t('يرجى مراجعة الحقول المطلوبة'), 'error');
       } else {
         showToast(err.response?.data?.message || 'حدث خطأ', 'error');
       }
@@ -99,8 +101,8 @@ export default function CoursesManagementPage() {
 
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">إدارة الدورات</h1>
-          <p className="text-gray-600 dark:text-gray-400">إنشاء وتعديل الدورات التعليمية</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('إدارة الدورات')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('إنشاء وتعديل الدورات التعليمية')}</p>
         </div>
         <button
           onClick={() => {
@@ -111,13 +113,13 @@ export default function CoursesManagementPage() {
           className="flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700"
         >
           <Plus className="w-5 h-5" />
-          <span>إضافة دورة</span>
+          <span>{t('إضافة دورة')}</span>
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading && <div className="col-span-3 text-center py-8 text-gray-500 dark:text-gray-400">جاري تحميل الدورات...</div>}
-        {!loading && courses.length === 0 && <div className="col-span-3 text-center py-8 text-gray-500 dark:text-gray-400">لا توجد دورات حالياً</div>}
+        {loading && <div className="col-span-3 text-center py-8 text-gray-500 dark:text-gray-400">{t('جاري تحميل الدورات...')}</div>}
+        {!loading && courses.length === 0 && <div className="col-span-3 text-center py-8 text-gray-500 dark:text-gray-400">{t('لا توجد دورات حالياً')}</div>}
         {courses.map((course) => (
           <div key={course.id} className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-md p-6">
             <div className="flex items-start justify-between mb-4">
@@ -125,21 +127,21 @@ export default function CoursesManagementPage() {
             </div>
 
             <div className="space-y-2 mb-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">الوصف: {course.description}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{t('الوصف:')} {course.description}</p>
               {course.teacher && (
-                <p className="text-sm text-gray-600 dark:text-gray-400">المعلم: {course.teacher.name} ({course.teacher.email})</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('المعلم:')} {course.teacher.name} ({course.teacher.email})</p>
               )}
               <div className="flex gap-4 mt-2">
-                <p className="text-sm font-semibold text-purple-700 dark:text-purple-400">السعر: {course.price}ج</p>
+                <p className="text-sm font-semibold text-purple-700 dark:text-purple-400">{t('السعر:')} {course.price}{t('ج')}</p>
                 <p className={`text-sm font-semibold ${course.status === 'PUBLISHED' ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-400'}`}>
-                  الحالة: {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
+                  {t('الحالة:')} {course.status === 'PUBLISHED' ? 'منشور' : 'مسودة'}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-2 mt-2">
-                <p className="text-sm text-gray-600 dark:text-gray-400">عدد الدروس: {course._count?.lessons || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">عدد الطلاب: {course._count?.enrollments || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">الامتحانات: {course._count?.exams || 0}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">الواجبات: {course._count?.homeworks || 0}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('عدد الدروس:')} {course._count?.lessons || 0}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('عدد الطلاب:')} {course._count?.enrollments || 0}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('الامتحانات:')} {course._count?.exams || 0}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{t('الواجبات:')} {course._count?.homeworks || 0}</p>
               </div>
             </div>
 
@@ -159,11 +161,11 @@ export default function CoursesManagementPage() {
                 className="flex-1 flex items-center justify-center gap-2 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/60 py-2 rounded-lg transition-colors"
               >
                 <Edit className="w-4 h-4" />
-                <span>تعديل</span>
+                <span>{t('تعديل')}</span>
               </button>
               <button onClick={() => handleDelete(course.id)} className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors">
                 <Trash2 className="w-4 h-4" />
-                <span>حذف</span>
+                <span>{t('حذف')}</span>
               </button>
             </div>
           </div>
@@ -182,7 +184,7 @@ export default function CoursesManagementPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">عنوان الدورة</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('عنوان الدورة')}</label>
                 <input
                   type="text"
                   value={formData.title}
@@ -193,7 +195,7 @@ export default function CoursesManagementPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الوصف</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('الوصف')}</label>
                 <textarea
                   rows={4}
                   value={formData.description}
@@ -204,7 +206,7 @@ export default function CoursesManagementPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">معرف المعلم (Teacher ID)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('معرف المعلم (Teacher ID)')}</label>
                 <input
                   type="text"
                   placeholder="Enter Teacher ID"
@@ -216,7 +218,7 @@ export default function CoursesManagementPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">السعر (بالجنيه)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('السعر (بالجنيه)')}</label>
                 <input
                   type="number"
                   min="0"
@@ -228,14 +230,14 @@ export default function CoursesManagementPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الحالة</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('الحالة')}</label>
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({...formData, status: e.target.value})}
                   className={`w-full px-4 py-2 border ${validationErrors.status ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-purple-500`}
                 >
-                  <option value="PUBLISHED">منشور (Published)</option>
-                  <option value="DRAFT">مسودة (Draft)</option>
+                  <option value="PUBLISHED">{t('منشور (Published)')}</option>
+                  <option value="DRAFT">{t('مسودة (Draft)')}</option>
                 </select>
                 {validationErrors.status && <p className="text-red-500 text-xs mt-1">{validationErrors.status}</p>}
               </div>
@@ -253,7 +255,7 @@ export default function CoursesManagementPage() {
                   disabled={isSaving}
                   className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
                 >
-                  إلغاء
+                  {t('إلغاء')}
                 </button>
               </div>
             </div>

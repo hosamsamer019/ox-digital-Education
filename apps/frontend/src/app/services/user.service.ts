@@ -1,4 +1,4 @@
-import { userApi, attendanceApi, authApi } from './api';
+import { userApi, managerApi, attendanceApi, authApi } from './api';
 import { User, UserRole } from '../contexts/AuthContext';
 
 export interface UpdateProfileData {
@@ -33,6 +33,51 @@ export const userService = {
   getUsers: async (filters: UserFilters): Promise<{ data: User[], total: number, page: number, limit: number, totalPages: number }> => {
     const response = await userApi.get('/users', { params: filters });
     return response.data;
+  },
+
+  getTeamMembers: async (params?: { branchId?: string; search?: string }): Promise<any[]> => {
+    let data: any = null;
+    try {
+      const response = await managerApi.get('/team', { params });
+      data = response.data;
+    } catch (err: any) {
+      if (err.response?.status === 400 || err.response?.status === 401 || err.response?.status === 403) {
+        throw err;
+      }
+      const response = await userApi.get('/manager/team', { params });
+      data = response.data;
+    }
+    const list = Array.isArray(data) ? data : (Array.isArray(data?.team) ? data.team : null);
+    if (!list) {
+      throw new Error('Invalid response structure: expected team array');
+    }
+    return list;
+  },
+
+  getManagerBranches: async (): Promise<any[]> => {
+    try {
+      const response = await managerApi.get('/branches');
+      return response.data?.branches || response.data?.data || (Array.isArray(response.data) ? response.data : []);
+    } catch (err: any) {
+      if (err.response?.status === 400 || err.response?.status === 401 || err.response?.status === 403) {
+        throw err;
+      }
+      const response = await userApi.get('/manager/branches');
+      return response.data?.branches || response.data?.data || (Array.isArray(response.data) ? response.data : []);
+    }
+  },
+
+  createAccountant: async (data: { name: string; email: string; branchId: string }): Promise<{ user: any; temporaryPassword: string; message: string }> => {
+    try {
+      const response = await managerApi.post('/accountants', data);
+      return response.data;
+    } catch (err: any) {
+      if (err.response?.status === 400 || err.response?.status === 401 || err.response?.status === 403) {
+        throw err;
+      }
+      const response = await userApi.post('/manager/accountants', data);
+      return response.data;
+    }
   },
 
   createUser: async (data: any): Promise<User> => {
@@ -106,6 +151,26 @@ export const userService = {
 
   getRisks: async (): Promise<any[]> => {
     const response = await userApi.get('/risks');
+    return response.data;
+  },
+
+  lookupUser: async (identifier: string, expectedRole?: string): Promise<{ success: boolean; account: any }> => {
+    const response = await userApi.post('/lookup', { identifier, expectedRole });
+    return response.data;
+  },
+
+  linkParentStudent: async (payload: { studentId?: string; parentId?: string }): Promise<any> => {
+    const response = await userApi.post('/link-parent', payload);
+    return response.data;
+  },
+
+  unlinkParentStudent: async (studentId?: string): Promise<any> => {
+    const response = await userApi.post('/unlink-parent', { studentId });
+    return response.data;
+  },
+
+  getLinkedRelationships: async (): Promise<any> => {
+    const response = await userApi.get('/linked-relationships');
     return response.data;
   }
 };

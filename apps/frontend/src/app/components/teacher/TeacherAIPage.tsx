@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
 import { Brain, Sparkles, BookOpen, Target, MessageSquare, Zap, ChevronLeft, Send, Loader2 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -48,10 +49,11 @@ const aiTools = [
 const homeworkGeneratorTopics = ['الجبر', 'الهندسة', 'التفاضل', 'التكامل', 'الإحصاء', 'المثلثات'];
 
 export default function TeacherAIPage() {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [difficulty, setDifficulty] = useState('متوسط');
+  const [difficulty, setDifficulty] = useState(t('متوسط'));
   const [questionCount, setQuestionCount] = useState(10);
   const [generating, setGenerating] = useState(false);
   const [genStage, setGenStage] = useState<string>('');
@@ -81,7 +83,7 @@ export default function TeacherAIPage() {
 
   const handleGenerate = async () => {
     if (selectedTopics.length === 0) {
-      alert('يرجى اختيار موضوع واحد على الأقل');
+      alert(t('يرجى اختيار موضوع واحد على الأقل'));
       return;
     }
     if (generating) return;
@@ -89,7 +91,7 @@ export default function TeacherAIPage() {
     setGenerating(true);
     setGenElapsed(0);
     setGenProgressCount(0);
-    setGenStage('إعداد الطلب...');
+    setGenStage(t('إعداد الطلب...'));
 
     const startTime = performance.now();
     const timer = setInterval(() => {
@@ -97,32 +99,32 @@ export default function TeacherAIPage() {
     }, 100);
 
     setTimeout(() => {
-      setGenStage('جاري الاتصال بالذكاء الاصطناعي...');
+      setGenStage(t('جاري الاتصال بالذكاء الاصطناعي...'));
     }, 350);
 
     setTimeout(() => {
-      setGenStage('توليد الأسئلة...');
+      setGenStage(t('توليد الأسئلة...'));
       setGenProgressCount(Math.max(1, Math.floor(questionCount * 0.4)));
     }, 900);
 
     setTimeout(() => {
-      setGenStage('التحقق من صحة الأسئلة...');
+      setGenStage(t('التحقق من صحة الأسئلة...'));
       setGenProgressCount(Math.max(1, Math.floor(questionCount * 0.8)));
     }, 2000);
 
     try {
       const res = await aiService.generateQuestions({
-        topic: selectedTopics.join('، '),
+        topic: selectedTopics.join(t('،')),
         difficulty,
         count: questionCount
       });
       setGenProgressCount(res.data.questions?.length || questionCount);
-      setGenStage('اكتمل التوليد');
+      setGenStage(t('اكتمل التوليد'));
       setGeneratedQuestions(res.data.questions);
       setGenerated(true);
     } catch (err) {
       console.error(err);
-      alert('فشل في التوليد');
+      alert(t('فشل في التوليد'));
     } finally {
       clearInterval(timer);
       setGenerating(false);
@@ -137,7 +139,7 @@ export default function TeacherAIPage() {
         text: q.questionText,
         options: q.options?.map((o: any) => o.text) || [],
         correctAnswer: q.options?.findIndex((o: any) => o.id === q.correctAnswer) || 0,
-        tag: selectedTopics.join('، '),
+        tag: selectedTopics.join(t('،')),
         mathExpression: q.mathExpression,
         diagram: q.diagram,
         solutionSteps: q.solutionSteps,
@@ -150,11 +152,11 @@ export default function TeacherAIPage() {
       }));
 
       await questionService.createQuestionsBatch(payload);
-      alert('تم حفظ كافة الأسئلة في بنك الأسئلة دفعة واحدة بنجاح!');
+      alert(t('تم حفظ كافة الأسئلة في بنك الأسئلة دفعة واحدة بنجاح!'));
       setGenerated(false);
     } catch (err) {
       console.error(err);
-      alert('فشل في حفظ الأسئلة');
+      alert(t('فشل في حفظ الأسئلة'));
     } finally {
       setGenerating(false);
     }
@@ -167,9 +169,9 @@ export default function TeacherAIPage() {
           <div className="w-10 h-10 bg-[#9e1b1b] rounded-xl flex items-center justify-center shadow-md">
             <Brain className="w-6 h-6 text-white" />
           </div>
-          <h1 className={`text-2xl font-bold ${textPrimary}`}>أدوات الذكاء الاصطناعي الأكاديمية</h1>
+          <h1 className={`text-2xl font-bold ${textPrimary}`}>{t('أدوات الذكاء الاصطناعي الأكاديمية')}</h1>
         </div>
-        <p className={textSecondary}>توليد الأسئلة الرياضية الذكية وربطها المباشر بقاعدة بيانات بنك الأسئلة</p>
+        <p className={textSecondary}>{t('توليد الأسئلة الرياضية الذكية وربطها المباشر بقاعدة بيانات بنك الأسئلة')}</p>
       </div>
 
       {!activeTool ? (
@@ -200,7 +202,7 @@ export default function TeacherAIPage() {
 
           {/* AI Stats */}
           <div className={`md:col-span-2 ${cardBg} border rounded-2xl p-6`}>
-            <h2 className={`font-bold ${textPrimary} mb-4`}>إحصائيات الذكاء الاصطناعي</h2>
+            <h2 className={`font-bold ${textPrimary} mb-4`}>{t('إحصائيات الذكاء الاصطناعي')}</h2>
             {aiStats ? (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
@@ -220,7 +222,7 @@ export default function TeacherAIPage() {
               </div>
             )}
             
-            <h2 className={`font-bold ${textPrimary} mt-8 mb-4`}>أحدث محادثات الطلاب مع المساعد</h2>
+            <h2 className={`font-bold ${textPrimary} mt-8 mb-4`}>{t('أحدث محادثات الطلاب مع المساعد')}</h2>
             {aiStats && aiStats.conversations && aiStats.conversations.length > 0 ? (
               <div className="space-y-4">
                 {aiStats.conversations.map((conv: any, idx: number) => (
@@ -235,21 +237,21 @@ export default function TeacherAIPage() {
                 ))}
               </div>
             ) : (
-              <p className={`text-sm ${textSecondary} text-center py-4`}>لا توجد محادثات مسجلة</p>
+              <p className={`text-sm ${textSecondary} text-center py-4`}>{t('لا توجد محادثات مسجلة')}</p>
             )}
           </div>
         </div>
       ) : activeTool === 'solver' ? (
         <div className={`${cardBg} border rounded-2xl p-6`}>
           <button onClick={() => { setActiveTool(null); setGenerated(false); }} className="flex items-center gap-2 text-emerald-600 mb-6 hover:underline">
-            <ChevronLeft className="w-4 h-4 rotate-180" /> رجوع
+            <ChevronLeft className="w-4 h-4 rotate-180" /> {t('رجوع')}
           </button>
-          <h2 className={`text-xl font-bold ${textPrimary} mb-6`}>توليد الواجبات الذكي</h2>
+          <h2 className={`text-xl font-bold ${textPrimary} mb-6`}>{t('توليد الواجبات الذكي')}</h2>
 
           {!generated ? (
             <div className="space-y-6 max-w-lg">
               <div>
-                <label className={`text-sm font-medium ${textPrimary} block mb-3`}>اختر المواضيع</label>
+                <label className={`text-sm font-medium ${textPrimary} block mb-3`}>{t('اختر المواضيع')}</label>
                 <div className="flex flex-wrap gap-2">
                   {homeworkGeneratorTopics.map((topic) => (
                     <button
@@ -269,7 +271,7 @@ export default function TeacherAIPage() {
                 </div>
               </div>
               <div>
-                <label className={`text-sm font-medium ${textPrimary} block mb-3`}>مستوى الصعوبة</label>
+                <label className={`text-sm font-medium ${textPrimary} block mb-3`}>{t('مستوى الصعوبة')}</label>
                 <div className="flex gap-2">
                   {['سهل', 'متوسط', 'صعب'].map((d) => (
                     <button
@@ -285,7 +287,7 @@ export default function TeacherAIPage() {
                 </div>
               </div>
               <div>
-                <label className={`text-sm font-medium ${textPrimary} block mb-3`}>عدد الأسئلة: {questionCount}</label>
+                <label className={`text-sm font-medium ${textPrimary} block mb-3`}>{t('عدد الأسئلة:')} {questionCount}</label>
                 <input
                   type="range"
                   min={5}
@@ -295,7 +297,7 @@ export default function TeacherAIPage() {
                   className="w-full accent-purple-600"
                 />
                 <div className="flex justify-between text-xs text-gray-400 mt-1">
-                  <span>٥</span><span>٣٠</span>
+                  <span>{t('٥')}</span><span>{t('٣٠')}</span>
                 </div>
               </div>
               {generating && (
@@ -308,11 +310,11 @@ export default function TeacherAIPage() {
                     <div className="flex items-center gap-2">
                       {genProgressCount > 0 && (
                         <span className="text-xs font-semibold text-purple-800 dark:text-purple-200 bg-purple-200 dark:bg-purple-800 px-2 py-0.5 rounded-full">
-                          تم توليد {genProgressCount} من {questionCount} أسئلة
+                          {t('تم توليد')} {genProgressCount} {t('من')} {questionCount} {t('أسئلة')}
                         </span>
                       )}
                       <span className="text-xs font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-800 px-2 py-0.5 rounded-full">
-                        الوقت المنقضي: {genElapsed.toFixed(1)} ثانية
+                        {t('الوقت المنقضي:')} {genElapsed.toFixed(1)} {t('ثانية')}
                       </span>
                     </div>
                   </div>
@@ -329,11 +331,11 @@ export default function TeacherAIPage() {
                 {generating ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    جاري التوليد الفائق...
+                    {t('جاري التوليد الفائق...')}
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" /> توليد الواجب
+                    <Sparkles className="w-5 h-5" /> {t('توليد الواجب')}
                   </>
                 )}
               </button>
@@ -342,17 +344,17 @@ export default function TeacherAIPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 bg-green-50 dark:bg-green-900/20 text-green-700 p-4 rounded-xl">
                 <Zap className="w-5 h-5" />
-                <span className="font-medium">تم توليد الواجب بنجاح! ({questionCount} سؤال في {selectedTopics.join('، ')})</span>
+                <span className="font-medium">{t('تم توليد الواجب بنجاح! (')}{questionCount} {t('سؤال في')} {selectedTopics.join(t('،'))})</span>
               </div>
               <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto">
                 {generatedQuestions.map((q, idx) => (
                   <div key={idx} className="relative">
                     <div className="absolute top-4 left-4 z-10 flex gap-2">
                        <button className="text-xs bg-purple-100 text-purple-700 px-3 py-1 rounded-md font-bold hover:bg-purple-200 transition-colors">
-                          تعديل
+                          {t('تعديل')}
                        </button>
                        <button className="text-xs bg-red-100 text-red-700 px-3 py-1 rounded-md font-bold hover:bg-red-200 transition-colors">
-                          إعادة التوليد
+                          {t('إعادة التوليد')}
                        </button>
                     </div>
                     <QuestionPreview question={q} showSolution={true} />
@@ -361,10 +363,10 @@ export default function TeacherAIPage() {
               </div>
               <div className="flex gap-3">
                 <button onClick={handleSaveToBank} disabled={generating} className="bg-gradient-to-l from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-xl font-medium hover:opacity-90">
-                  حفظ في بنك الأسئلة
+                  {t('حفظ في بنك الأسئلة')}
                 </button>
                 <button onClick={() => setGenerated(false)} className={`px-6 py-3 rounded-xl border ${isDark ? 'border-gray-600 text-gray-300' : 'border-gray-200 text-gray-600'}`}>
-                  إعادة التوليد
+                  {t('إعادة التوليد')}
                 </button>
               </div>
             </div>
@@ -381,7 +383,7 @@ export default function TeacherAIPage() {
               {aiTools.find(t => t.id === activeTool)?.title || 'خدمة الذكاء الاصطناعي'}
             </h2>
             <p className={`${textSecondary} text-sm max-w-md mx-auto leading-relaxed`}>
-              هذه الوحدة تخضع حاليًا للتحقق الأكاديمي والربط بنموذج الاستدلال المتخصص. يمكنك استخدام أداة توليد الأسئلة الذكية المتاحة حاليًا وحفظ النتائج في بنك الأسئلة الموحد.
+              {t('هذه الوحدة تخضع حاليًا للتحقق الأكاديمي والربط بنموذج الاستدلال المتخصص. يمكنك استخدام أداة توليد الأسئلة الذكية المتاحة حاليًا وحفظ النتائج في بنك الأسئلة الموحد.')}
             </p>
           </div>
           <div className="pt-2 flex justify-center gap-3">
@@ -389,13 +391,13 @@ export default function TeacherAIPage() {
               onClick={() => setActiveTool('solver')}
               className="px-6 py-2.5 rounded-xl bg-[#9e1b1b] hover:bg-[#851616] text-white font-bold text-sm transition-colors shadow-sm"
             >
-              الانتقال إلى توليد الأسئلة الذكي
+              {t('الانتقال إلى توليد الأسئلة الذكي')}
             </button>
             <button
               onClick={() => setActiveTool(null)}
               className={`px-6 py-2.5 rounded-xl border ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-700 hover:bg-slate-100'} font-semibold text-sm transition-colors`}
             >
-              رجوع للأدوات
+              {t('رجوع للأدوات')}
             </button>
           </div>
         </div>

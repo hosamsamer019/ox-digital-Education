@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OX-DIGITAL Education — App Shell & Navigation Prototype (DEMO DATA)</title>
+  <!-- 
+    NOTICE ON EXTERNAL DEPENDENCIES:
+    This design prototype loads Tailwind CSS and Google Fonts (Cairo & JetBrains Mono) from external CDN endpoints:
+    - https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js
+    - https://fonts.googleapis.com
+    This prototype is intended for interactive design inspection and review. It is NOT fully offline.
+    No application source code or production dependencies have been modified.
+  -->
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #b62626;
+      --primary-hover: #9e1b1b;
+      --primary-foreground: #ffffff;
+      --background: #f8fafc;
+      --card: #ffffff;
+      --foreground: #0f172a;
+      --muted: #f1f5f9;
+      --muted-foreground: #64748b;
+      --border: #e2e8f0;
+      --ring: #b62626;
+    }
+    .dark {
+      --primary: #dc2626;
+      --primary-hover: #ef4444;
+      --primary-foreground: #ffffff;
+      --background: #090b10;
+      --card: #131722;
+      --foreground: #f8fafc;
+      --muted: #1e293b;
+      --muted-foreground: #94a3b8;
+      --border: #1e293b;
+      --ring: #ef4444;
+    }
+    body {
+      font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+    }
+    .font-mono-numbers {
+      font-family: 'JetBrains Mono', monospace;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen p-3 md:p-4 transition-colors duration-200">
+
+  <!-- Persistent Demo Data Warning & Architecture Alignment Notice -->
+  <aside aria-label="Demo Data Notice" class="max-w-[1600px] mx-auto mb-3 bg-amber-50 dark:bg-amber-950/70 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2 shadow-xs">
+    <div class="flex items-center gap-2 text-amber-900 dark:text-amber-200 font-medium">
+      <span class="text-sm">⚠️</span>
+      <span><strong>تنبيه مواءمة بنية الأدوار:</strong> تم إلغاء دور الكاشير المستقل بقرار المالك؛ دُمجت مهام الخزائن والتحصيل ضمن واجهتي <strong>المدير الرئيسي والمحاسب</strong> مع الحفاظ على امتداد واجهة المعلم القائمة. كافة الأرقام <strong>بيانات تجريبية استرشادية (DEMO DATA — NOT REAL)</strong>.</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="font-mono text-[10px] font-bold bg-amber-200/80 dark:bg-amber-900 text-amber-950 dark:text-amber-200 px-2 py-0.5 rounded">NO CASHIER ROLE • DEMO DATA</span>
+    </div>
+  </aside>
+
+  <!-- Interactive Controls Header (Prototype Switcher Bar) -->
+  <header class="max-w-[1600px] mx-auto mb-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 md:p-4 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-red-700 text-white flex items-center justify-center font-bold text-lg shadow-inner">
+          OX
+        </div>
+        <div>
+          <h1 class="text-sm md:text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            لوحة محاكاة الهيكل البصري الموحد (App Shell & Navigation)
+            <span class="text-[10px] md:text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-900">Phase 2 — Batch 1 (Aligned)</span>
+          </h1>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">بنية الأدوار المعتمدة: مدير رئيسي • محاسب • واجهة المعلم الممتدة (بدون دور كاشير مستقل)</p>
+        </div>
+      </div>
+
+      <!-- Controls Grid -->
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <!-- Role Selector: 3 Approved Roles (No Independent Cashier) -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+          <span class="px-2 text-slate-500 font-medium hidden sm:inline">الدور:</span>
+          <button onclick="setRole('PM')" id="btn-role-pm" class="px-2.5 py-1.5 rounded-lg font-bold bg-white dark:bg-slate-900 text-red-700 dark:text-red-400 shadow-sm transition">مدير رئيسي</button>
+          <button onclick="setRole('ACC')" id="btn-role-acc" class="px-2.5 py-1.5 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 transition">محاسب</button>
+          <button onclick="setRole('TCH')" id="btn-role-tch" class="px-2.5 py-1.5 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 transition">واجهة المعلم (ممتدة)</button>
+        </div>
+
+        <!-- Sidebar Mode Toggle -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+          <button onclick="toggleSidebar()" id="btn-sidebar-toggle" class="px-2.5 py-1.5 rounded-lg font-medium text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-900 transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            <span id="txt-sidebar-mode">تبديل العرض (260px)</span>
+          </button>
+        </div>
+
+        <!-- Viewport Simulator -->
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+          <button onclick="setViewport('desktop')" id="btn-vp-desktop" class="px-2.5 py-1.5 rounded-lg font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm">شاشة كاملة</button>
+          <button onclick="setViewport('laptop')" id="btn-vp-laptop" class="px-2 py-1.5 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900">لابتوب (1280px)</button>
+          <button onclick="setViewport('tablet-l')" id="btn-vp-tablet-l" class="px-2 py-1.5 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900">تابلت أفقي (1024px)</button>
+          <button onclick="setViewport('tablet-p')" id="btn-vp-tablet-p" class="px-2 py-1.5 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900">تابلت رأسي (768px)</button>
+        </div>
+
+        <!-- Popover Simulation Triggers -->
+        <div class="flex items-center gap-1">
+          <button onclick="toggleBranchPopover()" class="px-2 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 rounded-lg text-slate-700 dark:text-slate-200 font-medium transition" title="فتح قائمة الفروع">
+            🏛️ الفروع
+          </button>
+          <button onclick="toggleUserPopover()" class="px-2 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 rounded-lg text-slate-700 dark:text-slate-200 font-medium transition" title="فتح قائمة المستخدم">
+            👤 المستخدم
+          </button>
+          <button onclick="toggleNotifFlyout()" class="px-2 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 rounded-lg text-slate-700 dark:text-slate-200 font-medium transition" title="فتح نافذة الإشعارات">
+            🔔 الإشعارات
+          </button>
+        </div>
+
+        <!-- Theme & Direction Switchers -->
+        <button onclick="toggleDarkMode()" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 transition" title="تبديل النمط الليلي">
+          🌙/☀️
+        </button>
+        <button onclick="toggleDirection()" class="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-medium transition" title="تبديل الاتجاه LTR/RTL">
+          <span id="txt-dir">LTR</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Prototype Outer Frame -->
+  <main id="app-viewport-container" class="max-w-[1600px] mx-auto bg-white dark:bg-[#131722] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden transition-all duration-300 relative">
+
+    <!-- Off-Canvas Drawer Backdrop Overlay (Active in Tablet Portrait 768px mode) -->
+    <div id="drawer-backdrop" onclick="closeDrawer()" class="hidden absolute inset-0 bg-slate-950/60 backdrop-blur-xs z-40 transition-opacity duration-200"></div>
+
+    <!-- Top Navigation Bar (Height: 64px) -->
+    <header class="h-16 border-b border-slate-200 dark:border-slate-800 px-4 flex items-center justify-between bg-white/95 dark:bg-[#131722]/95 backdrop-blur sticky top-0 z-30">
+      
+      <!-- Start Side (Logo + Branch Pill) -->
+      <div class="flex items-center gap-3">
+        <!-- Sidebar Toggle Icon / Hamburger -->
+        <button onclick="handleSidebarToggleClick()" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="تصغير/توسيع الشريط الجانبي">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+        </button>
+
+        <!-- Institution Identity (Reusing existing repository logo) -->
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-lg bg-red-700 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+            OX
+          </div>
+          <div class="hidden sm:block">
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm font-bold text-slate-900 dark:text-white leading-tight">أكاديمية أوكس الرقمية</span>
+              <span class="text-[10px] font-semibold px-1.5 py-0.2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded border border-slate-200 dark:border-slate-700">INST-01 [DEMO]</span>
+            </div>
+            <p class="text-[11px] text-slate-400">منظومة الإدارة التعليمية والمالية للمراكز</p>
+          </div>
+        </div>
+
+        <div class="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
+
+        <!-- Dynamic Branch Selector Pill -->
+        <div class="relative">
+          <button onclick="toggleBranchPopover()" id="topbar-branch-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 hover:border-red-400 dark:hover:border-red-600 text-slate-800 dark:text-slate-200 text-xs font-semibold shadow-xs transition">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span id="topbar-branch-label">🌐 جميع الفروع (إجمالي المؤسسة) [DEMO]</span>
+            <svg id="topbar-branch-icon" class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </button>
+
+          <!-- Branch Dropdown Popover (3 Active Demo Branches + 1 Consolidated Option) -->
+          <div id="popover-branch" class="hidden absolute start-0 mt-2 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-3 z-50 text-start">
+            <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-200">تحديد نطاق الفرع التشغيلي</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">3 فروع تجريبية نشطة</span>
+            </div>
+            <div class="space-y-1 text-xs">
+              <button onclick="selectBranch('🌐 جميع الفروع (إجمالي المؤسسة) [DEMO]')" id="btn-branch-all" class="w-full text-start px-3 py-2 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 font-bold flex items-center justify-between">
+                <div>
+                  <span>🌐 جميع الفروع (إجمالي المؤسسة)</span>
+                  <p class="text-[10px] text-red-600/80 font-normal">رؤية تنفيذية موحدة • مدير رئيسي فقط</p>
+                </div>
+                <span class="text-[10px] text-red-600 font-semibold">محدد</span>
+              </button>
+              <button onclick="selectBranch('🏛️ فرع القاهرة الرئيسي (BR-01) [DEMO]')" class="w-full text-start px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center justify-between">
+                <div>
+                  <p class="font-semibold">🏛️ فرع القاهرة الرئيسي</p>
+                  <p class="text-[10px] text-slate-400">كود: BR-01 • المعادي (مقر رئيسي)</p>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600">نشط</span>
+              </button>
+              <button onclick="selectBranch('🏛️ فرع الإسكندرية الأكاديمي (BR-02) [DEMO]')" class="w-full text-start px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center justify-between">
+                <div>
+                  <p class="font-semibold">🏛️ فرع الإسكندرية الأكاديمي</p>
+                  <p class="text-[10px] text-slate-400">كود: BR-02 • سموحة (مقر فرعي)</p>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600">نشط</span>
+              </button>
+              <button onclick="selectBranch('💻 الفرع الرقمي / التعلم الإلكتروني (BR-ON) [DEMO]')" class="w-full text-start px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium flex items-center justify-between">
+                <div>
+                  <p class="font-semibold">💻 الفرع الرقمي والتعليم عن بعد</p>
+                  <p class="text-[10px] text-slate-400">كود: BR-ON • منصة البث والامتحانات</p>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950 text-emerald-600">نشط</span>
+              </button>
+            </div>
+            <div class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
+              <span>يتم قفل الاختيار تلقائياً لموظفي الفرع الواحد</span>
+              <span class="font-mono">OD-701</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- End Side (Search + Placeholder Notifications + Profile Menu) -->
+      <div class="flex items-center gap-2">
+        <!-- Neutral Global Command Search Input (Cross-platform Ctrl / ⌘ + K) -->
+        <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs text-slate-400 w-64 cursor-pointer hover:border-slate-400 transition" title="البحث السريع في النظام">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <span class="truncate">بحث عن طالب، إيصال، خزينة...</span>
+          <kbd class="ms-auto text-[10px] bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono text-slate-500">Ctrl/⌘+K</kbd>
+        </div>
+
+        <!-- Notifications Bell (With Future Placeholder Flyout) -->
+        <div class="relative">
+          <button onclick="toggleNotifFlyout()" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition relative" title="الإشعارات والتنبيهات">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+          </button>
+
+          <!-- Notifications Placeholder Flyout -->
+          <div id="flyout-notifications" class="hidden absolute end-0 mt-2 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-4 z-50 text-start">
+            <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-800">
+              <span class="text-xs font-bold text-slate-800 dark:text-slate-200">الإشعارات والتنبيهات</span>
+              <span class="text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-950 px-2 py-0.5 rounded-full font-medium">ميزة مستقبلية</span>
+            </div>
+            <div class="text-center py-6">
+              <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mb-3">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              </div>
+              <p class="text-xs font-semibold text-slate-700 dark:text-slate-300">لا توجد تنبيهات حية</p>
+              <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                قناة الإشعارات الفورية قيد التطوير البرمجي. لا يتم عرض أي عدادات وهمية غير مدعومة بخدمة خلفية حقيقية.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
+
+        <!-- User Profile Capsule Button -->
+        <div class="relative">
+          <button onclick="toggleUserPopover()" id="topbar-user-btn" class="flex items-center gap-2.5 p-1 ps-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <div class="text-start hidden sm:block">
+              <p id="topbar-user-name" class="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight">د. طارق عبد الرحمن [DEMO]</p>
+              <p id="topbar-user-role" class="text-[10px] text-red-600 dark:text-red-400 font-semibold">مدير رئيسي (PRIMARY_MANAGER)</p>
+            </div>
+            <div class="w-9 h-9 rounded-xl bg-red-700 text-white font-bold flex items-center justify-center text-xs shadow-xs" id="topbar-user-avatar">
+              ط.ع
+            </div>
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </button>
+
+          <!-- User Menu Dropdown Popover -->
+          <div id="popover-user" class="hidden absolute end-0 mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-2 z-50 text-start">
+            <div class="p-2 border-b border-slate-100 dark:border-slate-800">
+              <p class="text-xs font-bold text-slate-800 dark:text-slate-100" id="menu-user-fullname">د. طارق عبد الرحمن</p>
+              <p class="text-[10px] text-slate-400 font-mono" id="menu-user-email">tarek.director@ox-digital.edu [DEMO]</p>
+              <div class="mt-1.5 flex items-center gap-1.5">
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 font-semibold" id="menu-user-badge">مدير معتمد</span>
+                <span class="text-[10px] text-slate-400 font-mono">DEMO DATA</span>
+              </div>
+            </div>
+            <div class="py-1 text-xs space-y-0.5">
+              <a href="#profile" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                الملف الشخصي وإعدادات الحساب
+              </a>
+              <a href="#security" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                الأمان وتسجيلات الدخول
+              </a>
+              <a href="#shortcuts" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                اختصارات لوحة المفاتيح (Ctrl / ⌘ + /)
+              </a>
+            </div>
+            <div class="pt-1 border-t border-slate-100 dark:border-slate-800">
+              <a href="#logout" class="flex items-center gap-2.5 px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-semibold">
+                <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                تسجيل الخروج الآمن
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Shell Body: Sidebar + Main Canvas -->
+    <div class="flex min-h-[700px] relative">
+
+      <!-- Sidebar Rail (Transitioning width 260px <-> 72px, or Drawer in 768px mode) -->
+      <aside id="app-sidebar" class="w-[260px] border-e border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131722] flex flex-col justify-between transition-all duration-200 select-none z-50">
+        
+        <!-- Drawer Close Button (Visible in Tablet Portrait Drawer mode) -->
+        <div id="drawer-header" class="hidden p-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-800 dark:text-slate-200">قائمة التنقل</span>
+          <button onclick="closeDrawer()" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" title="إغلاق القائمة">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <!-- Top Nav Menu (Injected dynamically based on role) -->
+        <div class="p-3 overflow-y-auto" id="sidebar-nav-container">
+          <!-- Dynamic Content Rendered Here via JS -->
+        </div>
+
+        <!-- Sidebar Footer Status & Collapse Toggle -->
+        <div class="p-3 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 text-xs">
+          <div id="sidebar-footer-expanded" class="space-y-2">
+            <div class="flex items-center justify-between text-slate-400">
+              <span class="flex items-center gap-1.5 text-[11px]">
+                <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                حالة الاتصال غير معروضة في النموذج
+              </span>
+              <span class="text-[10px] font-mono">DESIGN ONLY</span>
+            </div>
+            <button onclick="toggleSidebar()" class="w-full py-1.5 px-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-100 flex items-center justify-center gap-2 transition text-xs">
+              <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+              <span>تصغير القائمة (72px)</span>
+            </button>
+          </div>
+          <div id="sidebar-footer-collapsed" class="hidden text-center">
+            <button onclick="toggleSidebar()" class="p-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 mx-auto block transition" title="توسيع القائمة">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Canvas Viewport Area -->
+      <section class="flex-1 bg-slate-50 dark:bg-[#090b10] flex flex-col overflow-y-auto min-w-0">
+
+        <!-- Breadcrumbs Navigation Bar -->
+        <nav aria-label="Breadcrumb" class="h-10 px-4 md:px-6 border-b border-slate-200/80 dark:border-slate-800/80 flex items-center gap-2 text-xs text-slate-500 bg-white/50 dark:bg-slate-900/30 overflow-x-auto">
+          <a href="#home" class="hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-1 font-medium shrink-0">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            الرئيسية
+          </a>
+          <svg class="w-3 h-3 text-slate-400 transform rtl:rotate-180 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+          <span id="breadcrumb-section" class="text-slate-500 font-medium shrink-0">الإشراف والحوكمة</span>
+          <svg class="w-3 h-3 text-slate-400 transform rtl:rotate-180 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+          <span id="breadcrumb-page" class="font-bold text-slate-900 dark:text-white truncate">لوحة القيادة التنفيذية (PM-DASH-01)</span>
+        </nav>
+
+        <!-- Page Context Header & Action Bar -->
+        <div class="px-4 md:px-6 py-4 md:py-5 bg-white dark:bg-[#131722] border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-3">
+              <h2 id="page-title" class="text-lg md:text-xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                لوحة القيادة التنفيذية والمؤشرات الحية
+              </h2>
+              <span id="page-code-badge" class="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                PM-DASH-01
+              </span>
+            </div>
+            <p id="page-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              متابعة التدفقات المالية المحصلة، السيولة الفعلية في خزائن الفروع، واعتماد الحركات المعلقة
+            </p>
+          </div>
+
+          <!-- Dynamic Action Buttons -->
+          <div class="flex items-center gap-2" id="page-actions-container">
+            <!-- Injected via JS -->
+          </div>
+        </div>
+
+        <!-- Global Alert Banner Simulation (Reflecting strict UP-705 without automatic thresholds) -->
+        <div id="global-alert-banner" class="bg-amber-500/10 border-b border-amber-500/20 px-4 md:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-800 dark:text-amber-300">
+          <div class="flex items-center gap-2 font-medium">
+            <span class="p-1 rounded-md bg-amber-500/20">⚠️</span>
+            <span>تنبيه توضيحي استرشادي (DEMO DATA): تسجيل فارق جرد نقدي قيد التحقيق الإداري دون أي تسوية آلية أو شطب عجز، التزاماً بالسياسة UP-705.</span>
+          </div>
+          <a href="#investigate" class="font-bold underline hover:opacity-80">فتح محضر الجرد الاسترشادي (CB-DISC-01) &larr;</a>
+        </div>
+
+        <!-- Empty Main-Content Container Placeholder (Demonstrating Screen Mount Zone) -->
+        <div class="p-4 md:p-6 flex-1 flex flex-col">
+          
+          <!-- Contextual Metric Row Simulator (With DEMO DATA badges) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" id="context-metrics-grid">
+            <!-- Injected dynamically based on role -->
+          </div>
+
+          <!-- Standard Screen Mounting Frame -->
+          <div class="flex-1 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl bg-white/60 dark:bg-slate-900/40 p-6 md:p-8 flex flex-col items-center justify-center text-center">
+            <div class="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mb-4 shadow-xs">
+              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg>
+            </div>
+            <h3 class="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">
+              مساحة حقن محتوى الشاشة التشغيلية (Main Content Injection Area)
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md leading-relaxed mb-4">
+              هنا يتم تحميل شاشات التطبيق التفصيلية (جداول الأستاذ المساعد، واجهة تسجيل المقبوضات وإصدار الإيصالات، نماذج القيود المحاسبية، إلخ) مع الحفاظ على استقرار الهيكل الخارجي وسياق المؤسسة والفرع.
+            </p>
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-mono">
+              <span>Container Constraints: max-w-[1600px] • p-6 (Desktop) • p-4 (Tablet) • DEMO DATA</span>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+    </div>
+
+  </main>
+
+  <script>
+    // State management for visual prototype: EXACTLY 3 ROLES (No Independent Cashier)
+    let currentRole = 'PM';
+    let isCollapsed = false;
+    let isDarkMode = false;
+    let isRTL = true;
+    let currentViewport = 'desktop';
+
+    // Role Navigation Menus Configuration: Cashbox & Collection integrated into PM & ACC
+    const roleNavData = {
+      PM: {
+        title: "لوحة القيادة التنفيذية والمؤشرات الحية",
+        subtitle: "إدارة الخزائن المركزية، الرقابة على المقبوضات، اعتماد التحويلات، واعتماد المصروفات",
+        code: "PM-DASH-01",
+        section: "الإشراف والحوكمة",
+        user: { name: "د. طارق عبد الرحمن", role: "مدير رئيسي (PRIMARY_MANAGER)", avatar: "ط.ع", badge: "مدير معتمد", email: "tarek.director@ox-digital.edu" },
+        branch: "🌐 جميع الفروع (إجمالي المؤسسة) [DEMO]",
+        metrics: [
+          { label: "إجمالي المقبوضات المحصلة [DEMO]", val: "142,500.00 ج.م", change: "رقابة عبر كافة الفروع", color: "emerald" },
+          { label: "رصيد الخزائن المركزية [DEMO]", val: "86,400.00 ج.م", change: "3 خزائن تجريبية مطابقة", color: "sky" },
+          { label: "الأرصدة المستحقة للتحصيل [DEMO]", val: "48,200.00 ج.م", change: "ذمم طلاب واجبة السداد", color: "amber" },
+          { label: "موافقات واعتمادات معلقة [DEMO]", val: "3 طلبات", change: "2 سندات صرف • 1 فارق جرد", color: "purple" }
+        ],
+        actions: `
+          <button class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 transition">التقارير المالية المجمعة</button>
+          <button class="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-bold shadow-xs transition">+ اعتماد تحويل خزينة / صرف</button>
+        `,
+        menu: `
+          <div class="space-y-4">
+            <div>
+              <p class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">الإشراف والاعتمادات</p>
+              <div class="space-y-1">
+                <a href="#pm-dash" class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 font-bold text-xs">
+                  <span class="text-base">📊</span> <span class="nav-label">لوحة القيادة التنفيذية</span>
+                </a>
+                <a href="#pm-branches" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">🏛️</span> <span class="nav-label">أداء وفروع المؤسسة</span>
+                </a>
+                <a href="#pm-approvals" class="flex items-center justify-between px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <div class="flex items-center gap-3">
+                    <span class="text-base">🛡️</span> <span class="nav-label">مركز الاعتمادات والموافقات</span>
+                  </div>
+                  <span class="nav-badge px-1.5 py-0.5 rounded-full text-[10px] bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 font-bold">3 معلق [DEMO]</span>
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <p class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">إدارة الخزائن والمقبوضات</p>
+              <div class="space-y-1">
+                <a href="#cb-list" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">🔒</span> <span class="nav-label">إدارة الخزائن المركزية</span>
+                </a>
+                <a href="#pm-rec" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">🧾</span> <span class="nav-label">رقابة المقبوضات والإيصالات</span>
+                </a>
+                <a href="#cb-xfer" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">⇄</span> <span class="nav-label">تحويلات الخزائن والسيولة</span>
+                </a>
+                <a href="#cb-disc" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">⚠️</span> <span class="nav-label">مراجعة المطابقات وفوارق الجرد</span>
+                </a>
+                <a href="#exp-list" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">📑</span> <span class="nav-label">اعتماد المصروفات المالية</span>
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <p class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">التقارير والتدقيق</p>
+              <div class="space-y-1">
+                <a href="#rep-earned" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">📈</span> <span class="nav-label">الإيراد المستحق الفعلي</span>
+                </a>
+                <a href="#audit" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">📜</span> <span class="nav-label">سجل التدقيق الشامل</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      ACC: {
+        title: "لوحة العمليات المالية والمحاسبية",
+        subtitle: "حسابات الطلاب، تسجيل المقبوضات وإصدار الإيصالات، سندات الصرف، ومطابقة اليومية",
+        code: "ACC-DASH-01",
+        section: "الإدارة المالية",
+        user: { name: "أ. نادية حسن", role: "محاسب معتمد (ACCOUNTANT)", avatar: "ن.ح", badge: "محاسب الفرع", email: "nadia.accountant@ox-digital.edu" },
+        branch: "🏛️ فرع القاهرة الرئيسي (BR-01) [DEMO]",
+        metrics: [
+          { label: "مقبوضات اليوم المسجلة [DEMO]", val: "38,500.00 ج.م", change: "42 إيصال قبض", color: "emerald" },
+          { label: "مقبوضات غير مخصصة [DEMO]", val: "4,200.00 ج.م", change: "بانتظار التخصيص للمستحقات", color: "amber" },
+          { label: "مطابقة الخزينة اليومية (CB-RECON)", val: "قيد التشغيل", change: "الخزينة مفتوحة للعمليات", color: "sky" },
+          { label: "سندات صرف قيد الإعداد [DEMO]", val: "2 سندات", change: "بانتظار موافقة المدير (Maker-Checker)", color: "purple" }
+        ],
+        actions: `
+          <button class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 transition">التقارير الأولية</button>
+          <button class="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-bold shadow-xs transition">+ تسجيل مقبوضات وإصدار إيصال</button>
+        `,
+        menu: `
+          <div class="space-y-4">
+            <div>
+              <p class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">التحصيل والطلاب</p>
+              <div class="space-y-1">
+                <a href="#acc-dash" class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 font-bold text-xs">
+                  <span class="text-base">💼</span> <span class="nav-label">لوحة العمليات المالية</span>
+                </a>
+                <a href="#csh-desk" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">💵</span> <span class="nav-label">تسجيل المقبوضات وإصدار الإيصالات</span>
+                </a>
+                <a href="#acc-rec" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">🧾</span> <span class="nav-label">سجل إيصالات القبض</span>
+                </a>
+                <a href="#acc-stu" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">👥</span> <span class="nav-label">حسابات الطلاب والأرصدة</span>
+                </a>
+                <a href="#acc-alloc" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">🔀</span> <span class="nav-label">تخصيص المقبوضات</span>
+                </a>
+                <a href="#acc-rev" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">🔄</span> <span class="nav-label">مكتب الحركات العكسية والتسويات</span>
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <p class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">الخزائن والمصروفات</p>
+              <div class="space-y-1">
+                <a href="#cb-recon" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">⚖️</span> <span class="nav-label">مطابقة وإقفال النقدية اليومية</span>
+                </a>
+                <a href="#cb-list" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">🔒</span> <span class="nav-label">الخزائن النقدية بالفرع</span>
+                </a>
+                <a href="#exp-new" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">📑</span> <span class="nav-label">تسجيل سندات المصروفات</span>
+                </a>
+                <a href="#tcomp-prep" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">👨‍🏫</span> <span class="nav-label">إعداد مستحقات المعلمين</span>
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <p class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">الدفاتر والتقارير</p>
+              <div class="space-y-1">
+                <a href="#gl" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">📖</span> <span class="nav-label">مستعرض القيود المحاسبية</span>
+                </a>
+                <a href="#rep-prelim" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">📊</span> <span class="nav-label">التقارير المالية الأولية</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      TCH: {
+        title: "بوابة المعلم التعليمية (واجهة المعلم الممتدة)",
+        subtitle: "متابعة الحصص والمجموعات، إثبات تقديم الحصص والحضور، واستعراض بيان المستحقات المعتمدة",
+        code: "TCH-DASH-01",
+        section: "الشؤون التعليمية",
+        user: { name: "أ. أيمن منصور", role: "معلم فيزياء (TEACHER)", avatar: "أ.م", badge: "معلم معتمد", email: "ayman.teacher@ox-digital.edu" },
+        branch: "🏛️ أكاديمية أوكس (مجموعات الفصل) [DEMO]",
+        metrics: [
+          { label: "المجموعات الدراسية [DEMO]", val: "4 مجموعات", change: "96 طالب مسجل استرشادياً", color: "emerald" },
+          { label: "الحصص المعتمدة المنفذة", val: "18 حصة", change: "موثقة بشهادات تقديم معتمدة", color: "sky" },
+          { label: "بيان الحصص المعتمدة [UP-704]", val: "18 حصة معتمدة", change: "قيد انتظار اعتماد سياسة الاحتساب (UP-704)", color: "amber" },
+          { label: "نسبة الحضور التراكمية", val: "94.2%", change: "عبر كافة المجموعات التجريبية", color: "purple" }
+        ],
+        actions: `
+          <button class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 transition">جدول الحصص الأسبوعي</button>
+          <button class="px-4 py-2 rounded-xl bg-red-700 hover:bg-red-800 text-white text-xs font-bold shadow-xs transition">+ توثيق إثبات حضور حصة</button>
+        `,
+        menu: `
+          <div class="space-y-4">
+            <div>
+              <p class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">الجدول والحصص (الواجهة القائمة)</p>
+              <div class="space-y-1">
+                <a href="#tch-dash" class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 font-bold text-xs">
+                  <span class="text-base">📚</span> <span class="nav-label">لوحة الحصص والمجموعات</span>
+                </a>
+                <a href="#tch-sched" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">📅</span> <span class="nav-label">جدول المواعيد الأسبوعي</span>
+                </a>
+                <a href="#tch-stu" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">👨‍🎓</span> <span class="nav-label">قائمة طلاب المجموعات</span>
+                </a>
+                <a href="#tch-att" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">📋</span> <span class="nav-label">تسجيل الحضور والغياب</span>
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <p class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">القدرات المالية الممتدة للمعلم</p>
+              <div class="space-y-1">
+                <a href="#tch-evid" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">✅</span> <span class="nav-label">إثبات تقديم الحصص وإصدار الشهادات</span>
+                </a>
+                <a href="#tch-dues" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-medium">
+                  <span class="text-base">💳</span> <span class="nav-label">بيان الحصص المعتمدة وسجل الدفعات</span>
+                </a>
+              </div>
+            </div>
+            <div class="px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 leading-normal">
+              🔒 لا يملك المعلم صلاحية الاطلاع على حسابات المؤسسة المالية أو ذمم الطلاب المالية الأخرى.
+            </div>
+          </div>
+        `
+      }
+    };
+
+    function renderActiveRole() {
+      const data = roleNavData[currentRole];
+      document.getElementById('page-title').innerText = data.title;
+      document.getElementById('page-subtitle').innerText = data.subtitle;
+      document.getElementById('page-code-badge').innerText = data.code;
+      document.getElementById('breadcrumb-section').innerText = data.section;
+      document.getElementById('breadcrumb-page').innerText = `${data.title.split(' ')[0]} ${data.title.split(' ')[1]} (${data.code})`;
+      document.getElementById('topbar-user-name').innerText = `${data.user.name} [DEMO]`;
+      document.getElementById('topbar-user-role').innerText = data.user.role;
+      document.getElementById('topbar-user-avatar').innerText = data.user.avatar;
+      document.getElementById('menu-user-fullname').innerText = data.user.name;
+      document.getElementById('menu-user-email').innerText = data.user.email;
+      document.getElementById('menu-user-badge').innerText = data.user.badge;
+      document.getElementById('topbar-branch-label').innerText = data.branch;
+      document.getElementById('page-actions-container').innerHTML = data.actions;
+      document.getElementById('sidebar-nav-container').innerHTML = data.menu;
+
+      // Lock branch selector for non-PM roles
+      const branchBtn = document.getElementById('topbar-branch-btn');
+      const branchIcon = document.getElementById('topbar-branch-icon');
+      const allBranchOption = document.getElementById('btn-branch-all');
+      if (currentRole === 'PM') {
+        branchBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+        allBranchOption.classList.remove('hidden');
+        branchIcon.classList.remove('hidden');
+      } else {
+        branchBtn.classList.add('opacity-75');
+        allBranchOption.classList.add('hidden');
+      }
+
+      // Render metrics with DEMO DATA tags
+      let metricHtml = '';
+      data.metrics.forEach(m => {
+        metricHtml += `
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs relative overflow-hidden">
+            <span class="absolute top-2 end-2 text-[9px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded">DEMO</span>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium pe-8">${m.label}</p>
+            <p class="text-lg font-bold text-slate-900 dark:text-white font-mono-numbers my-1">${m.val}</p>
+            <p class="text-[11px] text-${m.color}-600 dark:text-${m.color}-400 font-medium">${m.change}</p>
+          </div>
+        `;
+      });
+      document.getElementById('context-metrics-grid').innerHTML = metricHtml;
+
+      // Update role buttons (PM, ACC, TCH only)
+      ['pm', 'acc', 'tch'].forEach(r => {
+        const btn = document.getElementById(`btn-role-${r}`);
+        if (r.toUpperCase() === currentRole) {
+          btn.className = "px-2.5 py-1.5 rounded-lg font-bold bg-white dark:bg-slate-900 text-red-700 dark:text-red-400 shadow-sm transition";
+        } else {
+          btn.className = "px-2.5 py-1.5 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 transition";
+        }
+      });
+    }
+
+    function setRole(role) {
+      currentRole = role;
+      renderActiveRole();
+    }
+
+    function toggleSidebar() {
+      isCollapsed = !isCollapsed;
+      applySidebarState();
+    }
+
+    function applySidebarState() {
+      const sidebar = document.getElementById('app-sidebar');
+      const footerExpanded = document.getElementById('sidebar-footer-expanded');
+      const footerCollapsed = document.getElementById('sidebar-footer-collapsed');
+      const btnText = document.getElementById('txt-sidebar-mode');
+
+      if (isCollapsed) {
+        sidebar.classList.remove('w-[260px]');
+        sidebar.classList.add('w-[72px]');
+        footerExpanded.classList.add('hidden');
+        footerCollapsed.classList.remove('hidden');
+        btnText.innerText = 'توسيع (260px)';
+        document.querySelectorAll('.nav-label').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.nav-badge').forEach(el => el.classList.add('hidden'));
+      } else {
+        sidebar.classList.remove('w-[72px]');
+        sidebar.classList.add('w-[260px]');
+        footerExpanded.classList.remove('hidden');
+        footerCollapsed.classList.add('hidden');
+        btnText.innerText = 'تصغير (72px)';
+        document.querySelectorAll('.nav-label').forEach(el => el.classList.remove('hidden'));
+        document.querySelectorAll('.nav-badge').forEach(el => el.classList.remove('hidden'));
+      }
+    }
+
+    function handleSidebarToggleClick() {
+      if (currentViewport === 'tablet-p') {
+        openDrawer();
+      } else {
+        toggleSidebar();
+      }
+    }
+
+    function openDrawer() {
+      const sidebar = document.getElementById('app-sidebar');
+      const backdrop = document.getElementById('drawer-backdrop');
+      const drawerHeader = document.getElementById('drawer-header');
+
+      sidebar.classList.remove('hidden');
+      sidebar.classList.add('absolute', 'top-0', 'bottom-0', 'start-0', 'shadow-2xl', 'w-[280px]');
+      backdrop.classList.remove('hidden');
+      drawerHeader.classList.remove('hidden');
+      document.querySelectorAll('.nav-label').forEach(el => el.classList.remove('hidden'));
+      document.querySelectorAll('.nav-badge').forEach(el => el.classList.remove('hidden'));
+    }
+
+    function closeDrawer() {
+      const sidebar = document.getElementById('app-sidebar');
+      const backdrop = document.getElementById('drawer-backdrop');
+      const drawerHeader = document.getElementById('drawer-header');
+
+      backdrop.classList.add('hidden');
+      drawerHeader.classList.add('hidden');
+      if (currentViewport === 'tablet-p') {
+        sidebar.classList.add('hidden');
+        sidebar.classList.remove('absolute', 'top-0', 'bottom-0', 'start-0', 'shadow-2xl', 'w-[280px]');
+      }
+    }
+
+    function setViewport(mode) {
+      currentViewport = mode;
+      const container = document.getElementById('app-viewport-container');
+      const sidebar = document.getElementById('app-sidebar');
+      const backdrop = document.getElementById('drawer-backdrop');
+      const drawerHeader = document.getElementById('drawer-header');
+
+      // Reset all viewport buttons
+      ['desktop', 'laptop', 'tablet-l', 'tablet-p'].forEach(v => {
+        const b = document.getElementById(`btn-vp-${v}`);
+        b.className = "px-2 py-1.5 rounded-lg font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900";
+      });
+      document.getElementById(`btn-vp-${mode}`).className = "px-2.5 py-1.5 rounded-lg font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm";
+
+      // Reset styling classes
+      container.classList.remove('max-w-[1600px]', 'max-w-[1280px]', 'max-w-[1024px]', 'max-w-[768px]');
+      sidebar.classList.remove('hidden', 'absolute', 'top-0', 'bottom-0', 'start-0', 'shadow-2xl', 'w-[280px]');
+      backdrop.classList.add('hidden');
+      drawerHeader.classList.add('hidden');
+
+      if (mode === 'desktop') {
+        container.classList.add('max-w-[1600px]');
+        isCollapsed = false;
+        applySidebarState();
+      } else if (mode === 'laptop') {
+        container.classList.add('max-w-[1280px]');
+        isCollapsed = false;
+        applySidebarState();
+      } else if (mode === 'tablet-l') {
+        container.classList.add('max-w-[1024px]');
+        isCollapsed = true; // Auto-collapse to 72px rail
+        applySidebarState();
+      } else if (mode === 'tablet-p') {
+        container.classList.add('max-w-[768px]');
+        sidebar.classList.add('hidden'); // Off-canvas drawer: hidden until hamburger clicked
+      }
+    }
+
+    function toggleBranchPopover() {
+      const popover = document.getElementById('popover-branch');
+      popover.classList.toggle('hidden');
+      document.getElementById('popover-user').classList.add('hidden');
+      document.getElementById('flyout-notifications').classList.add('hidden');
+    }
+
+    function selectBranch(name) {
+      document.getElementById('topbar-branch-label').innerText = name;
+      toggleBranchPopover();
+    }
+
+    function toggleUserPopover() {
+      const popover = document.getElementById('popover-user');
+      popover.classList.toggle('hidden');
+      document.getElementById('popover-branch').classList.add('hidden');
+      document.getElementById('flyout-notifications').classList.add('hidden');
+    }
+
+    function toggleNotifFlyout() {
+      const flyout = document.getElementById('flyout-notifications');
+      flyout.classList.toggle('hidden');
+      document.getElementById('popover-branch').classList.add('hidden');
+      document.getElementById('popover-user').classList.add('hidden');
+    }
+
+    function toggleDarkMode() {
+      isDarkMode = !isDarkMode;
+      document.documentElement.classList.toggle('dark');
+    }
+
+    function toggleDirection() {
+      isRTL = !isRTL;
+      document.documentElement.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
+      document.getElementById('txt-dir').innerText = isRTL ? 'LTR' : 'RTL';
+    }
+
+    // Initialize on load
+    renderActiveRole();
+  </script>
+</body>
+</html>

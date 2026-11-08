@@ -26,10 +26,14 @@ export const analyticsService = {
   getStudentRecent: () =>
     analyticsApi.get('/student/recent'),
 
+  getAcademicAssessment: (studentId?: string) =>
+    analyticsApi.get(studentId ? `/academic/${studentId}` : '/academic'),
+
   // ── Parent ───────────────────────────────────────────────────────
   getParentAnalytics: () =>
     analyticsApi.get('/parent'),
 
+  // ── Parent ───────────────────────────────────────────────────────
   getParentChildOverview: (childId: string) =>
     analyticsApi.get(`/parent/child/${childId}/overview`),
 };

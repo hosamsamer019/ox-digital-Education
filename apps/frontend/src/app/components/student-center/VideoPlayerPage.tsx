@@ -7,7 +7,7 @@ export default function VideoPlayerPage() {
   return (
     <UnifiedVideoPlayer
       lessonId={videoId || ''}
-      backUrl="/student/center/lessons"
+      backUrl="/student/center/courses"
       mode="center"
     />
   );

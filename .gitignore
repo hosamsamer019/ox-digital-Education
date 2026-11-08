@@ -61,6 +61,15 @@ scratch/
 # Temporary recovery & fix scripts
 recover*.js
 fix*.js
+patch*.js
+update*.js
+apply*.js
+.tmp*
+*.backup*
+screenshots/
+storage/
+reports/browser_to_db_acceptance_results.json
+*.manifest.json
 k6_bin/
 .turbo/
 .cache/
@@ -68,5 +77,6 @@ k6_bin/
 .vercel/
 *_output.txt
 tsc_output.txt
+
 
 

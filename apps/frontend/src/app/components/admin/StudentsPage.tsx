@@ -1,5 +1,6 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useEffect, useState } from 'react';
-import { Search, Plus, Edit, Trash2, X } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Loader2 } from 'lucide-react';
 const ACADEMIC_CONFIG = {
   EG: {
     label: 'مصر',
@@ -37,6 +38,7 @@ const ACADEMIC_CONFIG = {
 import { userService } from '../../services/user.service';
 
 export default function StudentsPage() {
+  const { t } = useLanguage();
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -137,14 +139,14 @@ export default function StudentsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if(confirm('هل أنت متأكد من الحذف؟')) {
+    if(confirm(t('هل أنت متأكد من الحذف؟'))) {
       try {
         await userService.deleteUser(id);
         setUsers(s => s.filter(x => x.id !== id));
-        showToast('تم الحذف بنجاح', 'success');
+        showToast(t('تم الحذف بنجاح'), 'success');
       } catch (err) {
         console.error('Delete failed', err);
-        showToast('فشل الحذف', 'error');
+        showToast(t('فشل الحذف'), 'error');
       }
     }
   };
@@ -192,7 +194,7 @@ export default function StudentsPage() {
 
       if (Object.keys(errors).length > 0) {
         setValidationErrors(errors);
-        showToast('يرجى مراجعة الحقول المطلوبة وتصحيح الأخطاء', 'error');
+        showToast(t('يرجى مراجعة الحقول المطلوبة وتصحيح الأخطاء'), 'error');
         return;
       }
 
@@ -232,10 +234,10 @@ export default function StudentsPage() {
 
       if (editingUser) {
         await userService.updateUser(editingUser.id, payload);
-        showToast('تم التعديل بنجاح', 'success');
+        showToast(t('تم التعديل بنجاح'), 'success');
       } else {
         await userService.createUser(payload);
-        showToast('تمت الإضافة بنجاح', 'success');
+        showToast(t('تمت الإضافة بنجاح'), 'success');
       }
       setShowModal(false);
       fetchUsers();
@@ -269,15 +271,15 @@ export default function StudentsPage() {
 
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">إدارة المستخدمين</h1>
-          <p className="text-gray-600 dark:text-gray-400">إضافة وتعديل وحذف المستخدمين</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{t('إدارة المستخدمين')}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{t('إضافة وتعديل وحذف المستخدمين')}</p>
         </div>
         <button
           onClick={handleAdd}
           className="flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700"
         >
           <Plus className="w-5 h-5" />
-          <span>إضافة مستخدم</span>
+          <span>{t('إضافة مستخدم')}</span>
         </button>
       </div>
 
@@ -287,7 +289,7 @@ export default function StudentsPage() {
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="ابحث عن مستخدم..."
+              placeholder={t('searchStudentPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pr-10 px-4 py-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-purple-500"
@@ -299,15 +301,24 @@ export default function StudentsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
-                <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">الاسم</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">البريد الإلكتروني</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">الدور</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">الإجراءات</th>
+                <th className={`${isRtl ? "text-right" : "text-left"} py-3 px-4 font-medium text-gray-700 dark:text-gray-300`}>{t('name')}</th>
+                <th className={`${isRtl ? "text-right" : "text-left"} py-3 px-4 font-medium text-gray-700 dark:text-gray-300`}>{t('email')}</th>
+                <th className={`${isRtl ? "text-right" : "text-left"} py-3 px-4 font-medium text-gray-700 dark:text-gray-300`}>{t('role')}</th>
+                <th className={`${isRtl ? "text-right" : "text-left"} py-3 px-4 font-medium text-gray-700 dark:text-gray-300`}>{t('actions')}</th>
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">جاري تحميل البيانات...</td></tr>}
-              {!loading && filteredUsers.length === 0 && <tr><td colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">لا يوجد مستخدمين</td></tr>}
+              {loading && (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2" role="status">
+                      <Loader2 className="w-6 h-6 animate-spin text-[#9e1b1b]" />
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('جاري تحميل بيانات الطلاب...')}</span>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {!loading && filteredUsers.length === 0 && <tr><td colSpan={4} className="text-center py-8 text-gray-500 dark:text-gray-400">{t('noUsersFound')}</td></tr>}
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="border-b border-gray-100 dark:border-gray-700/60 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                   <td className="py-3 px-4 text-gray-900 dark:text-white">{user.name}</td>
@@ -319,10 +330,10 @@ export default function StudentsPage() {
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
-                      <button onClick={() => handleEdit(user)} title="تعديل" aria-label="تعديل" className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg">
+                      <button onClick={() => handleEdit(user)} title={t('تعديل')} aria-label={t('تعديل')} className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg">
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(user.id)} title="حذف" aria-label="حذف" className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg">
+                      <button onClick={() => handleDelete(user.id)} title={t('حذف')} aria-label={t('حذف')} className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -337,7 +348,7 @@ export default function StudentsPage() {
             <div className="flex flex-1 items-center justify-between">
               <div>
                 <p className="text-sm text-gray-700 dark:text-gray-300">
-                  الصفحة <span className="font-medium">{page}</span> من <span className="font-medium">{totalPages}</span>
+                  {t('pageOf')} <span className="font-medium">{page}</span> {t('of')} <span className="font-medium">{totalPages}</span>
                 </p>
               </div>
               <div>
@@ -347,14 +358,14 @@ export default function StudentsPage() {
                     disabled={page === 1}
                     className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                   >
-                    <span>السابق</span>
+                    <span>{t('السابق')}</span>
                   </button>
                   <button
                     onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                     className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                   >
-                    <span>التالي</span>
+                    <span>{t('التالي')}</span>
                   </button>
                 </nav>
               </div>
@@ -378,7 +389,7 @@ export default function StudentsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  الاسم الكامل <span className="text-red-500">*</span>
+                  {t('الاسم الكامل')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -392,7 +403,7 @@ export default function StudentsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  البريد الإلكتروني <span className="text-red-500">*</span>
+                  {t('البريد الإلكتروني')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="email"
@@ -406,7 +417,7 @@ export default function StudentsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {editingUser ? 'كلمة المرور الجديدة (اتركها فارغة للاحتفاظ بالقديمة)' : <>كلمة المرور <span className="text-red-500">*</span></>}
+                  {editingUser ? 'كلمة المرور الجديدة (اتركها فارغة للاحتفاظ بالقديمة)' : <>{t('كلمة المرور')} <span className="text-red-500">*</span></>}
                 </label>
                 <input
                   type="password"
@@ -420,7 +431,7 @@ export default function StudentsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الدور (Role)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('الدور (Role)')}</label>
                 <select
                   disabled={isSaving}
                   value={formData.role}
@@ -438,11 +449,11 @@ export default function StudentsPage() {
 
               {(formData.role === 'ONLINE_STUDENT' || formData.role === 'CENTER_STUDENT') && (
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-                  <h3 className="text-md font-semibold text-gray-800 dark:text-gray-100 mb-3">المستوى الدراسي</h3>
+                  <h3 className="text-md font-semibold text-gray-800 dark:text-gray-100 mb-3">{t('المستوى الدراسي')}</h3>
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        البلد <span className="text-red-500">*</span>
+                        {t('البلد')} <span className="text-red-500">*</span>
                       </label>
                       <select
                         disabled={isSaving}
@@ -459,7 +470,7 @@ export default function StudentsPage() {
                     {formData.country && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          المرحلة الدراسية <span className="text-red-500">*</span>
+                          {t('المرحلة الدراسية')} <span className="text-red-500">*</span>
                         </label>
                         <select
                           disabled={isSaving}
@@ -467,7 +478,7 @@ export default function StudentsPage() {
                           onChange={(e) => setFormData({...formData, educationLevel: e.target.value, gradeLevel: ''})}
                           className={`w-full px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border ${validationErrors.educationLevel ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:ring-2 focus:ring-purple-500`}
                         >
-                          <option value="">اختر المرحلة</option>
+                          <option value="">{t('اختر المرحلة')}</option>
                           {Object.entries((ACADEMIC_CONFIG as any)[formData.country].levels).map(([key, level]: [string, any]) => (
                             <option key={key} value={key}>{level.label}</option>
                           ))}
@@ -478,7 +489,7 @@ export default function StudentsPage() {
                     {formData.country && formData.educationLevel && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          الصف الدراسي <span className="text-red-500">*</span>
+                          {t('الصف الدراسي')} <span className="text-red-500">*</span>
                         </label>
                         <select
                           disabled={isSaving}
@@ -486,7 +497,7 @@ export default function StudentsPage() {
                           onChange={(e) => setFormData({...formData, gradeLevel: e.target.value})}
                           className={`w-full px-4 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border ${validationErrors.gradeLevel ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:ring-2 focus:ring-purple-500`}
                         >
-                          <option value="">اختر الصف</option>
+                          <option value="">{t('اختر الصف')}</option>
                           {Object.entries((ACADEMIC_CONFIG as any)[formData.country].levels[formData.educationLevel].grades).map(([key, label]: [string, any]) => (
                             <option key={key} value={key}>{label}</option>
                           ))}
@@ -500,7 +511,7 @@ export default function StudentsPage() {
 
               {(formData.role === 'ONLINE_STUDENT' || formData.role === 'CENTER_STUDENT') && (
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-                  <h3 className="text-md font-semibold text-gray-800 dark:text-gray-100 mb-3">ارتباط ولي الأمر</h3>
+                  <h3 className="text-md font-semibold text-gray-800 dark:text-gray-100 mb-3">{t('ارتباط ولي الأمر')}</h3>
                   <div className="flex gap-4 mb-4">
                     <label className="flex items-center gap-1.5 cursor-pointer">
                       <input
@@ -509,7 +520,7 @@ export default function StudentsPage() {
                         checked={parentMode === 'none'}
                         onChange={() => setParentMode('none')}
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">بدون</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{t('بدون')}</span>
                     </label>
                     <label className="flex items-center gap-1.5 cursor-pointer">
                       <input
@@ -518,7 +529,7 @@ export default function StudentsPage() {
                         checked={parentMode === 'link'}
                         onChange={() => setParentMode('link')}
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">ربط ولي أمر موجود</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{t('ربط ولي أمر موجود')}</span>
                     </label>
                     <label className="flex items-center gap-1.5 cursor-pointer">
                       <input
@@ -527,14 +538,14 @@ export default function StudentsPage() {
                         checked={parentMode === 'new'}
                         onChange={() => setParentMode('new')}
                       />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">بيانات ولي الأمر</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{t('بيانات ولي الأمر')}</span>
                     </label>
                   </div>
 
                   {parentMode === 'link' && (
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">معرف ولي الأمر (Parent ID)</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('معرف ولي الأمر (Parent ID)')}</label>
                         <input
                           type="text"
                           value={formData.parentId}
@@ -549,7 +560,7 @@ export default function StudentsPage() {
                   {parentMode === 'new' && (
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">اسم ولي الأمر</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('اسم ولي الأمر')}</label>
                         <input
                           type="text"
                           value={formData.parentName}
@@ -558,7 +569,7 @@ export default function StudentsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">بريد ولي الأمر</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('بريد ولي الأمر')}</label>
                         <input
                           type="email"
                           value={formData.parentEmail}
@@ -567,7 +578,7 @@ export default function StudentsPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">هاتف ولي الأمر</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('هاتف ولي الأمر')}</label>
                         <input
                           type="text"
                           value={formData.parentPhone}
@@ -593,7 +604,7 @@ export default function StudentsPage() {
 
               {formData.role === 'PARENT' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">معرف الطالب المرتبط (Student ID)</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('معرف الطالب المرتبط (Student ID)')}</label>
                   <input
                     type="text"
                     placeholder="Enter Student ID"
@@ -619,7 +630,7 @@ export default function StudentsPage() {
                   disabled={isSaving}
                   className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
                 >
-                  إلغاء
+                  {t('إلغاء')}
                 </button>
               </div>
             </div>

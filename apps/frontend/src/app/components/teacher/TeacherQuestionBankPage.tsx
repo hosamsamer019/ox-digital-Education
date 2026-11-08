@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit, Trash2, Tag, Search, Save, X, Database, Brain, Loader2 } from 'lucide-react';
 import { questionService } from '../../services/question.service';
@@ -6,6 +7,7 @@ import { QuestionPreview, StructuredQuestion } from '../ui/QuestionPreview';
 import ScrollToTopButton from '../ui/ScrollToTopButton';
 
 export default function TeacherQuestionBankPage() {
+  const { t } = useLanguage();
   const [questions, setQuestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export default function TeacherQuestionBankPage() {
       setQuestions(res.data.data ? res.data.data : Array.isArray(res.data) ? res.data : []);
     } catch (err: any) {
       console.error(err);
-      setError('فشل في جلب بنك الأسئلة');
+      setError(t('فشل في جلب بنك الأسئلة'));
     } finally {
       setLoading(false);
     }
@@ -84,12 +86,12 @@ export default function TeacherQuestionBankPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا السؤال؟ لن يؤثر ذلك على الامتحانات السابقة.')) return;
+    if (!confirm(t('هل أنت متأكد من حذف هذا السؤال؟ لن يؤثر ذلك على الامتحانات السابقة.'))) return;
     try {
       await questionService.deleteQuestion(id);
       fetchQuestions();
     } catch (err) {
-      alert('فشل في الحذف');
+      alert(t('فشل في الحذف'));
     }
   };
 
@@ -143,7 +145,7 @@ export default function TeacherQuestionBankPage() {
 
   const handleGenerate = async () => {
     if (!aiForm.topic.trim()) {
-      setAiError('يرجى كتابة الموضوع');
+      setAiError(t('يرجى كتابة الموضوع'));
       return;
     }
     if (aiLoading) return;
@@ -153,7 +155,7 @@ export default function TeacherQuestionBankPage() {
       setAiError(null);
       setAiElapsed(0);
       setAiProgressCount(0);
-      setAiStage('إعداد الطلب...');
+      setAiStage(t('إعداد الطلب...'));
 
       const startTime = performance.now();
       aiTimerRef.current = setInterval(() => {
@@ -161,23 +163,23 @@ export default function TeacherQuestionBankPage() {
       }, 100);
 
       setTimeout(() => {
-        setAiStage('جاري الاتصال بالذكاء الاصطناعي...');
+        setAiStage(t('جاري الاتصال بالذكاء الاصطناعي...'));
       }, 350);
 
       setTimeout(() => {
-        setAiStage('توليد الأسئلة...');
+        setAiStage(t('توليد الأسئلة...'));
         setAiProgressCount(Math.max(1, Math.floor(aiForm.count * 0.4)));
       }, 900);
 
       setTimeout(() => {
-        setAiStage('التحقق من صحة الأسئلة...');
+        setAiStage(t('التحقق من صحة الأسئلة...'));
         setAiProgressCount(Math.max(1, Math.floor(aiForm.count * 0.8)));
       }, 2000);
 
       const res = await aiService.generateQuestions(aiForm);
       
       setAiProgressCount(res.data.questions.length);
-      setAiStage('اكتمل التوليد');
+      setAiStage(t('اكتمل التوليد'));
       setGeneratedQuestions(res.data.questions);
     } catch (err: any) {
       console.error(err);
@@ -215,7 +217,7 @@ export default function TeacherQuestionBankPage() {
         setGeneratedQuestions(updated);
         setEditingGeneratedQuestion(null);
       } else {
-        alert('فشل التوليد: لم يتم إرجاع سؤال');
+        alert(t('فشل التوليد: لم يتم إرجاع سؤال'));
       }
     } catch (err: any) {
       alert(err.response?.data?.message || 'حدث خطأ أثناء إعادة التوليد');
@@ -228,7 +230,7 @@ export default function TeacherQuestionBankPage() {
     if (!generatedQuestions || generatedQuestions.length === 0) return;
     try {
       setAiLoading(true);
-      setAiStage('جاري حفظ الأسئلة دفعة واحدة في قاعدة البيانات...');
+      setAiStage(t('جاري حفظ الأسئلة دفعة واحدة في قاعدة البيانات...'));
       
       const payload = generatedQuestions.map(q => ({
         text: q.questionText,
@@ -253,7 +255,7 @@ export default function TeacherQuestionBankPage() {
       setGeneratedQuestions(null);
       fetchQuestions();
     } catch (err: any) {
-      alert('فشل في حفظ بعض الأسئلة');
+      alert(t('فشل في حفظ بعض الأسئلة'));
     } finally {
       setAiLoading(false);
     }
@@ -265,9 +267,9 @@ export default function TeacherQuestionBankPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center gap-3">
             <Database className="w-8 h-8 text-[#9e1b1b]" />
-            بنك الأسئلة الموحد
+            {t('بنك الأسئلة الموحد')}
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">إدارة ومراجعة بنك الأسئلة وصيغ الرياضيات والرسوم التوضيحية</p>
+          <p className="text-slate-600 dark:text-slate-400">{t('إدارة ومراجعة بنك الأسئلة وصيغ الرياضيات والرسوم التوضيحية')}</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -280,14 +282,14 @@ export default function TeacherQuestionBankPage() {
             className="flex items-center gap-2 bg-[#161c28] border border-slate-700 text-slate-200 px-5 py-3 rounded-xl hover:bg-slate-800 transition-all shadow-sm font-semibold text-sm"
           >
             <Brain className="w-5 h-5 text-indigo-400" />
-            <span>توليد ذكي (AI)</span>
+            <span>{t('توليد ذكي (AI)')}</span>
           </button>
           <button
             onClick={handleAddNew}
             className="flex items-center gap-2 bg-[#9e1b1b] hover:bg-[#851616] text-white px-5 py-3 rounded-xl transition-all shadow-sm font-bold text-sm"
           >
             <Plus className="w-5 h-5" />
-            <span>إضافة سؤال جديد</span>
+            <span>{t('إضافة سؤال جديد')}</span>
           </button>
         </div>
       </div>
@@ -298,7 +300,7 @@ export default function TeacherQuestionBankPage() {
             <Search className="absolute right-4 top-3 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="تصفية حسب الوسم (Tag)..."
+              placeholder={t('تصفية حسب الوسم (Tag)...')}
               value={tagFilter}
               onChange={(e) => setTagFilter(e.target.value)}
               className="w-full pr-12 pl-4 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:ring-2 focus:ring-indigo-500 text-right"
@@ -324,38 +326,38 @@ export default function TeacherQuestionBankPage() {
             
             <div id="question-bank-modal-body" className="p-6 space-y-6 overflow-y-auto flex-1 overscroll-contain relative">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">نص السؤال *</label>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('نص السؤال *')}</label>
                 <textarea
                   value={formData.text}
                   onChange={(e) => setFormData({ ...formData, text: e.target.value })}
                   className={`w-full px-4 py-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border ${formErrors.text ? 'border-red-500 bg-red-50 dark:bg-red-950/30' : 'border-gray-200 dark:border-gray-600'} rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none`}
                   rows={3}
-                  placeholder="أدخل نص السؤال هنا (يدعم صيغ الرياضيات KaTeX/LaTeX)..."
+                  placeholder={t('أدخل نص السؤال هنا (يدعم صيغ الرياضيات KaTeX/LaTeX)...')}
                 />
                 {formErrors.text && <p className="text-red-500 text-xs mt-1 font-semibold">{formErrors.text}</p>}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">الصف الدراسي</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('الصف الدراسي')}</label>
                   <select
                     className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                     value={formData.academicLevel}
                     onChange={(e) => setFormData({ ...formData, academicLevel: e.target.value })}
                   >
-                    <option value="PREP_1">الصف الأول الإعدادي</option>
-                    <option value="PREP_2">الصف الثاني الإعدادي</option>
-                    <option value="PREP_3">الصف الثالث الإعدادي</option>
-                    <option value="SEC_1">الصف الأول الثانوي</option>
-                    <option value="SEC_2">الصف الثاني الثانوي</option>
-                    <option value="SEC_3">الصف الثالث الثانوي</option>
+                    <option value="PREP_1">{t('الصف الأول الإعدادي')}</option>
+                    <option value="PREP_2">{t('الصف الثاني الإعدادي')}</option>
+                    <option value="PREP_3">{t('الصف الثالث الإعدادي')}</option>
+                    <option value="SEC_1">{t('الصف الأول الثانوي')}</option>
+                    <option value="SEC_2">{t('الصف الثاني الثانوي')}</option>
+                    <option value="SEC_3">{t('الصف الثالث الثانوي')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">التصنيف / الموضوع</label>
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('التصنيف / الموضوع')}</label>
                   <input
                     type="text"
-                    placeholder="مثال: الجبر، الهندسة، الوحدة الأولى..."
+                    placeholder={t('مثال: الجبر، الهندسة، الوحدة الأولى...')}
                     className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                     value={formData.tag}
                     onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
@@ -364,7 +366,7 @@ export default function TeacherQuestionBankPage() {
               </div>
 
               <div className="space-y-4">
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">الخيارات والإجابة الصحيحة</label>
+                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300">{t('الخيارات والإجابة الصحيحة')}</label>
                 {formData.options.map((opt, i) => (
                   <div key={i} className="flex gap-3 items-center">
                     <input
@@ -399,7 +401,7 @@ export default function TeacherQuestionBankPage() {
                 onClick={() => setShowForm(false)}
                 className="px-5 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               >
-                إلغاء
+                {t('إلغاء')}
               </button>
               <button
                 type="button"
@@ -410,7 +412,7 @@ export default function TeacherQuestionBankPage() {
                 {isSubmitting ? 'جاري الحفظ...' : (
                   <>
                     <Save className="w-5 h-5" />
-                    <span>حفظ السؤال</span>
+                    <span>{t('حفظ السؤال')}</span>
                   </>
                 )}
               </button>
@@ -429,7 +431,7 @@ export default function TeacherQuestionBankPage() {
             <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between flex-shrink-0 bg-gray-50/50 dark:bg-gray-900/50">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Brain className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                توليد أسئلة بالذكاء الاصطناعي
+                {t('توليد أسئلة بالذكاء الاصطناعي')}
               </h2>
               <button onClick={() => setShowAiModal(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl text-gray-500 dark:text-gray-400 transition-colors">
                 <X className="w-5 h-5" />
@@ -440,51 +442,51 @@ export default function TeacherQuestionBankPage() {
               {!generatedQuestions ? (
                 <>
                   <div className="bg-purple-50 dark:bg-purple-950/30 text-purple-800 dark:text-purple-300 p-4 rounded-xl text-sm mb-6 border border-purple-100 dark:border-purple-900/40">
-                    أدخل موضوع الدرس ومستوى الصعوبة، وسيقوم المساعد الذكي بتوليد أسئلة اختيار من متعدد لك.
+                    {t('أدخل موضوع الدرس ومستوى الصعوبة، وسيقوم المساعد الذكي بتوليد أسئلة اختيار من متعدد لك.')}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">الصف الدراسي</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('الصف الدراسي')}</label>
                       <select
                         className="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500"
                         value={aiForm.academicLevel}
                         onChange={(e) => setAiForm({ ...aiForm, academicLevel: e.target.value })}
                       >
-                        <option value="PREP_1">الصف الأول الإعدادي</option>
-                        <option value="PREP_2">الصف الثاني الإعدادي</option>
-                        <option value="PREP_3">الصف الثالث الإعدادي</option>
-                        <option value="SEC_1">الصف الأول الثانوي</option>
-                        <option value="SEC_2">الصف الثاني الثانوي</option>
-                        <option value="SEC_3">الصف الثالث الثانوي</option>
+                        <option value="PREP_1">{t('الصف الأول الإعدادي')}</option>
+                        <option value="PREP_2">{t('الصف الثاني الإعدادي')}</option>
+                        <option value="PREP_3">{t('الصف الثالث الإعدادي')}</option>
+                        <option value="SEC_1">{t('الصف الأول الثانوي')}</option>
+                        <option value="SEC_2">{t('الصف الثاني الثانوي')}</option>
+                        <option value="SEC_3">{t('الصف الثالث الثانوي')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الموضوع / الدرس</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('الموضوع / الدرس')}</label>
                     <input
                       type="text"
                       value={aiForm.topic}
                       onChange={(e) => setAiForm({ ...aiForm, topic: e.target.value })}
                       className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:ring-2 focus:ring-purple-500"
-                      placeholder="مثال: المعادلات التربيعية، نظرية فيثاغورس..."
+                      placeholder={t('مثال: المعادلات التربيعية، نظرية فيثاغورس...')}
                     />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">مستوى الصعوبة</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('مستوى الصعوبة')}</label>
                       <select
                         value={aiForm.difficulty}
                         onChange={(e) => setAiForm({ ...aiForm, difficulty: e.target.value })}
                         className="w-full px-4 py-3 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-purple-500"
                       >
-                        <option value="سهل">سهل</option>
-                        <option value="متوسط">متوسط</option>
-                        <option value="صعب">صعب</option>
-                        <option value="تحدي">تحدي</option>
+                        <option value={t('سهل')}>{t('سهل')}</option>
+                        <option value={t('متوسط')}>{t('متوسط')}</option>
+                        <option value={t('صعب')}>{t('صعب')}</option>
+                        <option value={t('تحدي')}>{t('تحدي')}</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">عدد الأسئلة (الحد الأقصى 20)</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('عدد الأسئلة (الحد الأقصى 20)')}</label>
                       <input
                         type="number"
                         min="1"
@@ -505,11 +507,11 @@ export default function TeacherQuestionBankPage() {
                         <div className="flex items-center gap-2">
                           {aiProgressCount > 0 && (
                             <span className="text-xs font-semibold text-purple-800 dark:text-purple-300 bg-purple-200 dark:bg-purple-900/60 px-2 py-0.5 rounded-full">
-                              تم توليد {aiProgressCount} من {aiForm.count} أسئلة
+                              {t('تم توليد')} {aiProgressCount} {t('من')} {aiForm.count} {t('أسئلة')}
                             </span>
                           )}
                           <span className="text-xs font-mono font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/40 px-2 py-0.5 rounded-full">
-                            الوقت المنقضي: {aiElapsed.toFixed(1)} ثانية
+                            {t('الوقت المنقضي:')} {aiElapsed.toFixed(1)} {t('ثانية')}
                           </span>
                         </div>
                       </div>
@@ -523,7 +525,7 @@ export default function TeacherQuestionBankPage() {
               ) : (
                 <div className="space-y-6">
                   <div className="bg-green-50 dark:bg-green-950/30 text-green-800 dark:text-green-300 p-4 rounded-xl text-sm border border-green-200 dark:border-green-800">
-                    تم التوليد بنجاح! يرجى مراجعة الأسئلة وتعديلها إذا لزم الأمر قبل حفظها في البنك.
+                    {t('تم التوليد بنجاح! يرجى مراجعة الأسئلة وتعديلها إذا لزم الأمر قبل حفظها في البنك.')}
                   </div>
                   {generatedQuestions.map((q, qIndex) => (
                     <div key={qIndex} className="relative">
@@ -538,7 +540,7 @@ export default function TeacherQuestionBankPage() {
                               setGeneratedQuestions(updated);
                             }}
                             className="w-full px-4 py-2 mb-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg font-bold"
-                            placeholder="نص السؤال"
+                            placeholder={t('نص السؤال')}
                           />
                           <input
                             type="text"
@@ -549,7 +551,7 @@ export default function TeacherQuestionBankPage() {
                               setGeneratedQuestions(updated);
                             }}
                             className="w-full px-4 py-2 mb-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg font-mono text-left"
-                            placeholder="معادلة LaTeX (اختياري)"
+                            placeholder={t('معادلة LaTeX (اختياري)')}
                             dir="ltr"
                           />
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -578,7 +580,7 @@ export default function TeacherQuestionBankPage() {
                           </div>
                           <div className="mt-3 flex justify-end">
                             <button onClick={() => setEditingGeneratedQuestion(null)} className="px-4 py-1.5 bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 rounded-lg text-sm font-bold">
-                              تم التعديل
+                              {t('تم التعديل')}
                             </button>
                           </div>
                         </div>
@@ -586,14 +588,14 @@ export default function TeacherQuestionBankPage() {
                         <div className="relative">
                           <div className="absolute top-4 left-4 z-10 flex gap-2">
                              <button onClick={() => setEditingGeneratedQuestion(qIndex)} className="text-xs bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 px-3 py-1 rounded-md font-bold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors">
-                               تعديل
+                               {t('تعديل')}
                              </button>
                              <button
                                onClick={() => handleRegenerateQuestion(qIndex)}
                                disabled={regeneratingIndex === qIndex}
                                className="text-xs bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 px-3 py-1 rounded-md font-bold hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors disabled:opacity-50"
                              >
-                               {regeneratingIndex === qIndex ? '...' : '↺'} إعادة توليد
+                               {regeneratingIndex === qIndex ? '...' : '↺'} {t('إعادة توليد')}
                              </button>
                           </div>
                           <QuestionPreview question={q} showSolution={true} isTeacher={true} />
@@ -613,7 +615,7 @@ export default function TeacherQuestionBankPage() {
                 onClick={() => setShowAiModal(false)}
                 className="px-5 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               >
-                إلغاء
+                {t('إلغاء')}
               </button>
               
               {!generatedQuestions ? (
@@ -626,12 +628,12 @@ export default function TeacherQuestionBankPage() {
                   {aiLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>جاري التوليد...</span>
+                      <span>{t('جاري التوليد...')}</span>
                     </>
                   ) : (
                     <>
                       <Brain className="w-4 h-4" />
-                      <span>توليد الأسئلة</span>
+                      <span>{t('توليد الأسئلة')}</span>
                     </>
                   )}
                 </button>
@@ -645,12 +647,12 @@ export default function TeacherQuestionBankPage() {
                   {aiLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>جاري الحفظ...</span>
+                      <span>{t('جاري الحفظ...')}</span>
                     </>
                   ) : (
                     <>
                       <Save className="w-4 h-4" />
-                      <span>حفظ في البنك</span>
+                      <span>{t('حفظ في البنك')}</span>
                     </>
                   )}
                 </button>
@@ -661,14 +663,14 @@ export default function TeacherQuestionBankPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-400">جاري التحميل...</div>
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">{t('جاري التحميل...')}</div>
       ) : error ? (
         <div className="bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 p-6 rounded-xl text-center border border-red-100 dark:border-red-900/50">{error}</div>
       ) : questions.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 border-dashed">
           <Database className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">لا توجد أسئلة</h3>
-          <p className="text-gray-500 dark:text-gray-400">بنك الأسئلة الخاص بك فارغ، أو لا توجد أسئلة تطابق بحثك.</p>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('لا توجد أسئلة')}</h3>
+          <p className="text-gray-500 dark:text-gray-400">{t('بنك الأسئلة الخاص بك فارغ، أو لا توجد أسئلة تطابق بحثك.')}</p>
         </div>
       ) : (
         <div className="grid gap-6">
@@ -688,14 +690,14 @@ export default function TeacherQuestionBankPage() {
                               {q.tag}
                             </span>
                           )}
-                    <span className="text-gray-400 dark:text-gray-500 text-sm">أضيف في {new Date(q.createdAt).toLocaleDateString('ar-EG')}</span>
+                    <span className="text-gray-400 dark:text-gray-500 text-sm">{t('أضيف في')} {new Date(q.createdAt).toLocaleDateString('ar-EG')}</span>
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 leading-relaxed">{q.text}</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {q.options.map((opt: string, idx: number) => (
                       <div key={idx} className={`p-3 rounded-lg border text-sm ${idx === q.correctAnswer ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300 font-medium' : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200'}`}>
                         {idx + 1}. {opt}
-                        {idx === q.correctAnswer && <span className="mr-2 text-green-600 dark:text-green-400">(الإجابة الصحيحة)</span>}
+                        {idx === q.correctAnswer && <span className="mr-2 text-green-600 dark:text-green-400">{t('(الإجابة الصحيحة)')}</span>}
                       </div>
                     ))}
                   </div>

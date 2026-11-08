@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -40,6 +41,7 @@ interface UnifiedVideoPlayerProps {
 const SPEED_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
 
 export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' }: UnifiedVideoPlayerProps) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -75,7 +77,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
   // HLS Adaptive Quality State
   const [availableQualities, setAvailableQualities] = useState<Array<{ id: number; label: string; height?: number }>>([]);
   const [currentQualityId, setCurrentQualityId] = useState<number>(-1); // -1 = Auto
-  const [currentQualityLabel, setCurrentQualityLabel] = useState<string>('تلقائي');
+  const [currentQualityLabel, setCurrentQualityLabel] = useState<string>(t('تلقائي'));
   const [showQualityMenu, setShowQualityMenu] = useState(false);
 
   // Anti-Cheat & Quizzes
@@ -182,7 +184,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
       if (requestId !== activeRequestIdRef.current) return;
 
       if (!lessonRes?.data) {
-        setLoadError('لم يتم العثور على بيانات هذا الدرس');
+        setLoadError(t('لم يتم العثور على بيانات هذا الدرس'));
         setIsLoading(false);
         return;
       }
@@ -204,7 +206,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
           return;
         }
         if (status === 401) {
-          setLoadError('انتهت صلاحية الجلسة. يرجى تسجيل الدخول للمتابعة.');
+          setLoadError(t('انتهت صلاحية الجلسة. يرجى تسجيل الدخول للمتابعة.'));
           setIsLoading(false);
           return;
         }
@@ -371,9 +373,9 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
             console.error('YouTube Player Error:', event.data);
             setIsBuffering(false);
             if (event.data === 101 || event.data === 150) {
-              setLoadError('تم تقييد تشغيل هذا الفيديو على المنصات الخارجية من قبل صاحب القناة.');
+              setLoadError(t('تم تقييد تشغيل هذا الفيديو على المنصات الخارجية من قبل صاحب القناة.'));
             } else {
-              setLoadError('تعذر تشغيل الفيديو من المصدر. تأكد من صحة الرابط أو جودة الاتصال.');
+              setLoadError(t('تعذر تشغيل الفيديو من المصدر. تأكد من صحة الرابط أو جودة الاتصال.'));
             }
           }
         }
@@ -403,7 +405,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
       }
       setAvailableQualities([]);
       setCurrentQualityId(-1);
-      setCurrentQualityLabel('تلقائي');
+      setCurrentQualityLabel(t('تلقائي'));
       return;
     }
 
@@ -523,7 +525,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                   hlsInstance.destroy();
                   setIsPlaying(false);
                   setIsBuffering(false);
-                  setLoadError('تعذر تشغيل هذا البث المباشر/الفيديو. يرجى التحقق من جودة الاتصال.');
+                  setLoadError(t('تعذر تشغيل هذا البث المباشر/الفيديو. يرجى التحقق من جودة الاتصال.'));
                   break;
               }
             }
@@ -534,9 +536,9 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
             : playableMediaUrl;
           videoElement.src = safariSourceUrl;
           setAvailableQualities([{ id: -1, label: 'تلقائي (Native)' }]);
-          setCurrentQualityLabel('تلقائي');
+          setCurrentQualityLabel(t('تلقائي'));
         } else {
-          setLoadError('متصفحك لا يدعم تقنية تشغيل هذا الفيديو (HLS). يرجى التحديث لمتصفح حديث.');
+          setLoadError(t('متصفحك لا يدعم تقنية تشغيل هذا الفيديو (HLS). يرجى التحديث لمتصفح حديث.'));
         }
       } catch (err) {
         console.error('[HLS] Failed to initialize HLS engine:', err);
@@ -643,7 +645,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
       origin: { y: 0.6 }
     });
 
-    toast.success('أحسنت! تم إكمال مشاهدة الدرس بنجاح 🎉');
+    toast.success(t('أحسنت! تم إكمال مشاهدة الدرس بنجاح 🎉'));
   }, [lessonId]);
 
   // 6. Interactive Quiz Handlers
@@ -676,11 +678,11 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
         }, 1500);
       } else {
         setQuizFeedback('error');
-        toast.error('إجابة غير صحيحة، فكر وحاول مرة أخرى.');
+        toast.error(t('إجابة غير صحيحة، فكر وحاول مرة أخرى.'));
       }
     } catch (err) {
       console.error(err);
-      toast.error('حدث خطأ أثناء إرسال الإجابة.');
+      toast.error(t('حدث خطأ أثناء إرسال الإجابة.'));
     }
   };
 
@@ -716,7 +718,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
     } else if (isNativePlayable && htmlVideoRef.current) {
       if (htmlVideoRef.current.error) {
         setIsPlaying(false);
-        setLoadError('تعذر تشغيل هذا الفيديو (المصدر غير مدعوم أو غير متاح حالياً).');
+        setLoadError(t('تعذر تشغيل هذا الفيديو (المصدر غير مدعوم أو غير متاح حالياً).'));
         return;
       }
       const playPromise = htmlVideoRef.current.play();
@@ -728,7 +730,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
           } else {
             console.error('Playback play() error:', err);
             if (err.name === 'NotSupportedError') {
-              setLoadError('تعذر تشغيل الفيديو (المصدر غير متاح أو نوع الملف غير مدعوم).');
+              setLoadError(t('تعذر تشغيل الفيديو (المصدر غير متاح أو نوع الملف غير مدعوم).'));
             }
           }
         });
@@ -808,7 +810,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
     if (hlsInstanceRef.current) {
       hlsInstanceRef.current.currentLevel = qualityId;
       if (qualityId === -1) {
-        setCurrentQualityLabel('تلقائي');
+        setCurrentQualityLabel(t('تلقائي'));
       } else {
         setCurrentQualityLabel(label);
       }
@@ -991,15 +993,15 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 animate-pulse">
             <ShieldCheck className="w-8 h-8" />
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">تم إيقاف العرض مؤقتاً</h2>
+          <h2 className="text-xl font-bold text-white mb-2">{t('تم إيقاف العرض مؤقتاً')}</h2>
           <p className="text-xs sm:text-sm text-slate-400 max-w-sm leading-relaxed mb-6">
-            تم إيقاف الشرح مؤقتاً لمساعدتك على التركيز وحماية المحتوى التعليمي. انقر بالأسفل للاستمرار في المشاهدة.
+            {t('تم إيقاف الشرح مؤقتاً لمساعدتك على التركيز وحماية المحتوى التعليمي. انقر بالأسفل للاستمرار في المشاهدة.')}
           </p>
           <button
             onClick={() => setIsBlurred(false)}
             className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-indigo-600/30 min-h-[44px] min-w-[140px] flex items-center justify-center"
           >
-            متابعة المشاهدة
+            {t('متابعة المشاهدة')}
           </button>
         </div>
       )}
@@ -1016,8 +1018,8 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
             className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-300 hover:text-white bg-slate-800/90 hover:bg-slate-700 active:scale-95 px-3 py-2 rounded-xl transition-all border border-slate-700/50 shadow-sm shrink-0 min-h-[38px]"
           >
             <ChevronRight className="w-4 h-4" />
-            <span className="hidden xs:inline">العودة للدروس</span>
-            <span className="xs:hidden">رجوع</span>
+            <span className="hidden xs:inline">{t('العودة للدروس')}</span>
+            <span className="xs:hidden">{t('رجوع')}</span>
           </button>
 
           {/* Breadcrumb Context */}
@@ -1036,10 +1038,10 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
           <button
             onClick={() => setShowPlaylistDrawer(!showPlaylistDrawer)}
             className="lg:hidden flex items-center gap-1 text-xs font-semibold text-indigo-300 bg-indigo-950/60 border border-indigo-500/30 hover:bg-indigo-900/60 px-2.5 py-1.5 rounded-xl transition-colors shrink-0"
-            title="قائمة الدروس"
+            title={t('قائمة الدروس')}
           >
             <ListVideo className="w-4 h-4" />
-            <span className="hidden sm:inline">الدروس ({courseLessons.length})</span>
+            <span className="hidden sm:inline">{t('الدروس (')}{courseLessons.length})</span>
           </button>
         </div>
       </header>
@@ -1072,8 +1074,8 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                     toggleFullscreen();
                   }}
                   className="absolute top-4 start-4 z-40 bg-black/75 hover:bg-black text-white p-2.5 rounded-full backdrop-blur-md border border-white/20 shadow-2xl active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
-                  title="خروج من ملء الشاشة"
-                  aria-label="خروج من ملء الشاشة"
+                  title={t('خروج من ملء الشاشة')}
+                  aria-label={t('خروج من ملء الشاشة')}
                 >
                   <Minimize className="w-5 h-5 text-white" />
                 </button>
@@ -1106,7 +1108,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                 <div className="absolute inset-y-0 left-0 w-1/3 z-30 flex items-center justify-center bg-indigo-600/20 backdrop-blur-xs rounded-r-full pointer-events-none animate-in fade-in zoom-in-75">
                   <div className="flex flex-col items-center text-white">
                     <RotateCcw className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" style={{ animationDuration: '0.4s' }} />
-                    <span className="text-xs font-bold mt-1 font-mono">10- ثواني</span>
+                    <span className="text-xs font-bold mt-1 font-mono">{t('10- ثواني')}</span>
                   </div>
                 </div>
               )}
@@ -1114,7 +1116,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                 <div className="absolute inset-y-0 right-0 w-1/3 z-30 flex items-center justify-center bg-indigo-600/20 backdrop-blur-xs rounded-l-full pointer-events-none animate-in fade-in zoom-in-75">
                   <div className="flex flex-col items-center text-white">
                     <RotateCw className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" style={{ animationDuration: '0.4s' }} />
-                    <span className="text-xs font-bold mt-1 font-mono">10+ ثواني</span>
+                    <span className="text-xs font-bold mt-1 font-mono">{t('10+ ثواني')}</span>
                   </div>
                 </div>
               )}
@@ -1123,7 +1125,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
               {isLoading && (
                 <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center gap-3 z-30">
                   <div className="w-10 h-10 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-xs sm:text-sm text-slate-300 font-medium">جاري تجهيز مشغل الفيديو...</p>
+                  <p className="text-xs sm:text-sm text-slate-300 font-medium">{t('جاري تجهيز مشغل الفيديو...')}</p>
                 </div>
               )}
 
@@ -1140,14 +1142,14 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                   <div className="w-12 h-12 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-3">
                     <AlertCircle className="w-6 h-6" />
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1">تعذر تشغيل الفيديو</h3>
+                  <h3 className="text-base font-bold text-white mb-1">{t('تعذر تشغيل الفيديو')}</h3>
                   <p className="text-xs text-slate-400 max-w-sm mb-4 leading-relaxed">{loadError}</p>
                   <button
                     onClick={fetchLessonData}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/25 min-h-[44px]"
                   >
                     <RefreshCw className="w-4 h-4" />
-                    إعادة المحاولة
+                    {t('إعادة المحاولة')}
                   </button>
                 </div>
               )}
@@ -1158,7 +1160,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                   <div className="flex items-center gap-2 text-xs">
                     <Clock className="w-4 h-4 text-indigo-400 shrink-0" />
                     <span>
-                      توقفت عند <b className="text-indigo-300 font-mono">{formatVideoTime(savedResumeTime || maxWatchedTimeRef.current)}</b>
+                      {t('توقفت عند')} <b className="text-indigo-300 font-mono">{formatVideoTime(savedResumeTime || maxWatchedTimeRef.current)}</b>
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -1166,12 +1168,12 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                       onClick={handleResumeClick}
                       className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white rounded-lg text-xs font-bold transition-all shadow-sm"
                     >
-                      متابعة
+                      {t('متابعة')}
                     </button>
                     <button
                       onClick={() => setShowResumeAlert(false)}
                       className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors"
-                      title="إغلاق"
+                      title={t('إغلاق')}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1186,8 +1188,8 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                     {quizFeedback === 'success' ? (
                       <div className="py-4 animate-in zoom-in-95">
                         <CheckCircle className="w-14 h-14 text-emerald-400 mx-auto mb-3" />
-                        <h4 className="text-lg sm:text-xl font-black text-white mb-1">إجابة صحيحة!</h4>
-                        <p className="text-xs text-slate-300">أحسنت 🌟 جاري استئناف الشرح الآن...</p>
+                        <h4 className="text-lg sm:text-xl font-black text-white mb-1">{t('إجابة صحيحة!')}</h4>
+                        <p className="text-xs text-slate-300">{t('أحسنت 🌟 جاري استئناف الشرح الآن...')}</p>
                       </div>
                     ) : (
                       <div>
@@ -1195,7 +1197,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                           <AlertTriangle className="w-5 h-5" />
                         </div>
                         <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider block mb-1">
-                          سؤال تفاعلي أثناء الشرح
+                          {t('سؤال تفاعلي أثناء الشرح')}
                         </span>
                         <h4 className="text-base sm:text-lg font-bold text-white mb-4 leading-snug">
                           {activeQuiz.question}
@@ -1266,7 +1268,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                           console.error('HTML Video Element Error:', mediaErr?.code, mediaErr?.message);
                           setIsPlaying(false);
                           setIsBuffering(false);
-                          setLoadError('تعذر تحميل الفيديو من المصدر (المصدر غير متاح أو تالف).');
+                          setLoadError(t('تعذر تحميل الفيديو من المصدر (المصدر غير متاح أو تالف).'));
                         }
                       }}
                       onEnded={handleVideoEnded}
@@ -1288,9 +1290,9 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                   {videoSourceType === 'unknown' && !lesson?.videoUrl && (
                     <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
                       <Tv className="w-12 h-12 text-slate-600 mb-3" />
-                      <h4 className="text-base font-bold text-white mb-1">لا يوجد فيديو مرفق بهذا الدرس</h4>
+                      <h4 className="text-base font-bold text-white mb-1">{t('لا يوجد فيديو مرفق بهذا الدرس')}</h4>
                       <p className="text-xs text-slate-400 max-w-sm">
-                        سيقوم المعلم برفع الشرح التعليمي لهذا الدرس قريباً.
+                        {t('سيقوم المعلم برفع الشرح التعليمي لهذا الدرس قريباً.')}
                       </p>
                     </div>
                   )}
@@ -1306,7 +1308,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                   {!isPlaying && !isLoading && !loadError && (
                     <button
                       type="button"
-                      aria-label="تشغيل الفيديو"
+                      aria-label={t('تشغيل الفيديو')}
                       onClick={(e) => {
                         e.stopPropagation();
                         togglePlay();
@@ -1413,8 +1415,8 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                         type="button"
                         onClick={() => skipRelative(-10)}
                         className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center hover:bg-white/15 active:scale-90 transition-all text-[11px] font-bold"
-                        title="تأخير 10 ثواني"
-                        aria-label="تأخير 10 ثواني"
+                        title={t('تأخير 10 ثواني')}
+                        aria-label={t('تأخير 10 ثواني')}
                       >
                         <RotateCcw className="w-4 h-4" />
                       </button>
@@ -1424,8 +1426,8 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                         type="button"
                         onClick={() => skipRelative(10)}
                         className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center hover:bg-white/15 active:scale-90 transition-all text-[11px] font-bold"
-                        title="تقديم 10 ثواني"
-                        aria-label="تقديم 10 ثواني"
+                        title={t('تقديم 10 ثواني')}
+                        aria-label={t('تقديم 10 ثواني')}
                       >
                         <RotateCw className="w-4 h-4" />
                       </button>
@@ -1454,7 +1456,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                           value={isMuted ? 0 : volume}
                           onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
                           className="w-14 sm:w-18 h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-indigo-500 hidden md:block"
-                          aria-label="مستوى الصوت"
+                          aria-label={t('مستوى الصوت')}
                         />
                       </div>
 
@@ -1478,8 +1480,8 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                               setShowSpeedMenu(false);
                             }}
                             className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-xl hover:bg-white/15 active:scale-95 transition-all text-xs font-mono font-bold flex items-center gap-1 border border-transparent hover:border-slate-700 min-h-[36px]"
-                            aria-label="جودة الفيديو"
-                            title="جودة الفيديو"
+                            aria-label={t('جودة الفيديو')}
+                            title={t('جودة الفيديو')}
                           >
                             <Settings className="w-3.5 h-3.5 text-slate-300" />
                             <span className="hidden xs:inline text-[11px] font-sans">{currentQualityLabel}</span>
@@ -1488,7 +1490,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                           {showQualityMenu && (
                             <div className="absolute bottom-full right-0 mb-2 bg-slate-900 border border-slate-700 rounded-xl p-1.5 shadow-2xl z-50 flex flex-col gap-1 min-w-[130px] animate-in fade-in zoom-in-95">
                               <span className="text-[10px] text-slate-400 font-bold px-2 py-0.5 text-center border-b border-slate-800 pb-1 mb-0.5">
-                                جودة الفيديو
+                                {t('جودة الفيديو')}
                               </span>
                               {availableQualities.map((q) => (
                                 <button
@@ -1518,14 +1520,14 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                             setShowQualityMenu(false);
                           }}
                           className="px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-xl hover:bg-white/15 active:scale-95 transition-all text-xs font-mono font-bold flex items-center gap-1 border border-transparent hover:border-slate-700 min-h-[36px]"
-                          aria-label="سرعة التشغيل"
+                          aria-label={t('سرعة التشغيل')}
                         >
                           <span>{playbackSpeed}x</span>
                         </button>
 
                         {showSpeedMenu && (
                           <div className="absolute bottom-full right-0 mb-2 bg-slate-900 border border-slate-700 rounded-xl p-1.5 shadow-2xl z-50 flex flex-col gap-1 min-w-[80px] animate-in fade-in zoom-in-95">
-                            <span className="text-[10px] text-slate-400 font-bold px-2 py-0.5 text-center">السرعة</span>
+                            <span className="text-[10px] text-slate-400 font-bold px-2 py-0.5 text-center">{t('السرعة')}</span>
                             {SPEED_OPTIONS.map((speed) => (
                               <button
                                 key={speed}
@@ -1549,8 +1551,8 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                           type="button"
                           onClick={togglePictureInPicture}
                           className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center hover:bg-white/15 active:scale-90 transition-all hidden sm:flex"
-                          title="صورة داخل صورة"
-                          aria-label="صورة داخل صورة"
+                          title={t('صورة داخل صورة')}
+                          aria-label={t('صورة داخل صورة')}
                         >
                           <Tv className="w-4 h-4" />
                         </button>
@@ -1597,12 +1599,12 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                     {isCompletedRef.current ? (
                       <>
                         <Check className="w-3.5 h-3.5" />
-                        تم إكمال الدرس
+                        {t('تم إكمال الدرس')}
                       </>
                     ) : progressPercent > 0 ? (
                       <>
                         <Clock className="w-3.5 h-3.5" />
-                        قيد المشاهدة ({progressPercent}%)
+                        {t('قيد المشاهدة (')}{progressPercent}%)
                       </>
                     ) : (
                       'لم تبدأ بعد'
@@ -1614,7 +1616,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
               {/* Progress Bar with Metric */}
               <div className="space-y-1.5 mb-5">
                 <div className="flex justify-between text-xs text-slate-400 font-medium">
-                  <span>نسبة المشاهدة المكتملة</span>
+                  <span>{t('نسبة المشاهدة المكتملة')}</span>
                   <span className="font-bold text-indigo-400 font-mono">{progressPercent}%</span>
                 </div>
                 <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
@@ -1633,7 +1635,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                     className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 px-3 sm:px-4 rounded-xl border border-slate-700 hover:bg-slate-800 active:scale-98 text-slate-300 text-xs sm:text-sm font-semibold transition-all min-h-[44px] min-w-0"
                   >
                     <ChevronRight className="w-4 h-4 shrink-0" />
-                    <span className="truncate">السابق: {prevLesson.title}</span>
+                    <span className="truncate">{t('السابق:')} {prevLesson.title}</span>
                   </button>
                 ) : (
                   <div className="flex-1" />
@@ -1644,7 +1646,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                     onClick={() => navigateToLesson(nextLesson.id)}
                     className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 px-3 sm:px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-98 text-white text-xs sm:text-sm font-bold transition-all shadow-md shadow-indigo-600/20 min-h-[44px] min-w-0"
                   >
-                    <span className="truncate">التالي: {nextLesson.title}</span>
+                    <span className="truncate">{t('التالي:')} {nextLesson.title}</span>
                     <ChevronLeft className="w-4 h-4 shrink-0" />
                   </button>
                 ) : (
@@ -1661,8 +1663,8 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                     <FileText className="w-5 h-5" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="text-xs sm:text-sm font-bold text-white truncate">مذكرة وملفات الدرس (PDF)</h4>
-                    <p className="text-[11px] sm:text-xs text-slate-400 truncate">قم بتحميل المرفقات الخاصة بهذا الدرس للمذاكرة</p>
+                    <h4 className="text-xs sm:text-sm font-bold text-white truncate">{t('مذكرة وملفات الدرس (PDF)')}</h4>
+                    <p className="text-[11px] sm:text-xs text-slate-400 truncate">{t('قم بتحميل المرفقات الخاصة بهذا الدرس للمذاكرة')}</p>
                   </div>
                 </div>
                 <a
@@ -1671,7 +1673,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                   rel="noreferrer"
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shrink-0 shadow-sm min-h-[38px] flex items-center justify-center"
                 >
-                  تحميل
+                  {t('تحميل')}
                 </a>
               </div>
             )}
@@ -1681,7 +1683,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
                 <h4 className="text-sm font-bold text-white flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-indigo-400" />
-                  أسئلة الدرس التفاعلية
+                  {t('أسئلة الدرس التفاعلية')}
                 </h4>
                 <div className="space-y-3">
                   {lesson.quizzes.map((quiz: any, idx: number) => (
@@ -1696,7 +1698,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                       {quizAnswered[quiz.id] ? (
                         <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 p-2.5 rounded-lg border border-emerald-500/20 text-xs font-semibold">
                           <CheckCircle className="w-4 h-4" />
-                          <span>تمت الإجابة بشكل صحيح</span>
+                          <span>{t('تمت الإجابة بشكل صحيح')}</span>
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1714,12 +1716,12 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                                   if (res.data?.passed) {
                                     setQuizAnswered((prev) => ({ ...prev, [quiz.id]: true }));
                                     confetti({ particleCount: 70, spread: 50 });
-                                    toast.success('إجابة صحيحة!');
+                                    toast.success(t('إجابة صحيحة!'));
                                   } else {
-                                    toast.error('إجابة غير صحيحة، حاول ثانية.');
+                                    toast.error(t('إجابة غير صحيحة، حاول ثانية.'));
                                   }
                                 } catch {
-                                  toast.error('حدث خطأ أثناء إرسال الإجابة.');
+                                  toast.error(t('حدث خطأ أثناء إرسال الإجابة.'));
                                 }
                               }}
                               className="w-full p-2.5 rounded-lg border border-slate-700 hover:bg-indigo-600 hover:border-indigo-500 text-slate-300 hover:text-white text-xs font-medium transition-colors min-h-[44px]"
@@ -1739,10 +1741,10 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-md">
               <h4 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
                 <Upload className="w-4 h-4 text-indigo-400" />
-                تسليم واجب الدرس
+                {t('تسليم واجب الدرس')}
               </h4>
               <p className="text-xs text-slate-400">
-                قم برفع ملف الحل الخاص بك ليقوم المعلم بتصحيحه وتسجيل درجاتك.
+                {t('قم برفع ملف الحل الخاص بك ليقوم المعلم بتصحيحه وتسجيل درجاتك.')}
               </p>
 
               {courseHomeworks.length > 0 ? (
@@ -1761,7 +1763,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                   <div className="space-y-3">
                     <SupabaseUploader
                       bucketName="homeworks"
-                      label="اسحب ملف الواجب هنا للرفع (PDF/صور)"
+                      label={t('اسحب ملف الواجب هنا للرفع (PDF/صور)')}
                       maxSizeMB={20}
                       onUploadSuccess={(url) => setHomeworkUrl(url)}
                       onUploadError={(err) => alert(err)}
@@ -1770,7 +1772,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="أو أدخل رابط الملف (Google Drive)..."
+                        placeholder={t('أو أدخل رابط الملف (Google Drive)...')}
                         className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-indigo-500 min-h-[44px]"
                         value={homeworkUrl}
                         onChange={(e) => setHomeworkUrl(e.target.value)}
@@ -1782,25 +1784,25 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                             try {
                               const { homeworkApi } = await import('../../services/api');
                               await homeworkApi.post(`/${select.value}/submit`, { url: homeworkUrl, answers: [] });
-                              toast.success('تم تسليم الواجب بنجاح!');
+                              toast.success(t('تم تسليم الواجب بنجاح!'));
                               setHomeworkUrl('');
                             } catch {
-                              toast.error('فشل في تسليم الواجب.');
+                              toast.error(t('فشل في تسليم الواجب.'));
                             }
                           } else {
-                            toast.warning('يرجى اختيار الواجب وإضافة الملف أولاً.');
+                            toast.warning(t('يرجى اختيار الواجب وإضافة الملف أولاً.'));
                           }
                         }}
                         className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all min-h-[44px] shrink-0 shadow-md shadow-emerald-600/20"
                       >
-                        تسليم
+                        {t('تسليم')}
                       </button>
                     </div>
                   </div>
                 </div>
               ) : (
                 <p className="text-xs text-amber-400 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                  لا توجد واجبات متاحة لهذه الدورة حالياً.
+                  {t('لا توجد واجبات متاحة لهذه الدورة حالياً.')}
                 </p>
               )}
             </div>
@@ -1812,14 +1814,14 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
               <h3 className="text-xs sm:text-sm font-bold text-white mb-3 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <ListVideo className="w-4 h-4 text-indigo-400" />
-                  قائمة دروس الدورة
+                  {t('قائمة دروس الدورة')}
                 </span>
-                <span className="text-xs text-slate-400 font-normal font-mono">({courseLessons.length} درس)</span>
+                <span className="text-xs text-slate-400 font-normal font-mono">({courseLessons.length} {t('درس)')}</span>
               </h3>
 
               <div className="space-y-2 max-h-[500px] sm:max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
                 {courseLessons.length === 0 ? (
-                  <p className="text-xs text-slate-500 text-center py-6">جاري تحميل قائمة الدروس...</p>
+                  <p className="text-xs text-slate-500 text-center py-6">{t('جاري تحميل قائمة الدروس...')}</p>
                 ) : (
                   courseLessons.map((l, idx) => {
                     const isCurrent = l.id === lessonId;
@@ -1846,7 +1848,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
 
                         {isCurrent ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white shrink-0">
-                            الدرس الحالي
+                            {t('الدرس الحالي')}
                           </span>
                         ) : (
                           <Tv className="w-3.5 h-3.5 text-slate-500 shrink-0" />
@@ -1862,10 +1864,10 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
             <div className="bg-slate-900/60 border border-slate-800/60 rounded-2xl p-4 text-xs text-slate-400 space-y-2 shadow-sm">
               <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs">
                 <ShieldCheck className="w-4 h-4" />
-                <span>حماية المحتوى والخصوصية</span>
+                <span>{t('حماية المحتوى والخصوصية')}</span>
               </div>
               <p className="text-[11px] leading-relaxed text-slate-400">
-                المحتوى محمي بحقوق الملكية الفكرية. يتم حفظ تقدمك تلقائياً في السيرفر لمتابعة دراستك من أي جهاز.
+                {t('المحتوى محمي بحقوق الملكية الفكرية. يتم حفظ تقدمك تلقائياً في السيرفر لمتابعة دراستك من أي جهاز.')}
               </p>
             </div>
           </div>

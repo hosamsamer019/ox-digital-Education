@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../contexts/LanguageContext';
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { assessmentService } from '../services/assessment.service';
@@ -6,6 +7,7 @@ import { ArrowRight, Loader2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function AssessmentReviewPage() {
+  const { t } = useLanguage();
   const { id, attemptId } = useParams<{ id: string; attemptId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -28,11 +30,11 @@ export default function AssessmentReviewPage() {
       setReviewData(res.data);
     } catch (err: any) {
       if (err.response?.status === 404) {
-        setError('لم يتم العثور على المحاولة');
+        setError(t('لم يتم العثور على المحاولة'));
       } else if (err.response?.status === 403) {
-        setError('غير مصرح لك بالوصول إلى هذه النتيجة');
+        setError(t('غير مصرح لك بالوصول إلى هذه النتيجة'));
       } else {
-        setError('حدث خطأ أثناء تحميل النتيجة التفصيلية');
+        setError(t('حدث خطأ أثناء تحميل النتيجة التفصيلية'));
       }
     } finally {
       setLoading(false);
@@ -49,9 +51,9 @@ export default function AssessmentReviewPage() {
           className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-[#9e1b1b] dark:hover:text-white font-bold transition-colors"
         >
           <ArrowRight className="w-5 h-5" />
-          العودة
+          {t('العودة')}
         </button>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">النتيجة التفصيلية ومراجعة الإجابات</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('النتيجة التفصيلية ومراجعة الإجابات')}</h1>
       </div>
 
       {loading ? (
@@ -61,7 +63,7 @@ export default function AssessmentReviewPage() {
       ) : error ? (
         <div className="max-w-4xl mx-auto bg-rose-50 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300 p-8 rounded-2xl flex flex-col items-center justify-center text-center border border-rose-200 dark:border-rose-900/40">
           <AlertTriangle className="w-12 h-12 text-[#9e1b1b] mb-4" />
-          <h3 className="text-xl font-bold mb-2">عذراً</h3>
+          <h3 className="text-xl font-bold mb-2">{t('عذراً')}</h3>
           <p>{error}</p>
         </div>
       ) : reviewData ? (

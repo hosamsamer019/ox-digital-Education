@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import React from 'react';
 import { User as UserIcon } from 'lucide-react';
 import { User } from '../../contexts/AuthContext';
@@ -17,25 +18,26 @@ export const ChildSelector: React.FC<ChildSelectorProps> = ({
   className = '',
 }) => {
   const { isDark } = useTheme();
+  const { isRtl, t } = useLanguage();
 
   if (childrenList.length === 0) return null;
 
   return (
-    <div className={`mb-6 ${className}`} dir="rtl">
+    <div className={`mb-6 ${className}`} dir={isRtl ? "rtl" : "ltr"}>
       <div className="flex items-center justify-between mb-2.5">
         <span className={`text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          تحديد الطالب للمتابعة:
+          {t('تحديد الطالب للمتابعة:')}
         </span>
         {childrenList.length > 1 && (
           <span className="text-[11px] text-slate-400 sm:hidden">
-            (اسحب أفقياً لاختيار الطالب)
+            {t('(اسحب أفقياً لاختيار الطالب)')}
           </span>
         )}
       </div>
 
       <div
         role="tablist"
-        aria-label="قائمة الأبناء"
+        aria-label={t('قائمة الأبناء')}
         className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-none snap-x focus:outline-none"
       >
         {childrenList.map((child) => {

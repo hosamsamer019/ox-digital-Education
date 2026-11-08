@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -16,6 +17,7 @@ export function ScrollToTopButton({
   threshold = 300,
   className = ''
 }: ScrollToTopButtonProps) {
+  const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
   const { isDark } = useTheme();
 
@@ -80,8 +82,8 @@ export function ScrollToTopButton({
     <button
       type="button"
       onClick={scrollToTop}
-      aria-label="العودة للأعلى"
-      title="العودة لأعلى الصفحة"
+      aria-label={t('العودة للأعلى')}
+      title={t('العودة لأعلى الصفحة')}
       className={`fixed bottom-6 start-6 z-40 p-3 rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2 group backdrop-blur-md ${
         isDark
           ? 'bg-gray-800/90 hover:bg-gray-700 text-purple-400 border border-gray-700 shadow-purple-950/40'
@@ -89,7 +91,7 @@ export function ScrollToTopButton({
       } ${className}`}
     >
       <ArrowUp className="w-5 h-5 transition-transform duration-300 group-hover:-translate-y-0.5" />
-      <span className="text-xs font-bold hidden sm:inline-block pe-1">للأعلى</span>
+      <span className="text-xs font-bold hidden sm:inline-block pe-1">{t('للأعلى')}</span>
     </button>
   );
 }

@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import React, { useState } from 'react';
 import { Upload, X, CheckCircle2, Loader2 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
@@ -25,6 +26,7 @@ export default function SupabaseUploader({
   label = 'اسحب الملف هنا أو اضغط للاختيار',
   maxSizeMB = 100,
 }: SupabaseUploaderProps) {
+  const { t } = useLanguage();
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export default function SupabaseUploader({
     }
 
     if (!supabase) {
-      onUploadError('لم يتم إعداد Supabase (مفاتيح API مفقودة)');
+      onUploadError(t('لم يتم إعداد Supabase (مفاتيح API مفقودة)'));
       return;
     }
 
@@ -100,7 +102,7 @@ export default function SupabaseUploader({
               <>
                 <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  جاري الرفع... {progress}%
+                  {t('جاري الرفع...')} {progress}%
                 </p>
                 <div className="w-full max-w-xs bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-2">
                   <div 
@@ -118,7 +120,7 @@ export default function SupabaseUploader({
                   {label}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  الحد الأقصى: {maxSizeMB} MB
+                  {t('الحد الأقصى:')} {maxSizeMB} MB
                 </p>
               </>
             )}
@@ -129,7 +131,7 @@ export default function SupabaseUploader({
           <div className="flex items-center gap-2 overflow-hidden">
             <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
             <span className="text-sm text-green-700 dark:text-green-300 truncate">
-              تم الرفع بنجاح
+              {t('تم الرفع بنجاح')}
             </span>
           </div>
           <button
@@ -138,7 +140,7 @@ export default function SupabaseUploader({
                 onUploadSuccess(''); // reset parent state
             }}
             className="p-1.5 hover:bg-green-100 dark:hover:bg-green-800 rounded-lg transition-colors text-green-700 dark:text-green-300"
-            title="حذف واختيار ملف آخر"
+            title={t('حذف واختيار ملف آخر')}
           >
             <X className="w-4 h-4" />
           </button>

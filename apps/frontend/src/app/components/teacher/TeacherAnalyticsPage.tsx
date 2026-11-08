@@ -1,3 +1,4 @@
+import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect, useCallback } from 'react';
 import {
   TrendingUp, Download, AlertTriangle, Award, Target,
@@ -13,6 +14,7 @@ import { analyticsService } from '../../services/analytics.service';
 import { LoadingState } from '../ui/LoadingState';
 
 export default function TeacherAnalyticsPage() {
+  const { t } = useLanguage();
   const { isDark } = useTheme();
   const { user } = useAuth();
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -43,7 +45,7 @@ export default function TeacherAnalyticsPage() {
       setRiskStudents(risks);
     } catch (err: any) {
       console.error('Failed to fetch teacher analytics:', err);
-      setError('تعذر تحميل بيانات التحليلات الأكاديمية. يرجى المحاولة مرة أخرى.');
+      setError(t('تعذر تحميل بيانات التحليلات الأكاديمية. يرجى المحاولة مرة أخرى.'));
     } finally {
       setLoading(false);
       if (isManual) setRefreshing(false);
@@ -59,7 +61,7 @@ export default function TeacherAnalyticsPage() {
   };
 
   if (loading) {
-    return <LoadingState message="جاري تحليل البيانات الأكاديمية وتقارير المقررات..." />;
+    return <LoadingState message={t('جاري تحليل البيانات الأكاديمية وتقارير المقررات...')} />;
   }
 
   const kpis = [
@@ -102,15 +104,15 @@ export default function TeacherAnalyticsPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#9e1b1b]/10 text-[#9e1b1b] border border-[#9e1b1b]/20">
-              التقارير الأكاديمية
+              {t('التقارير الأكاديمية')}
             </span>
-            <span className="text-xs text-slate-400">تحليلات الأداء والتحصيل المعتمدة</span>
+            <span className="text-xs text-slate-400">{t('تحليلات الأداء والتحصيل المعتمدة')}</span>
           </div>
           <h1 className={`text-2xl sm:text-3xl font-extrabold ${textPrimary}`}>
-            التحليلات ومؤشرات الأداء
+            {t('التحليلات ومؤشرات الأداء')}
           </h1>
           <p className={`text-xs sm:text-sm mt-0.5 ${textSecondary}`}>
-            رؤى إحصائية واقعية مبنية حصراً على بيانات نتائج امتحانات وواجبات طلابك
+            {t('رؤى إحصائية واقعية مبنية حصراً على بيانات نتائج امتحانات وواجبات طلابك')}
           </p>
         </div>
 
@@ -125,7 +127,7 @@ export default function TeacherAnalyticsPage() {
             }`}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-[#9e1b1b]' : 'text-slate-400'}`} />
-            <span>تحديث البيانات</span>
+            <span>{t('تحديث البيانات')}</span>
           </button>
 
           <button
@@ -133,7 +135,7 @@ export default function TeacherAnalyticsPage() {
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#9e1b1b] hover:bg-[#851616] text-white shadow-xs transition-colors cursor-pointer"
           >
             <Printer className="w-4 h-4" />
-            <span>طباعة التقرير</span>
+            <span>{t('طباعة التقرير')}</span>
           </button>
         </div>
       </div>
@@ -148,7 +150,7 @@ export default function TeacherAnalyticsPage() {
               onClick={() => fetchAnalytics(true)}
               className="mt-1.5 underline font-bold cursor-pointer hover:text-amber-400"
             >
-              إعادة المحاولة
+              {t('إعادة المحاولة')}
             </button>
           </div>
         </div>
@@ -183,10 +185,10 @@ export default function TeacherAnalyticsPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className={`font-bold text-base sm:text-lg ${textPrimary}`}>
-                متوسط درجات الطلاب حسب المقرر
+                {t('متوسط درجات الطلاب حسب المقرر')}
               </h2>
               <p className={`text-xs ${textSecondary}`}>
-                النتائج الحقيقية المجمعة للامتحانات في كل دورة دراسية
+                {t('النتائج الحقيقية المجمعة للامتحانات في كل دورة دراسية')}
               </p>
             </div>
           </div>
@@ -205,12 +207,12 @@ export default function TeacherAnalyticsPage() {
                     borderRadius: 12
                   }}
                 />
-                <Bar dataKey="avg" fill="#9e1b1b" radius={[0, 6, 6, 0]} name="المتوسط" />
+                <Bar dataKey="avg" fill="#9e1b1b" radius={[0, 6, 6, 0]} name={t('المتوسط')} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="text-center py-16 text-slate-400 text-xs sm:text-sm">
-              لا توجد بيانات مقررات أو درجات امتحانات مسجلة بعد.
+              {t('لا توجد بيانات مقررات أو درجات امتحانات مسجلة بعد.')}
             </div>
           )}
         </div>
@@ -218,10 +220,10 @@ export default function TeacherAnalyticsPage() {
         {/* Student Level Distribution Pie Chart */}
         <div className={`${cardBg} border rounded-2xl p-5 sm:p-6`}>
           <h2 className={`font-bold text-base sm:text-lg ${textPrimary} mb-1`}>
-            توزيع المستويات الأكاديمية
+            {t('توزيع المستويات الأكاديمية')}
           </h2>
           <p className={`text-xs ${textSecondary} mb-4`}>
-            تصنيف أداء الطلاب في امتحاناتك
+            {t('تصنيف أداء الطلاب في امتحاناتك')}
           </p>
 
           {distributionData.length > 0 && distributionData.some((d: any) => d.value > 0) ? (
@@ -257,14 +259,14 @@ export default function TeacherAnalyticsPage() {
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                       <span className={textSecondary}>{item.name}</span>
                     </div>
-                    <span className={`font-bold ${textPrimary}`}>{item.value} طالب</span>
+                    <span className={`font-bold ${textPrimary}`}>{item.value} {t('طالب')}</span>
                   </div>
                 ))}
               </div>
             </>
           ) : (
             <div className="text-center py-12 text-slate-400 text-xs sm:text-sm">
-              لا توجد درجات كافية لحساب التوزيع.
+              {t('لا توجد درجات كافية لحساب التوزيع.')}
             </div>
           )}
         </div>
@@ -277,10 +279,10 @@ export default function TeacherAnalyticsPage() {
             <AlertTriangle className="w-5 h-5 text-amber-500" />
             <div>
               <h2 className={`font-bold text-base sm:text-lg ${textPrimary}`}>
-                سجل متابعة الطلاب المتعثرين
+                {t('سجل متابعة الطلاب المتعثرين')}
               </h2>
               <p className={`text-xs ${textSecondary}`}>
-                تقييم حقيقي لحالات تدني درجات الامتحانات والواجبات غير المسلمة
+                {t('تقييم حقيقي لحالات تدني درجات الامتحانات والواجبات غير المسلمة')}
               </p>
             </div>
           </div>
@@ -288,18 +290,18 @@ export default function TeacherAnalyticsPage() {
 
         {riskStudents.length === 0 ? (
           <div className="text-center py-10 text-slate-400 text-xs sm:text-sm">
-            لا توجد حالات تعثر أكاديمي مسجلة بين طلابك حالياً.
+            {t('لا توجد حالات تعثر أكاديمي مسجلة بين طلابك حالياً.')}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-right text-xs sm:text-sm">
               <thead>
                 <tr className={`border-b ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
-                  <th className="py-3 px-3 font-semibold">اسم الطالب</th>
-                  <th className="py-3 px-3 font-semibold">نوع التسجيل</th>
-                  <th className="py-3 px-3 font-semibold">متوسط الدرجات</th>
-                  <th className="py-3 px-3 font-semibold">درجة الخطورة</th>
-                  <th className="py-3 px-3 font-semibold">أسباب المتابعة</th>
+                  <th className="py-3 px-3 font-semibold">{t('اسم الطالب')}</th>
+                  <th className="py-3 px-3 font-semibold">{t('نوع التسجيل')}</th>
+                  <th className="py-3 px-3 font-semibold">{t('متوسط الدرجات')}</th>
+                  <th className="py-3 px-3 font-semibold">{t('درجة الخطورة')}</th>
+                  <th className="py-3 px-3 font-semibold">{t('أسباب المتابعة')}</th>
                 </tr>
               </thead>
               <tbody>
