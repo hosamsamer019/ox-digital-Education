@@ -43,7 +43,15 @@ Strictly limited to the focused fix, regression test suite, and operational repo
 
 ## 3. Commit & Push Details
 
+- **Commit Hash**: `3dcd411446714275069b2d8be0ce8677c385dbfe`
+- **Short Hash**: `3dcd411`
 - **Commit Message**: `fix(frontend): destructure isRtl from useLanguage in StudentsPage and AdminDashboard, expand regression tests`
 - **Target Branch**: `main`
 - **Remote**: `origin` (`https://github.com/hosamsamer019/ox-digital-Education.git`)
-- **Status**: Ready for push outside sandbox (`BypassSandbox: true`).
+- **Push Output**:
+  ```text
+  To https://github.com/hosamsamer019/ox-digital-Education.git
+     bb7cb53..3dcd411  main -> main
+  ```
+- **Post-Push Status**: `Your branch is up to date with 'origin/main'. nothing to commit, working tree clean.`
+
