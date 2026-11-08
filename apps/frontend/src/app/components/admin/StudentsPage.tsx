@@ -38,7 +38,7 @@ const ACADEMIC_CONFIG = {
 import { userService } from '../../services/user.service';
 
 export default function StudentsPage() {
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');

@@ -49,7 +49,7 @@ export const adminMenuItems: MenuItem[] = [
 ];
 
 export default function AdminDashboard() {
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   return (
     <SharedLayout
       menuItems={adminMenuItems}
