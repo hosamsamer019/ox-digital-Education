@@ -145,15 +145,18 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
 
     // Status filter handling
     const statusQuery = (req.query.status as string || '').toUpperCase();
+    const includeArchived = req.query.includeArchived === 'true';
+
     if (statusQuery === 'ARCHIVED') {
       whereClause.status = 'ARCHIVED';
     } else if (statusQuery === 'PUBLISHED' || statusQuery === 'DRAFT') {
       whereClause.status = statusQuery;
       whereClause.deletedAt = null;
-    } else if (statusQuery === 'ALL' || req.query.includeArchived === 'true') {
-      // Show all including archived
+    } else if (statusQuery === 'ALL' && includeArchived) {
+      // Explicitly requested ALL including archived
     } else {
-      // Default: exclude archived/deleted courses from active platform views
+      // Default / ACTIVE / ALL without includeArchived:
+      // Exclude archived/deleted courses from active platform views
       whereClause.deletedAt = null;
       whereClause.status = { not: 'ARCHIVED' };
     }
@@ -1253,10 +1256,25 @@ export const deleteCourse = async (req: AuthRequest, res: Response) => {
     });
     if (!course) return res.status(404).json({ message: 'الدورة غير موجودة أو تم حذفها بالفعل' });
 
-    const authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+    let authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+    // If the requester is the course creator teacher, resolve institution from verified teacher profile if token lacked it
+    if (!authoritativeInstitutionId && course.teacherId === requesterId) {
+      authoritativeInstitutionId = course.teacher?.institutionId || null;
+    }
+
     if (course.institutionId) {
-      if (!authoritativeInstitutionId || course.institutionId !== authoritativeInstitutionId) {
-        return res.status(403).json({ message: 'غير مصرح لك بإدارة دورات تابعة لمؤسسة أخرى' });
+      if (isManagerOrAdmin) {
+        if (!authoritativeInstitutionId || course.institutionId !== authoritativeInstitutionId) {
+          return res.status(403).json({ message: 'غير مصرح لك بإدارة دورات تابعة لمؤسسة أخرى' });
+        }
+      } else {
+        // Teacher deleting their own course
+        if (course.teacherId !== requesterId) {
+          return res.status(403).json({ message: 'غير مصرح لك بحذف أو أرشفة دورة معلم آخر' });
+        }
+        if (!authoritativeInstitutionId || course.institutionId !== authoritativeInstitutionId) {
+          return res.status(403).json({ message: 'غير مصرح لك بإدارة دورات تابعة لمؤسسة أخرى' });
+        }
       }
     } else {
       // Legacy unscoped course: only creator teacher
@@ -1315,10 +1333,25 @@ export const restoreCourse = async (req: AuthRequest, res: Response) => {
     });
     if (!course) return res.status(404).json({ message: 'الدورة غير موجودة' });
 
-    const authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+    let authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+    // If the requester is the course creator teacher, resolve institution from verified teacher profile if token lacked it
+    if (!authoritativeInstitutionId && course.teacherId === requesterId) {
+      authoritativeInstitutionId = course.teacher?.institutionId || null;
+    }
+
     if (course.institutionId) {
-      if (!authoritativeInstitutionId || course.institutionId !== authoritativeInstitutionId) {
-        return res.status(403).json({ message: 'غير مصرح لك بإدارة دورات تابعة لمؤسسة أخرى' });
+      if (isManagerOrAdmin) {
+        if (!authoritativeInstitutionId || course.institutionId !== authoritativeInstitutionId) {
+          return res.status(403).json({ message: 'غير مصرح لك بإدارة دورات تابعة لمؤسسة أخرى' });
+        }
+      } else {
+        // Teacher restoring their own course
+        if (course.teacherId !== requesterId) {
+          return res.status(403).json({ message: 'غير مصرح لك باستعادة دورة معلم آخر' });
+        }
+        if (!authoritativeInstitutionId || course.institutionId !== authoritativeInstitutionId) {
+          return res.status(403).json({ message: 'غير مصرح لك بإدارة دورات تابعة لمؤسسة أخرى' });
+        }
       }
     } else {
       // Legacy unscoped course: only creator teacher

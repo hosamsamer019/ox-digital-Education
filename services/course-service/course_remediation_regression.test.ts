@@ -853,6 +853,230 @@ async function runSuite() {
     record('Scenario 23: Student attempting enrollCourse on archived course rejected with 400/403', ok);
   }
 
+  // Scenario 24: Teacher without explicit institution claim in JWT token deletes/archives their own course (profile fallback)
+  const TEACHER_OWN = {
+    id: '66666666-6666-4666-8666-000000000006',
+    name: 'أستاذ سامي',
+    role: 'TEACHER',
+    institutionId: 'inst-001',
+    branchId: 'branch-001'
+  };
+  users.set(TEACHER_OWN.id, TEACHER_OWN);
+
+  const teacherOwnCourseId = 'course-teacher-token-fallback';
+  courses.set(teacherOwnCourseId, {
+    id: teacherOwnCourseId,
+    title: 'دورة خاصة بالمعلم بدون مؤسسة في التوكن',
+    status: 'PUBLISHED',
+    institutionId: 'inst-001',
+    teacherId: TEACHER_OWN.id,
+    deletedAt: null
+  });
+  {
+    const req = createMockReq({
+      user: { userId: TEACHER_OWN.id, role: 'TEACHER' }, // No institutionId in user token
+      tenantContext: null, // No tenantContext
+      params: { id: teacherOwnCourseId }
+    });
+    const res = createMockRes();
+    await deleteCourse(req, res);
+
+    const updated = courses.get(teacherOwnCourseId);
+    const ok = res.statusCode === 200 && updated?.status === 'ARCHIVED' && Boolean(updated?.deletedAt);
+    record('Scenario 24: Teacher without token institutionId successfully deletes/archives own course via profile fallback', ok, `status=${res.statusCode}, body=${JSON.stringify(res.body)}`);
+  }
+
+  // Scenario 25: Teacher listing courses with status=ACTIVE or includeArchived=false strictly excludes archived courses
+  {
+    const req = createMockReq({
+      user: { userId: TEACHER_OWN.id, role: 'TEACHER' },
+      tenantContext: { institutionId: 'inst-001' },
+      query: { status: 'ACTIVE', includeArchived: 'false' }
+    });
+    const res = createMockRes();
+    await getCourses(req, res);
+
+    const list = res.body?.data || [];
+    const containsArchived = list.some((c: any) => c.id === teacherOwnCourseId || c.status === 'ARCHIVED');
+    record('Scenario 25: Teacher listing courses with status=ACTIVE strictly excludes archived courses', !containsArchived);
+  }
+
+  // Scenario 26: Teacher restoring their course without token institutionId succeeds safely to DRAFT
+  {
+    const req = createMockReq({
+      user: { userId: TEACHER_OWN.id, role: 'TEACHER' },
+      tenantContext: null,
+      params: { id: teacherOwnCourseId }
+    });
+    const res = createMockRes();
+    await restoreCourse(req, res);
+
+    const updated = courses.get(teacherOwnCourseId);
+    const ok = res.statusCode === 200 && updated?.status === 'DRAFT' && updated?.deletedAt === null;
+    record('Scenario 26: Teacher without token institutionId successfully restores course to DRAFT via profile fallback', ok, `status=${res.statusCode}, body=${JSON.stringify(res.body)}`);
+  }
+
+  // Scenario 27: Creator teacher with null institution in profile and token attempting deleteCourse on institution course rejected with 403 (DEF-SEC-01 closure)
+  const TEACHER_NULL_INST = {
+    id: '77777777-7777-4777-8777-000000000007',
+    name: 'أستاذ بدون مؤسسة',
+    role: 'TEACHER',
+    institutionId: null,
+    branchId: null
+  };
+  users.set(TEACHER_NULL_INST.id, TEACHER_NULL_INST);
+
+  const instCourseForNullTeacher = 'course-inst-scoped-null-teacher';
+  courses.set(instCourseForNullTeacher, {
+    id: instCourseForNullTeacher,
+    title: 'دورة مؤسسية تابعة لمؤسسة 1 لمعلم مجرد من المؤسسة',
+    status: 'PUBLISHED',
+    institutionId: 'inst-001',
+    teacherId: TEACHER_NULL_INST.id,
+    deletedAt: null
+  });
+  {
+    const req = createMockReq({
+      user: { userId: TEACHER_NULL_INST.id, role: 'TEACHER' },
+      tenantContext: null,
+      params: { id: instCourseForNullTeacher }
+    });
+    const res = createMockRes();
+    await deleteCourse(req, res);
+
+    const recordInStore = courses.get(instCourseForNullTeacher);
+    const ok = res.statusCode === 403 && recordInStore.status === 'PUBLISHED' && recordInStore.deletedAt === null;
+    record('Scenario 27: Creator teacher with null institution in profile and token attempting deleteCourse on institution course rejected with 403 and unmutated (DEF-SEC-01 closure)', ok, `status=${res.statusCode}`);
+  }
+
+  // Scenario 28: Creator teacher with null institution in profile and token attempting restoreCourse on archived institution course rejected with 403 (DEF-SEC-01 closure)
+  const instCourseForNullTeacherArchived = 'course-inst-scoped-null-teacher-archived';
+  courses.set(instCourseForNullTeacherArchived, {
+    id: instCourseForNullTeacherArchived,
+    title: 'دورة مؤسسية مؤرشفة لمعلم مجرد من المؤسسة',
+    status: 'ARCHIVED',
+    institutionId: 'inst-001',
+    teacherId: TEACHER_NULL_INST.id,
+    deletedAt: new Date()
+  });
+  {
+    const req = createMockReq({
+      user: { userId: TEACHER_NULL_INST.id, role: 'TEACHER' },
+      tenantContext: null,
+      params: { id: instCourseForNullTeacherArchived }
+    });
+    const res = createMockRes();
+    await restoreCourse(req, res);
+
+    const recordInStore = courses.get(instCourseForNullTeacherArchived);
+    const ok = res.statusCode === 403 && recordInStore.status === 'ARCHIVED' && recordInStore.deletedAt !== null;
+    record('Scenario 28: Creator teacher with null institution in profile and token attempting restoreCourse on institution course rejected with 403 and unmutated (DEF-SEC-01 closure)', ok, `status=${res.statusCode}`);
+  }
+
+  // Scenario 29: Cross-institution teacher attempting deleteCourse on another institution's course rejected with 403 (no mutation)
+  const crossInstCourse = 'course-cross-inst-delete-guard';
+  courses.set(crossInstCourse, {
+    id: crossInstCourse,
+    title: 'دورة مؤسسة 1 ضد معلم مؤسسة 2',
+    status: 'PUBLISHED',
+    institutionId: 'inst-001',
+    teacherId: TEACHER_2_FOREIGN.id,
+    deletedAt: null
+  });
+  {
+    const req = createMockReq({
+      user: { userId: TEACHER_2_FOREIGN.id, role: 'TEACHER', institutionId: 'inst-002' },
+      tenantContext: { institutionId: 'inst-002' },
+      params: { id: crossInstCourse }
+    });
+    const res = createMockRes();
+    await deleteCourse(req, res);
+
+    const recordInStore = courses.get(crossInstCourse);
+    const ok = res.statusCode === 403 && recordInStore.status === 'PUBLISHED' && recordInStore.deletedAt === null;
+    record('Scenario 29: Cross-institution teacher attempting deleteCourse rejected with 403 and unmutated', ok, `status=${res.statusCode}`);
+  }
+
+  // Scenario 30: Non-creator teacher in same institution attempting restoreCourse rejected with 403 (no mutation)
+  const sameInstOtherTeacher = {
+    id: '88888888-8888-4888-8888-000000000008',
+    name: 'معلم زميل في نفس المؤسسة',
+    role: 'TEACHER',
+    institutionId: 'inst-001'
+  };
+  users.set(sameInstOtherTeacher.id, sameInstOtherTeacher);
+
+  const archivedCourseSameInst = 'course-archived-same-inst';
+  courses.set(archivedCourseSameInst, {
+    id: archivedCourseSameInst,
+    title: 'دورة معلم 1 مؤرشفة',
+    status: 'ARCHIVED',
+    institutionId: 'inst-001',
+    teacherId: TEACHER_OWN.id,
+    deletedAt: new Date()
+  });
+  {
+    const req = createMockReq({
+      user: { userId: sameInstOtherTeacher.id, role: 'TEACHER', institutionId: 'inst-001' },
+      tenantContext: { institutionId: 'inst-001' },
+      params: { id: archivedCourseSameInst }
+    });
+    const res = createMockRes();
+    await restoreCourse(req, res);
+
+    const recordInStore = courses.get(archivedCourseSameInst);
+    const ok = res.statusCode === 403 && recordInStore.status === 'ARCHIVED' && recordInStore.deletedAt !== null;
+    record('Scenario 30: Non-creator teacher in same institution attempting restoreCourse rejected with 403 and unmutated', ok, `status=${res.statusCode}`);
+  }
+
+  // Scenario 31: Manager with mismatched institution attempting deleteCourse rejected with 403 (no mutation)
+  const managerTargetCourse = 'course-manager-mismatch-delete';
+  courses.set(managerTargetCourse, {
+    id: managerTargetCourse,
+    title: 'دورة لمؤسسة 1 ضد مدير مؤسسة 2',
+    status: 'PUBLISHED',
+    institutionId: 'inst-001',
+    teacherId: TEACHER_OWN.id,
+    deletedAt: null
+  });
+  {
+    const req = createMockReq({
+      user: { userId: 'mgr-inst-2', role: 'ADMIN', institutionId: 'inst-002' },
+      tenantContext: { institutionId: 'inst-002' },
+      params: { id: managerTargetCourse }
+    });
+    const res = createMockRes();
+    await deleteCourse(req, res);
+
+    const recordInStore = courses.get(managerTargetCourse);
+    const ok = res.statusCode === 403 && recordInStore.status === 'PUBLISHED' && recordInStore.deletedAt === null;
+    record('Scenario 31: Manager with mismatched institution attempting deleteCourse rejected with 403 and unmutated', ok, `status=${res.statusCode}`);
+  }
+
+  // Scenario 32: Manager with mismatched institution attempting restoreCourse rejected with 403 (no mutation)
+  const managerTargetCourseArchived = 'course-manager-mismatch-restore';
+  courses.set(managerTargetCourseArchived, {
+    id: managerTargetCourseArchived,
+    title: 'دورة مؤرشفة لمؤسسة 1 ضد مدير مؤسسة 2',
+    status: 'ARCHIVED',
+    institutionId: 'inst-001',
+    teacherId: TEACHER_OWN.id,
+    deletedAt: new Date()
+  });
+  {
+    const req = createMockReq({
+      user: { userId: 'mgr-inst-2', role: 'ADMIN', institutionId: 'inst-002' },
+      tenantContext: { institutionId: 'inst-002' },
+      params: { id: managerTargetCourseArchived }
+    });
+    const res = createMockRes();
+    await restoreCourse(req, res);
+
+    const recordInStore = courses.get(managerTargetCourseArchived);
+    const ok = res.statusCode === 403 && recordInStore.status === 'ARCHIVED' && recordInStore.deletedAt !== null;
+    record('Scenario 32: Manager with mismatched institution attempting restoreCourse rejected with 403 and unmutated', ok, `status=${res.statusCode}`);
+  }
+
   console.log('===================================================================');
   console.log(`Regression Test Results: ${passed} passed, ${failed} failed`);
   console.log('===================================================================');

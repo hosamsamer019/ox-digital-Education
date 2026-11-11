@@ -13,7 +13,7 @@ export default function LandingPage() {
   const { t, isRtl } = useLanguage();
   return (
     <div
-      className="min-h-screen bg-[#090b10] text-slate-100 antialiased selection:bg-[#9e1b1b] selection:text-white"
+      className="min-h-screen max-w-full overflow-x-hidden bg-[#090b10] text-slate-100 antialiased selection:bg-[#9e1b1b] selection:text-white"
       dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Keyboard Accessibility Skip Link */}
@@ -28,7 +28,7 @@ export default function LandingPage() {
       <InstitutionalNav />
 
       {/* Main Content Area */}
-      <main id="main-content">
+      <main id="main-content" className="max-w-full overflow-x-hidden">
         {/* 2. Asymmetric Editorial Hero & Live Quick Exam Terminal */}
         <EditorialHero />
 

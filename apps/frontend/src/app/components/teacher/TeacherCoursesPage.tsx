@@ -97,7 +97,7 @@ export default function TeacherCoursesPage() {
       if (statusFilter === 'ARCHIVED') {
         params.status = 'ARCHIVED';
       } else if (statusFilter === 'ACTIVE') {
-        params.status = 'ALL';
+        params.status = 'ACTIVE';
         params.includeArchived = false;
       } else if (statusFilter === 'ALL') {
         params.status = 'ALL';

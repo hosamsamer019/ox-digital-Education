@@ -100,7 +100,13 @@ export default function CoursesManagementPage() {
       });
       // Stale response protection: drop results if a newer request has already fired
       if (requestId === searchRequestIdRef.current) {
-        const list = Array.isArray(res?.data) ? res.data : [];
+        const list = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray((res as any)?.data?.data)
+          ? (res as any).data.data
+          : Array.isArray(res)
+          ? res
+          : [];
         setTeachersList(list);
       }
     } catch (err: any) {

@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import zlib from 'zlib';
 import crypto from 'crypto';
+import os from 'os';
 
 export interface DecodedImageInfo {
   format: 'jpeg' | 'png' | 'webp';
@@ -2078,37 +2079,115 @@ export const BrdSubscriptionController = {
   },
 
   /**
+   * Helper to retrieve all canonical candidate directories for avatar persistence.
+   * Ensures resilience across containerized mounts, local dev paths, and non-root permission sandboxes.
+   */
+  getAvatarCandidateDirs(): string[] {
+    const candidates: string[] = [];
+    if (process.env.STORAGE_DIR) {
+      candidates.push(path.resolve(process.env.STORAGE_DIR));
+    }
+    if (process.env.AVATAR_STORAGE_DIR) {
+      candidates.push(path.resolve(process.env.AVATAR_STORAGE_DIR));
+    }
+    // Dedicated volume mount in docker containers
+    candidates.push('/app/storage/avatars');
+    // Pre-created and chowned writable directory for nodejs in container
+    candidates.push(path.resolve(process.cwd(), 'uploads/avatars'));
+    candidates.push(path.resolve(process.cwd(), 'uploads'));
+    // Standard local development storage directories
+    candidates.push(path.resolve(process.cwd(), 'storage/avatars'));
+    candidates.push(path.resolve(process.cwd(), '../../storage/avatars'));
+    // System temporary fallback
+    candidates.push(path.join(os.tmpdir(), 'ox-digital-avatars'));
+    return candidates;
+  },
+
+  /**
+   * Resolves or creates an existing, writable directory for saving avatars.
+   */
+  resolveWritableAvatarDir(): string {
+    const candidates = this.getAvatarCandidateDirs();
+    for (const dir of candidates) {
+      try {
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
+        }
+        fs.accessSync(dir, fs.constants.W_OK);
+        return dir;
+      } catch {
+        continue;
+      }
+    }
+    const fallback = path.join(os.tmpdir(), 'ox-digital-avatars');
+    if (!fs.existsSync(fallback)) {
+      fs.mkdirSync(fallback, { recursive: true, mode: 0o755 });
+    }
+    return fallback;
+  },
+
+  /**
+   * Searches candidate directories to locate an existing avatar file safely.
+   */
+  findAvatarFile(filename: string): string | null {
+    const candidates = this.getAvatarCandidateDirs();
+    for (const dir of candidates) {
+      try {
+        const candidatePath = path.resolve(dir, filename);
+        const canonicalDir = path.resolve(dir);
+        if (candidatePath.startsWith(canonicalDir + path.sep)) {
+          if (fs.existsSync(candidatePath)) {
+            return candidatePath;
+          }
+        }
+      } catch {
+        continue;
+      }
+    }
+    return null;
+  },
+
+  /**
    * POST /api/account/profile-picture
    * Upload square cropped profile picture (JPG, PNG, WebP <= 2MB with content check)
    */
   async uploadProfilePicture(req: AuthRequest, res: Response) {
     try {
+      const userId = req.user?.userId || (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'UNAUTHORIZED',
+          message: 'Authentication required: missing or invalid user session'
+        });
+      }
+
       let rawMime = '';
       let rawBase64 = '';
 
       if (req.body?.image && typeof req.body.image === 'string') {
         const dataUrlMatch = req.body.image.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
         if (!dataUrlMatch) {
-          return res.status(400).json({ message: 'Invalid data URL format for image' });
+          return res.status(400).json({ success: false, message: 'Invalid data URL format for image' });
         }
         rawMime = dataUrlMatch[1].toLowerCase();
-        rawBase64 = dataUrlMatch[2].trim();
+        rawBase64 = dataUrlMatch[2].replace(/\s/g, '');
       } else if (req.body?.base64Data && req.body?.mimeType) {
         rawMime = String(req.body.mimeType).toLowerCase().trim();
-        rawBase64 = String(req.body.base64Data).trim();
+        rawBase64 = String(req.body.base64Data).replace(/\s/g, '');
       } else {
-        return res.status(400).json({ message: 'base64Data and mimeType (or data URL image) are required' });
+        return res.status(400).json({ success: false, message: 'base64Data and mimeType (or data URL image) are required' });
       }
 
       const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
       if (!allowedMimes.includes(rawMime)) {
-        return res.status(400).json({ message: 'Only JPG, PNG, and WebP images are permitted' });
+        return res.status(400).json({ success: false, message: 'Only JPG, PNG, and WebP images are permitted' });
       }
 
       // Safe pre-allocation string length check: base64 encoding adds ~33% overhead.
       // A 2 MB file produces ~2.8 MB of base64 data. Any string exceeding 3 MB is rejected before allocation.
       if (rawBase64.length > 3 * 1024 * 1024) {
-        return res.status(400).json({ message: 'File size exceeds maximum permitted limit of 2 MB' });
+        return res.status(400).json({ success: false, message: 'File size exceeds maximum permitted limit of 2 MB' });
       }
 
       // Strict Base64 syntax and canonical format verification (prevents corrupted or forged base64 streams)
@@ -2170,13 +2249,10 @@ export const BrdSubscriptionController = {
 
       const ext = decodedImage.extension;
 
-      const uploadDir = path.resolve(process.env.STORAGE_DIR || 'storage/avatars');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true, mode: 0o755 });
-      }
+      const uploadDir = this.resolveWritableAvatarDir();
 
       // Unpredictable UUID filename prevents file collisions and enumeration
-      const fileName = `avatar_${req.user?.userId}_${crypto.randomUUID()}.${ext}`;
+      const fileName = `avatar_${userId}_${crypto.randomUUID()}.${ext}`;
       const filePath = path.join(uploadDir, fileName);
       fs.writeFileSync(filePath, buffer, { mode: 0o644 });
 
@@ -2184,20 +2260,25 @@ export const BrdSubscriptionController = {
 
       try {
         await db.user.update({
-          where: { id: req.user?.userId },
+          where: { id: userId },
           data: { profilePictureUrl }
         });
-      } catch (dbErr) {
+      } catch (dbErr: any) {
         // Safe atomic rollback: clean up orphaned file if database update fails
         if (fs.existsSync(filePath)) {
           try { fs.unlinkSync(filePath); } catch (_) {}
         }
-        throw dbErr;
+        return res.status(500).json({
+          success: false,
+          error: 'DATABASE_UPDATE_FAILED',
+          message: 'Failed to update user profile picture in database',
+          details: dbErr.message
+        });
       }
 
       return res.json({ success: true, profilePictureUrl, dimensions: { width: decodedImage.width, height: decodedImage.height } });
     } catch (err: any) {
-      return res.status(500).json({ message: 'Error uploading profile picture', error: err.message });
+      return res.status(500).json({ success: false, message: 'Error uploading profile picture', error: err.message });
     }
   },
 
@@ -2215,16 +2296,8 @@ export const BrdSubscriptionController = {
         return res.status(400).json({ message: 'Invalid avatar filename' });
       }
 
-      const uploadDir = path.resolve(process.env.STORAGE_DIR || 'storage/avatars');
-      const filePath = path.join(uploadDir, filename);
-
-      // Path traversal prevention: verify canonical resolved path stays within uploadDir
-      const resolvedPath = path.resolve(filePath);
-      if (!resolvedPath.startsWith(uploadDir + path.sep)) {
-        return res.status(403).json({ message: 'Access denied' });
-      }
-
-      if (!fs.existsSync(resolvedPath)) {
+      const resolvedPath = BrdSubscriptionController.findAvatarFile(filename);
+      if (!resolvedPath || !fs.existsSync(resolvedPath)) {
         return res.status(404).json({ message: 'Avatar image not found' });
       }
 
@@ -2246,8 +2319,33 @@ export const BrdSubscriptionController = {
    */
   async deleteProfilePicture(req: AuthRequest, res: Response) {
     try {
+      const userId = req.user?.userId || (req.user as any)?.id;
+      if (!userId) {
+        return res.status(401).json({ success: false, message: 'Authentication required' });
+      }
+
+      // Check existing profile picture to remove disk file
+      try {
+        const currentUser = await db.user.findUnique({
+          where: { id: userId },
+          select: { profilePictureUrl: true }
+        });
+        if (currentUser?.profilePictureUrl) {
+          const parts = currentUser.profilePictureUrl.split('/');
+          const filename = parts[parts.length - 1];
+          if (filename && /^avatar_[a-zA-Z0-9_\-]+\.(jpg|png|webp)$/.test(filename)) {
+            const diskFile = BrdSubscriptionController.findAvatarFile(filename);
+            if (diskFile && fs.existsSync(diskFile)) {
+              try { fs.unlinkSync(diskFile); } catch (_) {}
+            }
+          }
+        }
+      } catch (_) {
+        // Non-blocking cleanup
+      }
+
       await db.user.update({
-        where: { id: req.user?.userId },
+        where: { id: userId },
         data: { profilePictureUrl: null }
       });
       return res.json({ success: true, message: 'Profile picture removed' });
@@ -2272,6 +2370,20 @@ export const BrdSubscriptionController = {
 
       const user = await db.user.findUnique({ where: { id: userId } });
       if (!user) return res.status(404).json({ message: 'User not found' });
+
+      // Clean up disk avatar file if present
+      if (user.profilePictureUrl) {
+        try {
+          const parts = user.profilePictureUrl.split('/');
+          const filename = parts[parts.length - 1];
+          if (filename && /^avatar_[a-zA-Z0-9_\-]+\.(jpg|png|webp)$/.test(filename)) {
+            const diskFile = BrdSubscriptionController.findAvatarFile(filename);
+            if (diskFile && fs.existsSync(diskFile)) {
+              try { fs.unlinkSync(diskFile); } catch (_) {}
+            }
+          }
+        } catch (_) {}
+      }
 
       await db.user.update({
         where: { id: userId },
