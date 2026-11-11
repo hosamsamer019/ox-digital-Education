@@ -66,9 +66,30 @@ export const createCashbox = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ message: 'Cashbox code and name are required' });
     }
 
-    const targetBranchId = branchId || defaultBranchId || (await db.branch.findFirst({
-      where: { institutionId: institutionId as string, isDefault: true }
-    }))?.id;
+    // Critical Fix C: Strict branch scoping for Accountants
+    if (userRole === 'ACCOUNTANT') {
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+      if (branchId && branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Accountants cannot create cashboxes for other branches.'
+        });
+      }
+    }
+
+    const targetBranchId = userRole === 'ACCOUNTANT'
+      ? (req.user?.branchId as string)
+      : (branchId || defaultBranchId || (await db.branch.findFirst({
+          where: { institutionId: institutionId as string, isDefault: true }
+        }))?.id);
 
     if (!targetBranchId) {
       return res.status(400).json({ message: 'Valid branchId required to create cashbox' });
@@ -140,6 +161,26 @@ export const reconcileCashbox = async (req: AuthRequest, res: Response) => {
 
     if (!cashbox) {
       return res.status(404).json({ message: 'Cashbox not found' });
+    }
+
+    // Critical Fix C: Object-level branch verification for Accountants
+    const userRole = (req.user?.role || '').toUpperCase();
+    if (userRole === 'ACCOUNTANT') {
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+      if (cashbox.branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Accountants cannot reconcile cashboxes of other branches.'
+        });
+      }
     }
 
     const businessDate = new Date().toISOString().slice(0, 10);
@@ -264,6 +305,32 @@ export const getCashboxTransactions = async (req: AuthRequest, res: Response) =>
 
     const { id } = req.params;
     const { businessDate, type, page = '1', limit = '50' } = req.query;
+
+    // Critical Fix C: Object-level cashbox branch verification for Accountants
+    const userRole = (req.user?.role || '').toUpperCase();
+    if (userRole === 'ACCOUNTANT') {
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+      const cashbox = await db.cashbox.findFirst({
+        where: { id, institutionId: institutionId as string, deletedAt: null }
+      });
+      if (!cashbox) {
+        return res.status(404).json({ message: 'Cashbox not found' });
+      }
+      if (cashbox.branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Accountants cannot view cashbox transactions of other branches.'
+        });
+      }
+    }
 
     const pageNum = Math.max(1, parseInt(page as string, 10));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10)));

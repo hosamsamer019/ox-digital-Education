@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import {
   Home, Users, BookOpen, ClipboardCheck, BarChart3,
@@ -21,30 +20,15 @@ import TeacherIncomePage from './TeacherIncomePage';
 import AccountSettingsPage from '../shared/AccountSettingsPage';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { notificationService } from '../../services/notification.service';
+import { useSmartNavigationCounters } from '../../hooks/useSmartNavigationCounters';
 import AssessmentReviewPage from '../../pages/AssessmentReviewPage';
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
   const { language } = useLanguage();
-  const [unreadCount, setUnreadCount] = useState<number>(0);
-  const [notificationError, setNotificationError] = useState<boolean>(false);
+  const { applyBadgesToMenuItems } = useSmartNavigationCounters();
 
-  useEffect(() => {
-    notificationService
-      .getNotifications()
-      .then((res) => {
-        if (Array.isArray(res.data)) {
-          const unread = res.data.filter((n: any) => !n.read).length;
-          setUnreadCount(unread);
-        }
-      })
-      .catch(() => {
-        setNotificationError(true);
-      });
-  }, []);
-
-  const menuItems: MenuItem[] = [
+  const baseMenuItems: MenuItem[] = [
     { path: '/teacher/home', icon: Home, label: 'لوحة المؤشرات', labelKey: 'teacherMenuHome' },
     { path: '/teacher/students', icon: Users, label: 'قائمة الطلاب (My Students)', labelKey: 'teacherMenuStudents' },
     { path: '/teacher/pricing', icon: CreditCard, label: 'الاشتراكات والأسعار', labelKey: 'teacherMenuPricing' },
@@ -58,7 +42,6 @@ export default function TeacherDashboard() {
       icon: Bell,
       label: 'التنبيهات المدرسية',
       labelKey: 'teacherMenuNotifications',
-      badge: unreadCount > 0 ? unreadCount : undefined
     },
     { path: '/teacher/analytics', icon: BarChart3, label: 'التحليلات والتقارير', labelKey: 'teacherMenuAnalytics' },
     { path: '/teacher/ai', icon: Brain, label: 'أدوات الذكاء الاصطناعي', labelKey: 'teacherMenuAI' },
@@ -66,11 +49,22 @@ export default function TeacherDashboard() {
     { path: '/teacher/settings', icon: Settings, label: 'إعدادات الحساب', labelKey: 'teacherMenuSettings' },
   ];
 
+  const menuItems = applyBadgesToMenuItems(baseMenuItems);
+
+  const branchName = user?.branch?.name;
+  const branchLabelText = branchName
+    ? (language === 'ar' ? `الفرع: ${branchName}` : `Branch: ${branchName}`)
+    : (language === 'ar' ? 'غير مسند لفرع حالياً' : 'Not assigned to a branch');
+
+  const teacherSubtitle = user?.name
+    ? (language === 'ar' ? `المعلم: ${user.name} • ${branchLabelText}` : `Teacher: ${user.name} • ${branchLabelText}`)
+    : (language === 'ar' ? `منظومة المعلم الأكاديمية • ${branchLabelText}` : `Teacher Academic System • ${branchLabelText}`);
+
   return (
     <SharedLayout
       menuItems={menuItems}
       title="OX-DIGITAL Education"
-      subtitle={user?.name ? (language === 'ar' ? `المعلم: ${user.name}` : `Teacher: ${user.name}`) : (language === 'ar' ? 'منظومة المعلم الأكاديمية' : 'Teacher Academic System')}
+      subtitle={teacherSubtitle}
       accentColor="crimson"
       gradientFrom="academic-crimson"
       gradientTo="academic-crimson"

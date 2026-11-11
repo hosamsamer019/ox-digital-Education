@@ -15,9 +15,10 @@ interface StudentItem {
   branch?: { id: string; name: string; code: string } | null;
   responsibleTeacher?: { id: string; name: string; email: string } | null;
   parent?: { id: string; name: string; email: string; phone?: string | null } | null;
+  financialAccessStatus?: 'ACTIVE' | 'GRACE_PERIOD' | 'LOCKED' | 'RESTRICTED' | null;
   studentTeacherLinks?: Array<{
     teacher: { id: string; name: string; email: string };
-    accessStatus: 'ACTIVE' | 'GRACE_PERIOD' | 'LOCKED';
+    accessStatus: 'ACTIVE' | 'GRACE_PERIOD' | 'LOCKED' | 'RESTRICTED';
     exceptionActiveUntil?: string | null;
   }>;
   studentMonthlySubscriptions?: any[];
@@ -67,16 +68,16 @@ export default function ManagerStudentsPage() {
         brdSubscriptionService.getBranches(),
       ]);
 
-      if (studentsRes.students) {
-        setStudents(studentsRes.students);
-      }
-      if (branchesRes.branches) {
-        setBranches(branchesRes.branches);
+      const studentList = studentsRes.students || studentsRes.data || [];
+      setStudents(studentList);
+
+      if (branchesRes.branches || branchesRes.data) {
+        setBranches(branchesRes.branches || branchesRes.data);
       }
 
       // Collect unique teachers from loaded data or API
       const teachersMap = new Map();
-      studentsRes.students?.forEach((s: any) => {
+      studentList.forEach((s: any) => {
         if (s.responsibleTeacher) {
           teachersMap.set(s.responsibleTeacher.id, s.responsibleTeacher);
         }
@@ -173,7 +174,7 @@ export default function ManagerStudentsPage() {
   // Filter in-memory by status if selected
   const filteredStudents = students.filter((s) => {
     if (!selectedStatus) return true;
-    const defaultStatus = s.studentTeacherLinks?.[0]?.accessStatus || 'ACTIVE';
+    const defaultStatus = s.studentTeacherLinks?.[0]?.accessStatus || s.financialAccessStatus || 'LOCKED';
     return defaultStatus === selectedStatus;
   });
 
@@ -193,7 +194,7 @@ export default function ManagerStudentsPage() {
 
         <button
           onClick={loadData}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm text-card-foreground bg-card border border-border rounded-lg hover:bg-muted transition"
         >
           <RefreshCw className="w-4 h-4" />
           {t('تحديث البيانات')}
@@ -215,7 +216,7 @@ export default function ManagerStudentsPage() {
       )}
 
       {/* Filters & Search */}
-      <div className="p-4 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-3">
+      <div className="p-4 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-3">
         <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row gap-3">
           <div className="flex-1 relative">
             <Search className="w-4 h-4 absolute right-3 top-3 text-gray-400" />
@@ -224,14 +225,14 @@ export default function ManagerStudentsPage() {
               placeholder={t('البحث باسم الطالب، البريد الإلكتروني...')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-[#9e1b1b]"
+              className="w-full pr-9 pl-3 py-2 border border-border bg-input text-foreground rounded-lg text-sm focus:ring-2 focus:ring-[#9e1b1b]"
             />
           </div>
 
           <select
             value={selectedBranch}
             onChange={(e) => setSelectedBranch(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700"
+            className="px-3 py-2 border border-border bg-input text-foreground rounded-lg text-sm"
           >
             <option value="">{t('جميع الفروع')}</option>
             {branches.map((b) => (
@@ -262,6 +263,7 @@ export default function ManagerStudentsPage() {
             <option value="ACTIVE">{t('نشط (Active)')}</option>
             <option value="GRACE_PERIOD">{t('فترة سماح (Grace Period)')}</option>
             <option value="LOCKED">{t('مقفل (Locked)')}</option>
+            <option value="RESTRICTED">{t('مقيد لعدم سداد المصروفات (Restricted)')}</option>
           </select>
 
           <button
@@ -279,7 +281,7 @@ export default function ManagerStudentsPage() {
           <RefreshCw className="w-8 h-8 text-[#9e1b1b] animate-spin" />
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-right text-sm">
               <thead className="bg-gray-50 text-gray-600 border-b border-gray-200">
@@ -303,7 +305,7 @@ export default function ManagerStudentsPage() {
                 ) : (
                   filteredStudents.map((s) => {
                     const stLink = s.studentTeacherLinks?.[0];
-                    const status = stLink?.accessStatus || 'ACTIVE';
+                    const status = stLink?.accessStatus || s.financialAccessStatus || 'LOCKED';
                     const isException = !!stLink?.exceptionActiveUntil;
 
                     return (
@@ -353,6 +355,11 @@ export default function ManagerStudentsPage() {
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
                               <Clock className="w-3.5 h-3.5" />
                               {t('فترة سماح')}
+                            </span>
+                          ) : status === 'RESTRICTED' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800">
+                              <Lock className="w-3.5 h-3.5" />
+                              {t('مقيد لعدم سداد المصروفات')}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">
@@ -427,7 +434,7 @@ export default function ManagerStudentsPage() {
       {/* MODAL 1: Transfer Teacher */}
       {transferModalStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-scaleUp">
+          <div className="bg-card text-card-foreground rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-border animate-scaleUp">
             <div className="flex items-center justify-between border-b pb-3">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <ArrowRightLeft className="w-5 h-5 text-blue-600" />
@@ -499,7 +506,7 @@ export default function ManagerStudentsPage() {
       {/* MODAL 2: Manager Exception Activation */}
       {exceptionModalStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-scaleUp">
+          <div className="bg-card text-card-foreground rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-border animate-scaleUp">
             <div className="flex items-center justify-between border-b pb-3">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-purple-600" />
@@ -568,7 +575,7 @@ export default function ManagerStudentsPage() {
       {/* MODAL 3: Student History & Audit Logs */}
       {historyModalStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
+          <div className="bg-card text-card-foreground rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-border max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between border-b pb-3">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                 <History className="w-5 h-5 text-gray-700" />

@@ -19,12 +19,11 @@ declare global {
 }
 
 /**
- * Validates if the authenticated identity is the dedicated SaaS Platform Super-Admin.
- * Per OD-701 & OD-718, admin@edu.com is a separate platform identity with global scope
- * and must not implicitly hold institution operational manager privileges.
+ * Legacy helper retained only for API compatibility.
+ * Email-based Super-Admin privilege elevation has been removed (fail-closed).
  */
-export function isPlatformSuperAdminUser(user: { email?: string; role?: string }): boolean {
-  return user?.email?.toLowerCase() === 'admin@edu.com';
+export function isPlatformSuperAdminUser(_user?: { email?: string; role?: string }): boolean {
+  return false;
 }
 
 export interface TenantContextOptions {
@@ -54,24 +53,15 @@ function handleTenantContext(
     });
   }
 
-  const isSuperAdmin = isPlatformSuperAdminUser(user);
   const isPrimaryManager = Boolean(user.isPrimaryManager || user.role === 'PRIMARY_MANAGER');
 
-  // Resolve tenant from authenticated user identity
+  // Resolve tenant strictly from authenticated user identity
   const institutionId = user.institutionId || null;
   const branchId = user.branchId || null;
 
-  // Optional header override ONLY permitted for Platform Super-Admin explicitly scoping their view
   const requestedInstitutionId = (req.headers['x-institution-id'] || req.headers['x-tenant-id']) as string | undefined;
-  const requestedBranchId = req.headers['x-branch-id'] as string | undefined;
 
-  let effectiveInstitutionId = institutionId;
-  let effectiveBranchId = branchId;
-
-  if (isSuperAdmin && requestedInstitutionId) {
-    effectiveInstitutionId = requestedInstitutionId;
-    effectiveBranchId = requestedBranchId || null;
-  } else if (!isSuperAdmin && requestedInstitutionId && requestedInstitutionId !== institutionId) {
+  if (requestedInstitutionId && requestedInstitutionId !== institutionId) {
     // Rejection of Client-Supplied Cross-Tenant Spoofing (SEC-01 / SEC-02)
     return res.status(403).json({
       message: 'Forbidden: Cross-tenant access attempt detected. Client header does not match authenticated institution.',
@@ -79,7 +69,7 @@ function handleTenantContext(
     });
   }
 
-  if (options.requireTenant && !effectiveInstitutionId && !isSuperAdmin) {
+  if (options.requireTenant && !institutionId) {
     return res.status(403).json({
       message: 'Forbidden: User is not assigned to an active institution',
       code: 'TENANT_CONTEXT_MISSING'
@@ -87,11 +77,11 @@ function handleTenantContext(
   }
 
   req.tenantContext = {
-    institutionId: effectiveInstitutionId,
-    branchId: effectiveBranchId,
+    institutionId,
+    branchId,
     userId: user.userId || user.id,
     role: user.role,
-    isPlatformSuperAdmin: isSuperAdmin,
+    isPlatformSuperAdmin: false,
     isPrimaryManager
   };
 
@@ -133,9 +123,8 @@ export function assertTenantAccess(
     throw new HttpError(401, 'Unauthorized: Missing tenant context');
   }
 
-  // Super-Admin can access across institutions if explicitly viewing
-  if (context.isPlatformSuperAdmin) {
-    return;
+  if (!context.institutionId) {
+    throw new HttpError(403, 'Forbidden: Missing authenticated institution context');
   }
 
   if (!resourceInstitutionId) {
@@ -160,8 +149,8 @@ export function assertBranchAccess(
     throw new HttpError(401, 'Unauthorized: Missing tenant context');
   }
 
-  if (context.isPlatformSuperAdmin || context.isPrimaryManager) {
-    // Primary managers and super admins have institution-wide oversight
+  if (context.isPrimaryManager) {
+    // Primary managers have institution-wide branch oversight within their authenticated institution
     return;
   }
 

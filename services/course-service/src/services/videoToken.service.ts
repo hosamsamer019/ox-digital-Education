@@ -5,9 +5,17 @@ interface VideoTicketPayload {
   userId: string;
   lessonId: string;
   purpose: 'video-stream';
+  role?: string;
+  institutionId?: string | null;
 }
 
-export function generateVideoTicket(params: { userId: string; lessonId: string; expiresInSeconds?: number }): string {
+export function generateVideoTicket(params: {
+  userId: string;
+  lessonId: string;
+  role?: string;
+  institutionId?: string | null;
+  expiresInSeconds?: number;
+}): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET is not configured');
 
@@ -15,6 +23,8 @@ export function generateVideoTicket(params: { userId: string; lessonId: string; 
     userId: params.userId,
     lessonId: params.lessonId,
     purpose: 'video-stream',
+    ...(params.role && { role: params.role }),
+    ...(params.institutionId !== undefined && { institutionId: params.institutionId })
   };
 
   return jwt.sign(payload, secret, {
@@ -22,7 +32,10 @@ export function generateVideoTicket(params: { userId: string; lessonId: string; 
   });
 }
 
-export function verifyVideoTicket(ticket: string, expectedLessonId: string): { userId: string; lessonId: string } | null {
+export function verifyVideoTicket(
+  ticket: string,
+  expectedLessonId: string
+): { userId: string; lessonId: string; role?: string; institutionId?: string | null } | null {
   const secret = process.env.JWT_SECRET;
   if (!secret || !ticket) return null;
 
@@ -37,6 +50,8 @@ export function verifyVideoTicket(ticket: string, expectedLessonId: string): { u
     return {
       userId: decoded.userId,
       lessonId: decoded.lessonId,
+      role: decoded.role,
+      institutionId: decoded.institutionId
     };
   } catch (err) {
     return null;

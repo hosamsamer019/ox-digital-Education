@@ -15,13 +15,14 @@ interface ScopedStudent {
   parent?: { id: string; name: string; phone?: string | null } | null;
   teacherId: string;
   teacherName: string;
-  accessStatus: 'ACTIVE' | 'GRACE_PERIOD' | 'LOCKED';
+  accessStatus: 'ACTIVE' | 'GRACE_PERIOD' | 'LOCKED' | 'RESTRICTED';
   recentSubscriptions?: any[];
 }
 
 export default function CollectionDeskPage() {
   const { t } = useLanguage();
   const [students, setStudents] = useState<ScopedStudent[]>([]);
+  const [branchTeachers, setBranchTeachers] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -42,12 +43,19 @@ export default function CollectionDeskPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await brdSubscriptionService.getAccountantStudents();
-      if (res.data) {
-        setStudents(res.data);
-        if (res.data.length > 0) {
-          setSelectedStudentId(res.data[0].studentId);
-        }
+      const teachersPromise = typeof brdSubscriptionService.getAccountantTeachers === 'function'
+        ? brdSubscriptionService.getAccountantTeachers().catch(() => ({ teachers: [] }))
+        : Promise.resolve({ teachers: [] });
+
+      const [resStudents, resTeachers] = await Promise.all([
+        brdSubscriptionService.getAccountantStudents().catch(() => ({ data: [] })),
+        teachersPromise
+      ]);
+      const sList = resStudents.data || [];
+      setStudents(sList);
+      setBranchTeachers(resTeachers?.teachers || []);
+      if (sList.length > 0) {
+        setSelectedStudentId(sList[0].studentId);
       }
     } catch (err: any) {
       console.error('Failed to load accountant students', err);
@@ -124,7 +132,7 @@ export default function CollectionDeskPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <CreditCard className="w-7 h-7 text-[#9e1b1b]" />
             {t('مكتب تحصيل وسداد الاشتراكات (Collection Desk)')}
           </h1>
@@ -135,7 +143,7 @@ export default function CollectionDeskPage() {
 
         <button
           onClick={loadStudents}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm text-card-foreground bg-card border border-border rounded-lg hover:bg-muted transition"
         >
           <RefreshCw className="w-4 h-4" />
           {t('تحديث القائمة')}
@@ -155,9 +163,32 @@ export default function CollectionDeskPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Diagnostic Banner if 0 students */}
+          {students.length === 0 && (
+            <div className="lg:col-span-3 p-4 rounded-xl border ${
+              branchTeachers.length > 0
+                ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200'
+                : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-200'
+            } text-xs space-y-1">
+              <div className="font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>
+                  {branchTeachers.length > 0
+                    ? t('معلمو الفرع مسجلون ولكن لا يوجد طلاب مقيدون معهم حالياً')
+                    : t('لم يتم ربط أي معلم بهذا الفرع بعد')}
+                </span>
+              </div>
+              <p>
+                {branchTeachers.length > 0
+                  ? t(`يوجد في هذا الفرع ${branchTeachers.length} معلم معتمد، ولكن لم يقم أي معلم بقيد طلاب معه في جدول StudentTeacher. بمجرد قيد الطلاب، ستظهر قائمة الطلاب هنا فوراً.`)
+                  : t('يرجى التواصل مع المدير الأساسي (Primary Manager) لربط المعلمين بهذا الفرع من شاشة إدارة الفروع.')}
+              </p>
+            </div>
+          )}
+
           {/* Column 1 & 2: Payment Form */}
-          <div className="lg:col-span-2 p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-5">
-            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+          <div className="lg:col-span-2 p-6 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-5">
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <Receipt className="w-5 h-5 text-[#9e1b1b]" />
               {t('تسجيل تحصيل اشتراك جديد')}
             </h2>
@@ -172,7 +203,7 @@ export default function CollectionDeskPage() {
                   required
                   value={selectedStudentId}
                   onChange={(e) => setSelectedStudentId(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#9e1b1b]"
+                  className="w-full px-3 py-2.5 bg-input text-foreground border border-border rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#9e1b1b]"
                 >
                   {students.length === 0 ? (
                     <option value="">{t('لا يوجد طلاب مرتبطين بمعلمي هذا الفرع')}</option>
@@ -180,7 +211,7 @@ export default function CollectionDeskPage() {
                     students.map((s) => (
                       <option key={`${s.studentId}-${s.teacherId}`} value={s.studentId}>
                         {s.studentName} {t('— مع المعلم:')} {s.teacherName} ({s.gradeLevel}) [
-                        {s.accessStatus === 'ACTIVE' ? 'نشط' : s.accessStatus === 'GRACE_PERIOD' ? 'سماح' : 'مقفل'}]
+                        {s.accessStatus === 'ACTIVE' ? t('نشط') : s.accessStatus === 'GRACE_PERIOD' ? t('فترة سماح') : s.accessStatus === 'RESTRICTED' ? t('مقيد') : t('مقفل')}]
                       </option>
                     ))
                   )}
@@ -196,7 +227,7 @@ export default function CollectionDeskPage() {
                   <select
                     value={monthsCount}
                     onChange={(e) => setMonthsCount(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-[#9e1b1b]"
+                    className="w-full px-3 py-2.5 bg-input text-foreground border border-border rounded-xl text-sm font-bold focus:ring-2 focus:ring-[#9e1b1b]"
                   >
                     <option value={1}>{t('شهر واحد (الشهر الحالي)')}</option>
                     <option value={2}>{t('شهران مقدماً (2 شهور)')}</option>
@@ -298,15 +329,15 @@ export default function CollectionDeskPage() {
                   className="px-6 py-3 bg-[#9e1b1b] hover:bg-[#801515] text-white text-sm font-bold rounded-xl transition shadow-sm flex items-center gap-2"
                 >
                   <Receipt className="w-4 h-4" />
-                  {submitting ? 'جاري التحصيل...' : 'تأكيد السداد وإصدار الإيصال'}
+                  {submitting ? t('جاري التحصيل...') : t('تأكيد السداد وإصدار الإيصال')}
                 </button>
               </div>
             </form>
           </div>
 
           {/* Column 3: Student Details Card */}
-          <div className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5 border-b pb-3">
+          <div className="p-6 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5 border-b border-border pb-3">
               <User className="w-4 h-4 text-[#9e1b1b]" />
               {t('بيانات الطالب المحدد')}
             </h3>
@@ -315,7 +346,7 @@ export default function CollectionDeskPage() {
               <div className="space-y-3 text-xs">
                 <div className="p-3 bg-gray-50 rounded-xl space-y-1">
                   <span className="text-gray-500 block">{t('الاسم:')}</span>
-                  <span className="font-bold text-gray-900 text-sm block">{selectedStudent.studentName}</span>
+                  <span className="font-bold text-foreground text-sm block">{selectedStudent.studentName}</span>
                   <span className="text-gray-400 font-mono text-[11px] block">{selectedStudent.studentEmail}</span>
                 </div>
 
@@ -337,14 +368,18 @@ export default function CollectionDeskPage() {
                         ? 'bg-emerald-100 text-emerald-800'
                         : selectedStudent.accessStatus === 'GRACE_PERIOD'
                         ? 'bg-amber-100 text-amber-800'
+                        : selectedStudent.accessStatus === 'RESTRICTED'
+                        ? 'bg-rose-100 text-rose-800'
                         : 'bg-red-100 text-red-800'
                     }`}
                   >
                     {selectedStudent.accessStatus === 'ACTIVE'
-                      ? 'نشط (مسدد)'
+                      ? t('نشط (مسدد)')
                       : selectedStudent.accessStatus === 'GRACE_PERIOD'
-                      ? 'فترة سماح'
-                      : 'مقفل (غير مسدد)'}
+                      ? t('فترة سماح')
+                      : selectedStudent.accessStatus === 'RESTRICTED'
+                      ? t('مقيد لعدم سداد المصروفات')
+                      : t('مقفل (غير مسدد)')}
                   </span>
                 </div>
 
@@ -368,11 +403,11 @@ export default function CollectionDeskPage() {
       {/* ISSUED RECEIPT MODAL */}
       {issuedReceipt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl border-2 border-emerald-500 animate-scaleUp">
+          <div className="bg-card text-card-foreground rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl border-2 border-emerald-500 animate-scaleUp">
             <div className="flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-2 text-emerald-700">
                 <CheckCircle2 className="w-6 h-6" />
-                <h2 className="text-lg font-black text-gray-900">{t('إيصال تحصيل رسمي مؤكد')}</h2>
+                <h2 className="text-lg font-black text-foreground">{t('إيصال تحصيل رسمي مؤكد')}</h2>
               </div>
               <button onClick={() => setIssuedReceipt(null)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
@@ -382,14 +417,14 @@ export default function CollectionDeskPage() {
             <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-2.5 text-xs font-sans">
               <div className="flex justify-between items-center py-1 border-b border-gray-200">
                 <span className="text-gray-500">{t('رقم الإيصال المتسلسل:')}</span>
-                <span className="font-mono font-black text-base text-gray-900">
+                <span className="font-mono font-black text-base text-foreground">
                   {issuedReceipt.receipt?.receiptNumber}
                 </span>
               </div>
 
               <div className="flex justify-between items-center py-1 border-b border-gray-200">
                 <span className="text-gray-500">{t('اسم الطالب:')}</span>
-                <span className="font-bold text-gray-900">{issuedReceipt.studentName}</span>
+                <span className="font-bold text-foreground">{issuedReceipt.studentName}</span>
               </div>
 
               <div className="flex justify-between items-center py-1 border-b border-gray-200">
@@ -406,10 +441,10 @@ export default function CollectionDeskPage() {
                 <span className="text-gray-500">{t('طريقة التحصيل:')}</span>
                 <span className="font-bold text-gray-800">
                   {issuedReceipt.receivingMethod === 'CASH'
-                    ? 'نقدي'
+                    ? t('نقدي (Cash)')
                     : issuedReceipt.receivingMethod === 'BANK_TRANSFER'
-                    ? 'تحويل بنكي'
-                    : 'محفظة إلكترونية'}
+                    ? t('تحويل بنكي (Bank Transfer)')
+                    : t('محفظة إلكترونية (Wallet)')}
                 </span>
               </div>
 

@@ -117,6 +117,14 @@ export default function TeacherProfilePage() {
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   {t('حساب معلم معتمد')}
                 </span>
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                  (user as any)?.branch?.name
+                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                }`}>
+                  <MapPin className="w-3.5 h-3.5" />
+                  {(user as any)?.branch?.name ? `${(user as any).branch.name}` : t('غير مسند لفرع حالياً')}
+                </span>
                 <span className="text-xs text-slate-400">OX-DIGITAL Education</span>
               </div>
               <h1 className={`text-2xl font-extrabold ${textPrimary}`}>{formData.name}</h1>
@@ -194,6 +202,24 @@ export default function TeacherProfilePage() {
                   readOnly
                   className={`${inputClass} pr-10 font-mono text-left cursor-text select-all opacity-80`}
                   dir="ltr"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className={`text-xs font-semibold ${textSecondary} block mb-1.5`}>{t('الفرع المسند إليه')}</label>
+              <div className="relative flex items-center">
+                <MapPin className={`absolute top-1/2 -translate-y-1/2 right-3 w-4 h-4 ${textSecondary}`} />
+                <input
+                  value={
+                    (user as any)?.branch?.name
+                      ? `${(user as any).branch.name}${(user as any).branch.code ? ` (${(user as any).branch.code})` : ''}`
+                      : t('غير مسند لفرع حالياً')
+                  }
+                  readOnly
+                  className={`${inputClass} pr-10 cursor-default opacity-90 font-medium ${
+                    (user as any)?.branch?.name ? 'text-indigo-500 dark:text-indigo-400' : 'text-amber-500 dark:text-amber-400'
+                  }`}
                 />
               </div>
             </div>

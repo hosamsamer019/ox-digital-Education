@@ -10,15 +10,43 @@ import { useTheme, Theme, resolveThemeAlias } from '../../contexts/ThemeContext'
 import { useLanguage } from '../../contexts/LanguageContext';
 import { brdSubscriptionService } from '../../services/brdSubscription.service';
 import { userService } from '../../services/user.service';
+import { useSearchParams } from 'react-router-dom';
 
 export default function AccountSettingsPage() {
   const { user, updateUser } = useAuth();
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t, isRtl } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Active Tab
-  const [activeTab, setActiveTab] = useState<'preferences' | 'profile' | 'linking' | 'security'>('preferences');
+  // Active Tab: supports ?tab=linking deep links and bidirectional browser history synchronization
+  const validTabs: Array<'preferences' | 'profile' | 'linking' | 'security'> = ['preferences', 'profile', 'linking', 'security'];
+  const queryTab = searchParams.get('tab') as 'preferences' | 'profile' | 'linking' | 'security' | null;
+  const [activeTab, setActiveTab] = useState<'preferences' | 'profile' | 'linking' | 'security'>(
+    queryTab && validTabs.includes(queryTab) ? queryTab : 'preferences'
+  );
+
+  // Synchronize state when URL search params change (e.g. back/forward navigation or external links)
+  useEffect(() => {
+    const tab = searchParams.get('tab') as any;
+    const targetTab = tab && validTabs.includes(tab) ? tab : 'preferences';
+    if (targetTab !== activeTab) {
+      setActiveTab(targetTab);
+    }
+  }, [searchParams]);
+
+  // Tab switch handler: updates activeTab state and synchronizes URL query parameter in browser history
+  const handleTabChange = (newTab: 'preferences' | 'profile' | 'linking' | 'security') => {
+    if (newTab === activeTab) return;
+    setActiveTab(newTab);
+    const newParams = new URLSearchParams(searchParams);
+    if (newTab === 'preferences') {
+      newParams.delete('tab');
+    } else {
+      newParams.set('tab', newTab);
+    }
+    setSearchParams(newParams, { replace: false });
+  };
 
   // Profile Picture state
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
@@ -90,12 +118,31 @@ export default function AccountSettingsPage() {
     setLoadingRelationships(true);
     userService.getLinkedRelationships()
       .then((res) => {
-        if (res.success && res.data) {
+        if (res && res.success && res.data) {
           setRelationshipData(res.data);
+        } else {
+          setRelationshipData({
+            userId: user?.id,
+            role: user?.role,
+            branch: user?.branch || null,
+            parent: null,
+            children: [],
+            teachers: [],
+            branchAccountants: []
+          });
         }
       })
       .catch((err) => {
         console.warn('Could not load relationships:', err);
+        setRelationshipData({
+          userId: user?.id,
+          role: user?.role,
+          branch: user?.branch || null,
+          parent: null,
+          children: [],
+          teachers: [],
+          branchAccountants: []
+        });
       })
       .finally(() => {
         setLoadingRelationships(false);
@@ -148,6 +195,7 @@ export default function AccountSettingsPage() {
 
     if (file.size > 2 * 1024 * 1024) {
       showErrorMessage(t('imageSizeError', 'حجم الصورة يجب ألا يتجاوز 2 ميجابايت'));
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
@@ -179,7 +227,11 @@ export default function AccountSettingsPage() {
       updateUser({ profilePictureUrl: url });
       showNotification(t('imageSavedSuccess', 'تم تحديث الصورة الشخصية بنجاح'));
     } catch (err: any) {
-      showErrorMessage(err?.response?.data?.message || err?.message || t('imageUploadFailed', 'تعذر رفع الصورة الشخصية'));
+      if (err?.response?.status === 413) {
+        showErrorMessage(t('imageSizeError', 'حجم الصورة يجب ألا يتجاوز 2 ميجابايت'));
+      } else {
+        showErrorMessage(err?.response?.data?.message || err?.message || t('imageUploadFailed', 'تعذر رفع الصورة الشخصية'));
+      }
     } finally {
       setSaving(false);
     }
@@ -247,6 +299,7 @@ export default function AccountSettingsPage() {
       setLookupResult(null);
       setSearchIdentifier('');
       loadRelationships();
+      window.dispatchEvent(new Event('ox:relationships-updated'));
     } catch (err: any) {
       showErrorMessage(err?.response?.data?.message || 'تعذر إتمام عملية الربط');
     } finally {
@@ -261,6 +314,7 @@ export default function AccountSettingsPage() {
       showNotification(t('unlinkingSuccessMsg', 'تم إلغاء ربط الحساب بنجاح'));
       setUnlinkConfirmTarget(null);
       loadRelationships();
+      window.dispatchEvent(new Event('ox:relationships-updated'));
     } catch (err: any) {
       showErrorMessage(err?.response?.data?.message || 'تعذر إلغاء الربط');
     } finally {
@@ -340,7 +394,7 @@ export default function AccountSettingsPage() {
       {/* Tabs */}
       <div className="flex border-b border-border overflow-x-auto space-x-2 space-x-reverse scrollbar-none">
         <button
-          onClick={() => setActiveTab('preferences')}
+          onClick={() => handleTabChange('preferences')}
           className={`px-5 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition flex items-center gap-2 cursor-pointer ${
             activeTab === 'preferences'
               ? 'border-primary text-primary font-bold'
@@ -352,7 +406,7 @@ export default function AccountSettingsPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab('profile')}
+          onClick={() => handleTabChange('profile')}
           className={`px-5 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition flex items-center gap-2 cursor-pointer ${
             activeTab === 'profile'
               ? 'border-primary text-primary font-bold'
@@ -364,7 +418,7 @@ export default function AccountSettingsPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab('linking')}
+          onClick={() => handleTabChange('linking')}
           className={`px-5 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition flex items-center gap-2 cursor-pointer ${
             activeTab === 'linking'
               ? 'border-primary text-primary font-bold'
@@ -376,7 +430,7 @@ export default function AccountSettingsPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab('security')}
+          onClick={() => handleTabChange('security')}
           className={`px-5 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition flex items-center gap-2 cursor-pointer ${
             activeTab === 'security'
               ? 'border-primary text-primary font-bold'
@@ -592,7 +646,13 @@ export default function AccountSettingsPage() {
               <div className="p-3 bg-muted/50 rounded-xl border border-border">
                 <span className="text-xs text-muted-foreground block">{t('branchLabel', 'الفرع (Branch)')}</span>
                 <span className="font-semibold text-foreground">
-                  {user?.branch?.name || (user as any)?.branchId || t('defaultMainBranch', 'المركز الرئيسي / عام')}
+                  {user?.branch?.name || (user as any)?.branchId ? (
+                    user?.branch?.name || (user as any)?.branchId
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" data-testid="settings-unassigned-badge">
+                      {t('unassignedBranch', 'غير مسند لفرع حالياً')}
+                    </span>
+                  )}
                 </span>
               </div>
             </div>
@@ -823,10 +883,16 @@ export default function AccountSettingsPage() {
                     {t('assignedBranchTitle', 'الفرع أو المركز المنسوب إليه')}
                   </div>
                   <div className="text-sm font-semibold text-primary">
-                    {relationshipData?.branch?.name || user?.branch?.name || t('defaultMainBranch', 'المركز الرئيسي / عام')}
+                    {relationshipData?.branch?.name || user?.branch?.name ? (
+                      relationshipData?.branch?.name || user?.branch?.name
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" data-testid="linking-unassigned-badge">
+                        {t('unassignedBranch', 'غير مسند لفرع حالياً')}
+                      </span>
+                    )}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {relationshipData?.branch?.code ? `كود الفرع: ${relationshipData.branch.code}` : 'فرع مركزي'}
+                    {relationshipData?.branch?.code ? `كود الفرع: ${relationshipData.branch.code}` : (relationshipData?.branch?.name || user?.branch?.name ? 'فرع مركزي' : t('noBranchCode', 'لا يوجد كود فرع مسند'))}
                   </div>
                 </div>
 

@@ -54,7 +54,7 @@ export default function ReceiptsManagementPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Receipt className="w-7 h-7 text-[#9e1b1b]" />
             {t('سجل الإيصالات المتسلسلة للفرع (Branch Receipts)')}
           </h1>
@@ -65,7 +65,7 @@ export default function ReceiptsManagementPage() {
 
         <button
           onClick={loadReceipts}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm text-card-foreground bg-card border border-border rounded-lg hover:bg-muted transition"
         >
           <RefreshCw className="w-4 h-4" />
           {t('تحديث السجل')}
@@ -80,7 +80,7 @@ export default function ReceiptsManagementPage() {
       )}
 
       {/* Filters */}
-      <div className="p-4 bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col md:flex-row gap-3">
+      <div className="p-4 bg-card text-card-foreground border border-border rounded-2xl shadow-sm flex flex-col md:flex-row gap-3">
         <div className="flex-1 relative">
           <Search className="w-4 h-4 absolute right-3 top-3 text-gray-400" />
           <input
@@ -88,14 +88,14 @@ export default function ReceiptsManagementPage() {
             placeholder={t('searchReceiptsPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-[#9e1b1b]"
+            className="w-full pr-9 pl-3 py-2 border border-border bg-input text-foreground rounded-lg text-sm focus:ring-2 focus:ring-[#9e1b1b]"
           />
         </div>
 
         <select
           value={methodFilter}
           onChange={(e) => setMethodFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700"
+          className="px-3 py-2 border border-border bg-input text-foreground rounded-lg text-sm"
         >
           <option value="ALL">{t('جميع طرق السداد')}</option>
           <option value="CASH">{t('نقدي (Cash)')}</option>
@@ -110,10 +110,10 @@ export default function ReceiptsManagementPage() {
           <RefreshCw className="w-8 h-8 text-[#9e1b1b] animate-spin" />
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="bg-card text-card-foreground border border-border rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-right text-sm">
-              <thead className="bg-gray-50 text-gray-600 border-b border-gray-200">
+              <thead className="bg-muted/50 text-muted-foreground border-b border-border">
                 <tr>
                   <th className={`py-3.5 px-4 font-semibold ${isRtl ? "text-right" : "text-left"}`}>{t('receiptNumber')}</th>
                   <th className={`py-3.5 px-4 font-semibold ${isRtl ? "text-right" : "text-left"}`}>{t('student')}</th>
@@ -138,10 +138,10 @@ export default function ReceiptsManagementPage() {
                     const isCancelled = r.payment?.status === 'CANCELLED';
                     return (
                       <tr key={r.id} className="hover:bg-gray-50/80 transition">
-                        <td className="py-3.5 px-4 font-mono font-bold text-gray-900">
+                        <td className="py-3.5 px-4 font-mono font-bold text-foreground">
                           {r.receiptNumber}
                         </td>
-                        <td className="py-3.5 px-4 font-medium text-gray-900">
+                        <td className="py-3.5 px-4 font-medium text-foreground">
                           {r.student?.name || 'غير معروف'}
                           {r.student?.gradeLevel && (
                             <span className="text-xs text-gray-500 block">{r.student.gradeLevel}</span>
@@ -206,11 +206,11 @@ export default function ReceiptsManagementPage() {
       {/* PRINT PREVIEW MODAL */}
       {selectedReceipt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-gray-200 animate-scaleUp">
+          <div className="bg-card text-card-foreground rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-border animate-scaleUp">
             <div className="flex items-center justify-between border-b pb-3">
               <div className="flex items-center gap-2">
                 <Receipt className="w-6 h-6 text-[#9e1b1b]" />
-                <h2 className="text-lg font-black text-gray-900">{t('إيصال تحصيل رسمي')}</h2>
+                <h2 className="text-lg font-black text-foreground">{t('إيصال تحصيل رسمي')}</h2>
               </div>
               <button onClick={() => setSelectedReceipt(null)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
@@ -219,18 +219,18 @@ export default function ReceiptsManagementPage() {
 
             <div className="p-5 bg-gray-50 border border-gray-200 rounded-xl space-y-3 text-xs">
               <div className="text-center pb-2 border-b border-gray-200">
-                <div className="font-black text-base text-gray-900">{t('منظومة OX-DIGITAL التعليمية')}</div>
+                <div className="font-black text-base text-foreground">{t('منظومة OX-DIGITAL التعليمية')}</div>
                 <div className="text-gray-500 text-[11px]">{t('المركز التعليمي لإدارة الاشتراكات والمجموعات')}</div>
               </div>
 
               <div className="flex justify-between py-1 border-b border-gray-100">
                 <span className="text-gray-500">{t('رقم الإيصال:')}</span>
-                <span className="font-mono font-bold text-gray-900 text-sm">{selectedReceipt.receiptNumber}</span>
+                <span className="font-mono font-bold text-foreground text-sm">{selectedReceipt.receiptNumber}</span>
               </div>
 
               <div className="flex justify-between py-1 border-b border-gray-100">
                 <span className="text-gray-500">{t('اسم الطالب:')}</span>
-                <span className="font-bold text-gray-900">{selectedReceipt.student?.name}</span>
+                <span className="font-bold text-foreground">{selectedReceipt.student?.name}</span>
               </div>
 
               <div className="flex justify-between py-1 border-b border-gray-100">

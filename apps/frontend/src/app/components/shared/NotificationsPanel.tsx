@@ -72,6 +72,7 @@ export default function NotificationsPanel({ onClose, isDark, onUnreadCountChang
       await notificationService.markAsRead(id);
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true, readAt: new Date().toISOString() } : n));
       onUnreadCountChange?.();
+      window.dispatchEvent(new Event('ox:counters-refresh'));
     } catch (err) {
       console.error('Failed to mark as read', err);
     }
@@ -82,6 +83,7 @@ export default function NotificationsPanel({ onClose, isDark, onUnreadCountChang
       await notificationService.markAllAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, read: true, readAt: new Date().toISOString() })));
       onUnreadCountChange?.();
+      window.dispatchEvent(new Event('ox:counters-refresh'));
     } catch (err) {
       console.error('Failed to mark all as read', err);
     }

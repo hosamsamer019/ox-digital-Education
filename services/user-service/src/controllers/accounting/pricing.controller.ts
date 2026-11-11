@@ -168,14 +168,35 @@ export const createStudentAgreement = async (req: AuthRequest, res: Response) =>
         return res.status(403).json({ message: 'Forbidden: Students can only access their own financial account' });
       }
     } else if (userRole === 'ACCOUNTANT') {
-      if (req.user?.branchId && student.branchId && student.branchId !== req.user.branchId) {
-        return res.status(403).json({ message: 'Forbidden: Branch accountants can only access students in their assigned branch' });
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+      if (student.branchId && student.branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Branch accountants can only access students in their assigned branch.'
+        });
+      }
+      if (branchId && branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Accountants cannot create agreements for other branches.'
+        });
       }
     }
 
-    const targetBranchId = branchId || defaultBranchId || student.branchId || (await db.branch.findFirst({
-      where: { institutionId: institutionId as string, isDefault: true }
-    }))?.id;
+    const targetBranchId = userRole === 'ACCOUNTANT'
+      ? (req.user?.branchId as string)
+      : (branchId || defaultBranchId || student.branchId || (await db.branch.findFirst({
+          where: { institutionId: institutionId as string, isDefault: true }
+        }))?.id);
 
     if (!targetBranchId) {
       return res.status(400).json({ message: 'Valid branchId required for agreement' });
@@ -336,8 +357,34 @@ export const getStudentFinancialAccount = async (req: AuthRequest, res: Response
         return res.status(403).json({ message: 'Forbidden: Students can only access their own financial account' });
       }
     } else if (userRole === 'ACCOUNTANT') {
-      if (req.user?.branchId && student.branchId && student.branchId !== req.user.branchId) {
-        return res.status(403).json({ message: 'Forbidden: Branch accountants can only access students in their assigned branch' });
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+      if (student.branchId && student.branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Branch accountants can only access students in their assigned branch.'
+        });
+      }
+    } else if (userRole === 'TEACHER') {
+      const teachesStudent = await db.courseEnrollment.findFirst({
+        where: {
+          studentId: student.id,
+          course: { teacherId: currentUserId }
+        }
+      });
+      if (!teachesStudent) {
+        return res.status(403).json({
+          success: false,
+          error: 'TEACHER_NOT_ENROLLED',
+          message: 'Forbidden: Teachers can only view financial accounts of their enrolled students.'
+        });
       }
     }
 

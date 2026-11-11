@@ -415,6 +415,17 @@ export const startAttempt = async (req: AuthRequest, res: Response) => {
     const exam = await db.exam.findUnique({ where: { id: examId } });
     if (!exam) return res.status(404).json({ message: 'Exam not found' });
 
+    // Enforce course lifecycle & archive protection (Phase II-C)
+    if (exam.courseId) {
+      const course = await db.course.findUnique({
+        where: { id: exam.courseId },
+        select: { id: true, status: true, deletedAt: true }
+      });
+      if (course && (course.status !== 'PUBLISHED' || course.deletedAt !== null)) {
+        return res.status(403).json({ message: 'لا يمكن بدء الامتحان لدورة مؤرشفة أو غير منشورة' });
+      }
+    }
+
     const now = new Date();
     if (exam.startTime && now < exam.startTime) {
       return res.status(400).json({ message: 'Exam has not started yet' });

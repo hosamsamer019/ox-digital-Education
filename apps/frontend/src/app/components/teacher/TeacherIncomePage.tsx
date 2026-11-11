@@ -1,13 +1,15 @@
 import { useLanguage, t } from '../../contexts/LanguageContext';
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   DollarSign, TrendingUp, Calendar, CreditCard, Wallet,
-  Receipt, ArrowUpRight, Printer, AlertCircle, RefreshCw, FileText
+  Receipt, ArrowUpRight, Printer, AlertCircle, RefreshCw, FileText, Building2
 } from 'lucide-react';
 import { brdSubscriptionService } from '../../services/brdSubscription.service';
 
 export default function TeacherIncomePage() {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<{
@@ -75,18 +77,31 @@ export default function TeacherIncomePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <DollarSign className="w-7 h-7 text-emerald-600" />
-            {t('تقرير الدخل والتحصيلات الشهرية')}
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <DollarSign className="w-7 h-7 text-emerald-600" />
+              {t('تقرير الدخل والتحصيلات الشهرية')}
+            </h1>
+            {user?.branch?.name ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" data-testid="income-branch-badge">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>{t('branchColon', 'الفرع:')} {user.branch.name}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" data-testid="income-unassigned-badge">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>{t('unassignedBranch', 'غير مسند لفرع حالياً')}</span>
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             {t('سجل التحصيلات الفعلية المستلمة للطلاب وتوزيعها حسب الصف وطريقة السداد')}
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={loadReport}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-card-foreground bg-card border border-border rounded-lg hover:bg-muted transition"
           >
             <RefreshCw className="w-4 h-4" />
             {t('تحديث')}
@@ -129,7 +144,7 @@ export default function TeacherIncomePage() {
               </div>
             </div>
 
-            <div className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm">
+            <div className="p-5 bg-card text-card-foreground border border-border rounded-2xl shadow-sm">
               <div className="flex items-center justify-between text-gray-600">
                 <span className="text-sm font-medium">{t('تحصيلات الشهر المحدد (')}{selectedMonth})</span>
                 <Calendar className="w-5 h-5 text-emerald-600" />
@@ -142,7 +157,7 @@ export default function TeacherIncomePage() {
               </div>
             </div>
 
-            <div className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm">
+            <div className="p-5 bg-card text-card-foreground border border-border rounded-2xl shadow-sm">
               <div className="flex items-center justify-between text-gray-600">
                 <span className="text-sm font-medium">{t('اختيار الشهر المالي')}</span>
                 <TrendingUp className="w-5 h-5 text-blue-600" />
@@ -171,7 +186,7 @@ export default function TeacherIncomePage() {
           {/* Breakdown: By Method & By Grade */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* By Payment Method */}
-            <div className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-4">
+            <div className="p-6 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-4">
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-emerald-600" />
                 {t('توزيع طرق السداد لشهر')} {selectedMonth}
@@ -231,7 +246,7 @@ export default function TeacherIncomePage() {
             </div>
 
             {/* By Grade */}
-            <div className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-4">
+            <div className="p-6 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-4">
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-emerald-600" />
                 {t('تحصيلات الصفوف الدراسية لشهر')} {selectedMonth}
@@ -269,8 +284,8 @@ export default function TeacherIncomePage() {
 
           {/* Month-over-Month Comparison */}
           {months.length > 1 && (
-            <div className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-4">
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+            <div className="p-6 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-4">
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
                 <ArrowUpRight className="w-5 h-5 text-blue-600" />
                 {t('مقارنة التحصيلات عبر الأشهر السابقة')}
               </h2>
@@ -309,8 +324,8 @@ export default function TeacherIncomePage() {
 
           {/* Recent Receipts Table */}
           {data?.receipts && data.receipts.length > 0 && (
-            <div className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-4">
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+            <div className="p-6 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-4">
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-emerald-600" />
                 {t('سجل أحدث الإيصالات الصادرة')}
               </h2>

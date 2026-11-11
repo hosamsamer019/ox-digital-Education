@@ -11,7 +11,7 @@ import StudentSubscriptionsPage from '../student-shared/StudentSubscriptionsPage
 import AccountSettingsPage from '../shared/AccountSettingsPage';
 import AssessmentReviewPage from '../../pages/AssessmentReviewPage';
 import { userService } from '../../services/user.service';
-import { notificationService } from '../../services/notification.service';
+import { useSmartNavigationCounters } from '../../hooks/useSmartNavigationCounters';
 
 const baseMenuItems: MenuItem[] = [
   { path: '/parent/home', icon: Home, label: 'الرئيسية', labelKey: 'parentMenuHome' },
@@ -25,30 +25,16 @@ const baseMenuItems: MenuItem[] = [
 export default function ParentDashboard() {
   const { t, language } = useLanguage();
   const [parentName, setParentName] = useState<string | null>(null);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [notificationError, setNotificationError] = useState<boolean>(false);
+  const { applyBadgesToMenuItems } = useSmartNavigationCounters();
 
   useEffect(() => {
     userService
       .getProfile()
       .then((user) => setParentName(user?.name || null))
       .catch(() => setParentName(null));
-
-    notificationService
-      .getNotifications()
-      .then((res) => {
-        if (Array.isArray(res.data)) {
-          setUnreadNotifications(res.data.filter((n: any) => !n.read).length);
-        }
-      })
-      .catch(() => setNotificationError(true));
   }, []);
 
-  const dynamicMenuItems: MenuItem[] = baseMenuItems.map((item) =>
-    item.path === '/parent/notifications'
-      ? { ...item, badge: unreadNotifications > 0 ? unreadNotifications : undefined }
-      : item
-  );
+  const dynamicMenuItems: MenuItem[] = applyBadgesToMenuItems(baseMenuItems);
 
   const displaySubtitle = parentName
     ? (language === 'ar' ? `ولي الأمر: ${parentName}` : `Parent: ${parentName}`)

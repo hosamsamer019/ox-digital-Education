@@ -1,10 +1,10 @@
-import { useLanguage, t } from '../../../contexts/LanguageContext';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Key, ArrowLeft, ShieldCheck, CheckCircle2, Clock } from 'lucide-react';
+import { Key, ArrowLeft, ArrowRight, ShieldCheck, CheckCircle2, Clock } from 'lucide-react';
 
 export default function QuickExamTerminal() {
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const navigate = useNavigate();
   const [examCode, setExamCode] = useState('');
   const [inputError, setInputError] = useState('');
@@ -30,11 +30,13 @@ export default function QuickExamTerminal() {
     navigate(`/external-exam?code=${encodeURIComponent(trimmed)}`);
   };
 
+  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
+
   return (
     <div
       id="quick-exam"
-      className="w-full max-w-lg mx-auto lg:mx-0 rounded-2xl bg-white dark:bg-[#0f131c] border border-slate-200 dark:border-slate-800 shadow-xl dark:shadow-2xl dark:shadow-black/40 overflow-hidden text-right transition-colors duration-200"
-      dir="rtl"
+      className={`w-full max-w-lg mx-auto lg:mx-0 rounded-2xl bg-white dark:bg-[#0f131c] border border-slate-200 dark:border-slate-800 shadow-xl dark:shadow-2xl dark:shadow-black/40 overflow-hidden ${isRtl ? 'text-right' : 'text-left'} transition-colors duration-200`}
+      dir={isRtl ? 'rtl' : 'ltr'}
     >
       {/* Terminal Title Bar */}
       <div className="bg-slate-50 dark:bg-[#141a27] px-5 py-3.5 border-b border-slate-200 dark:border-slate-800/90 flex items-center justify-between">
@@ -71,7 +73,7 @@ export default function QuickExamTerminal() {
               {t('كود الدخول المخصص للاختبار')}
             </label>
             <div className="relative">
-              <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-amber-500">
+              <span className={`absolute inset-y-0 ${isRtl ? 'right-0 pr-3.5' : 'left-0 pl-3.5'} flex items-center pointer-events-none text-amber-500`}>
                 <Key className="w-4 h-4" />
               </span>
               <input
@@ -83,7 +85,7 @@ export default function QuickExamTerminal() {
                   if (inputError) setInputError('');
                 }}
                 placeholder={t('مثال: 7TF4-WJ6J-ZGS6')}
-                className="w-full pr-10 pl-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm sm:text-base font-mono font-bold tracking-wider text-center uppercase focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all"
+                className={`w-full ${isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 rounded-xl bg-slate-50 dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 text-sm sm:text-base font-mono font-bold tracking-wider text-center uppercase focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition-all`}
                 dir="ltr"
                 autoComplete="off"
                 spellCheck="false"
@@ -100,7 +102,7 @@ export default function QuickExamTerminal() {
             className="w-full py-3.5 px-5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-amber-950/20 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
           >
             <span>{t('دخول الامتحان الآن')}</span>
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowIcon className="w-4 h-4" />
           </button>
         </form>
 

@@ -87,7 +87,7 @@ export default function TeamManagementPage() {
     setBranchesError(null);
     try {
       const data = await userService.getManagerBranches();
-      const list: LiveBranch[] = Array.isArray(data) ? data : (data?.branches || []);
+      const list: LiveBranch[] = Array.isArray(data) ? data : [];
       setBranches(list);
       if (list.length > 0) {
         setInviteBranchId(list[0].id);

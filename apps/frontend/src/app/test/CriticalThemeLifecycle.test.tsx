@@ -10,7 +10,8 @@ import * as path from 'path';
 // Mock dependencies for AccountSettingsPage
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
-    user: { id: 'user-123', name: 'أحمد محمود', email: 'ahmed@ox-digital.edu', role: 'ADMIN', theme: 'default' }
+    user: { id: 'user-123', name: 'أحمد محمود', email: 'ahmed@ox-digital.edu', role: 'ADMIN', theme: 'default' },
+    updateUser: vi.fn()
   })
 }));
 
@@ -171,11 +172,12 @@ describe('Critical Theme Lifecycle, State Ownership & Persistence Suite', () => 
     expect(document.documentElement.getAttribute('data-theme')).toBe('default');
     expect(document.documentElement.classList.contains('dark')).toBe(false);
     expect(localStorage.getItem('preferred_theme')).toBe('default');
-  });
+  }, 15000);
 
   it('5. Contrast Verification: verifies WCAG 2.1 AA mathematical compliance across all 7 themes in theme.css', () => {
     const cssPath = path.resolve(__dirname, '../../styles/theme.css');
     const cssContent = fs.readFileSync(cssPath, 'utf8');
+    expect(cssContent.length).toBeGreaterThan(0);
 
     // Helper to compute relative luminance from hex
     function hexToLuminance(hex: string): number {

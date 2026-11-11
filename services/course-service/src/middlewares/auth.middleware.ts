@@ -27,16 +27,21 @@ export const verifyToken = async (req: AuthRequest, res: Response, next: NextFun
     const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
     req.user = decoded;
 
-    // Reject video tickets on normal API endpoints
+    // Reject video tickets on normal API endpoints and enforce exact lesson scope
     if (decoded.purpose === 'video-stream') {
+      const origUrl = req.originalUrl || '';
+      const reqPath = req.path || '';
       const isStreamingEndpoint =
-        req.originalUrl.includes('/stream') ||
-        req.path.includes('/stream') ||
-        req.originalUrl.includes('/hls') ||
-        req.path.includes('/hls');
-      const requestedLessonId = req.params?.id;
-      if (!isStreamingEndpoint || (requestedLessonId && decoded.lessonId !== requestedLessonId)) {
-        return res.status(403).json({ message: 'Forbidden: Video stream ticket cannot be used for standard API requests.' });
+        origUrl.includes('/stream') ||
+        reqPath.includes('/stream') ||
+        origUrl.includes('/hls') ||
+        reqPath.includes('/hls');
+      
+      const urlLessonMatch = origUrl.match(/\/lessons\/([a-zA-Z0-9_-]+)\/(stream|hls)/);
+      const requestedLessonId = urlLessonMatch ? urlLessonMatch[1] : req.params?.id;
+
+      if (!isStreamingEndpoint || !requestedLessonId || decoded.lessonId !== requestedLessonId) {
+        return res.status(403).json({ message: 'Forbidden: Video stream ticket cannot be used for standard API requests or other lessons.' });
       }
     }
 

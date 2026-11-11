@@ -17,6 +17,10 @@ import { toast } from 'sonner';
 import { ExpenseVoucher } from './types';
 import { accountingService } from '../../services/accounting.service';
 
+export function isPendingDisbursementVoucher(v: any): boolean {
+  return Boolean(v && v.status === 'APPROVED' && !v.disbursedAt && !v.disbursedById);
+}
+
 export default function ExpensesPage() {
   const { t } = useLanguage();
   const [vouchers, setVouchers] = useState<any[]>([]);
@@ -34,25 +38,34 @@ export default function ExpensesPage() {
       setLoading(true);
       const res = await accountingService.getExpenses({ limit: 50 });
       if (res.vouchers && res.vouchers.length > 0) {
-        const formatted = res.vouchers.map((v: any) => ({
-          id: v.id,
-          voucherNumber: v.voucherNumber,
-          title: v.description,
-          costCenter: v.category,
-          amount: Number(v.amount),
-          justification: v.description,
-          supportingDocs: v.receiptAttachmentUrl ? [v.receiptAttachmentUrl] : ['مرفق معتمد'],
-          preparedBy: v.preparedBy?.name || v.preparedBy?.email || 'المحاسب',
-          submittedAt: new Date(v.createdAt).toLocaleDateString('ar-EG'),
-          status: v.status,
-          statusLabel: v.status === 'APPROVED'
-            ? 'معتمد - جاهز للصرف'
-            : v.status === 'APPLIED'
-            ? 'تم الصرف بنجاح'
-            : v.status === 'REJECTED'
-            ? 'مرفوض'
-            : 'بانتظار توقيع المدير الرئيسي'
-        }));
+        const formatted = res.vouchers.map((v: any) => {
+          const pendingDisbursement = isPendingDisbursementVoucher(v);
+          const alreadyDisbursed =
+            v.status === 'APPLIED' || (v.status === 'APPROVED' && (Boolean(v.disbursedAt) || Boolean(v.disbursedById)));
+          return {
+            id: v.id,
+            voucherNumber: v.voucherNumber,
+            title: v.description,
+            costCenter: v.category,
+            amount: Number(v.amount),
+            justification: v.description,
+            supportingDocs: v.receiptAttachmentUrl ? [v.receiptAttachmentUrl] : ['مرفق معتمد'],
+            preparedBy: v.preparedBy?.name || v.preparedBy?.email || 'المحاسب',
+            submittedAt: new Date(v.createdAt).toLocaleDateString('ar-EG'),
+            status: v.status,
+            disbursedAt: v.disbursedAt ?? null,
+            disbursedById: v.disbursedById ?? null,
+            isPendingDisbursement: pendingDisbursement,
+            isDisbursed: alreadyDisbursed,
+            statusLabel: pendingDisbursement
+              ? 'معتمد - جاهز للصرف'
+              : alreadyDisbursed
+              ? 'تم الصرف بنجاح'
+              : v.status === 'REJECTED'
+              ? 'مرفوض'
+              : 'بانتظار توقيع المدير الرئيسي'
+          };
+        });
         setVouchers(formatted);
       } else if (res.vouchers) {
         setVouchers([]);
@@ -103,6 +116,7 @@ export default function ExpensesPage() {
     setDisbursingId(voucherId);
     try {
       await accountingService.disburseExpenseVoucher(voucherId);
+      window.dispatchEvent(new Event('ox:counters-refresh'));
       toast.success(`تم صرف سند المصروفات بنجاح: ${voucherNumber}`, {
         description: 'تم خصم المبلغ من رصيد الخزينة المعتمدة وقيد حركة نقدية صادرة'
       });
@@ -266,9 +280,9 @@ export default function ExpensesPage() {
                         </span>
                         <span
                           className={`text-[10px] font-bold inline-block px-2 py-0.5 rounded-full mt-1 ${
-                            v.status === 'APPLIED'
+                            v.isDisbursed
                               ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                              : v.status === 'APPROVED'
+                              : v.isPendingDisbursement
                               ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
                               : v.status === 'REJECTED'
                               ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
@@ -286,7 +300,7 @@ export default function ExpensesPage() {
 
                     <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-[11px] text-slate-400">
                       <span>{t('المُعِد:')} {v.preparedBy} • {v.submittedAt}</span>
-                      {v.status === 'APPROVED' && (
+                      {v.isPendingDisbursement && (
                         <button
                           onClick={() => handleDisburse(v.id, v.voucherNumber)}
                           disabled={disbursingId === v.id}

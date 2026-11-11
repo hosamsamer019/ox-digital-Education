@@ -85,9 +85,30 @@ export const createCollection = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Student not found in this institution' });
     }
 
-    const targetBranchId = branchId || student.branchId || (await db.branch.findFirst({
-      where: { institutionId: institutionId as string, isDefault: true }
-    }))?.id;
+    // Critical Fix C: Strict Branch Isolation for Accountants
+    if (userRole === 'ACCOUNTANT') {
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+      if (student.branchId && student.branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Accountants cannot record collections for students assigned to other branches.'
+        });
+      }
+    }
+
+    const targetBranchId = userRole === 'ACCOUNTANT'
+      ? (req.user?.branchId as string)
+      : (branchId || student.branchId || (await db.branch.findFirst({
+          where: { institutionId: institutionId as string, isDefault: true }
+        }))?.id);
 
     if (!targetBranchId) {
       return res.status(400).json({ message: 'No valid branch resolved for collection' });
@@ -565,8 +586,20 @@ export const getCollectionById = async (req: AuthRequest, res: Response) => {
         return res.status(403).json({ message: 'Forbidden: Cannot access collections of other students' });
       }
     } else if (userRole === 'ACCOUNTANT') {
-      if (req.user?.branchId && collection.branchId && collection.branchId !== req.user.branchId) {
-        return res.status(403).json({ message: 'Forbidden: Branch accountants can only access collections of their assigned branch' });
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+      if (collection.branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Branch accountants can only access collections of their assigned branch.'
+        });
       }
     }
 
@@ -616,8 +649,20 @@ export const requestReversal = async (req: AuthRequest, res: Response) => {
         return res.status(403).json({ message: 'Forbidden: Cannot access collections of other students' });
       }
     } else if (userRole === 'ACCOUNTANT') {
-      if (req.user?.branchId && collection.branchId && collection.branchId !== req.user.branchId) {
-        return res.status(403).json({ message: 'Forbidden: Branch accountants can only access collections of their assigned branch' });
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+      if (collection.branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Branch accountants can only access collections of their assigned branch.'
+        });
       }
     }
 

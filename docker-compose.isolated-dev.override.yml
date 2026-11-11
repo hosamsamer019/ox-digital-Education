@@ -1,0 +1,98 @@
+name: ox-digital-github-dev
+
+services:
+  nginx:
+    container_name: !reset
+    networks: !override
+      - ox-digital-github-dev-network
+
+  frontend:
+    image: ox-digital-github-dev-frontend:local
+    container_name: !reset
+    networks: !override
+      - ox-digital-github-dev-network
+
+  auth-service:
+    image: ox-digital-github-dev-auth-service:local
+    container_name: !reset
+    environment:
+      - REDIS_URL=redis://github-dev-redis:6379
+    networks: !override
+      - ox-digital-github-dev-network
+      - ox-digital-network
+
+  user-service:
+    image: ox-digital-github-dev-user-service:local
+    container_name: !reset
+    volumes: !override
+      - ./storage/receipts:/app/storage/receipts
+      - ox_digital_github_dev_avatars_data:/app/storage/avatars
+    networks: !override
+      - ox-digital-github-dev-network
+      - ox-digital-network
+
+  ai-service:
+    image: ox-digital-github-dev-ai-service:local
+    container_name: !reset
+    environment:
+      - REDIS_URL=redis://github-dev-redis:6379
+    networks: !override
+      - ox-digital-github-dev-network
+      - ox-digital-network
+
+  course-service:
+    image: ox-digital-github-dev-course-service:local
+    container_name: !reset
+    environment:
+      - REDIS_URL=redis://github-dev-redis:6379
+    volumes: !override
+      - ox-digital-github-dev-course-uploads:/app/uploads
+    networks: !override
+      - ox-digital-github-dev-network
+      - ox-digital-network
+
+  analytics-service:
+    image: ox-digital-github-dev-analytics-service:local
+    container_name: !reset
+    networks: !override
+      - ox-digital-github-dev-network
+      - ox-digital-network
+
+  video-worker:
+    image: ox-digital-github-dev-video-worker:local
+    container_name: !reset
+    environment:
+      - REDIS_URL=redis://github-dev-redis:6379
+    networks: !override
+      - ox-digital-github-dev-network
+      - ox-digital-network
+
+  redis:
+    container_name: !reset
+    volumes: !override
+      - ox-digital-github-dev-redis-data:/data
+    networks: !override
+      ox-digital-github-dev-network:
+        aliases:
+          - github-dev-redis
+
+  pg-backup:
+    container_name: !reset
+    profiles:
+      - disabled
+
+networks:
+  ox-digital-network:
+    external: true
+  ox-digital-github-dev-network:
+    name: ox-digital-github-dev-network
+    driver: bridge
+
+volumes:
+  ox-digital-github-dev-redis-data:
+    name: ox-digital-github-dev-redis-data
+  ox-digital-github-dev-course-uploads:
+    name: ox-digital-github-dev-course-uploads
+  ox_digital_github_dev_avatars_data:
+    name: ox_digital_github_dev_avatars_data
+

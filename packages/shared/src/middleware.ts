@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { AnyZodObject, ZodError } from 'zod';
-import { HttpError } from './errorHandler';
+import { AnyZodObject } from 'zod';
+import { HttpError, isZodError, formatValidationIssues } from './errorHandler';
 
 export const validate = (schema: AnyZodObject) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -8,10 +8,12 @@ export const validate = (schema: AnyZodObject) => {
       req.body = await schema.parseAsync(req.body);
       next();
     } catch (error: unknown) {
-      if (error instanceof ZodError) {
+      // isZodError() is module-copy safe: the schema may come from a service's own `zod`
+      // instance, so a plain `instanceof ZodError` check here would miss it and yield HTTP 500.
+      if (isZodError(error)) {
         return res.status(400).json({
           message: 'Validation failed',
-          errors: error.errors
+          errors: formatValidationIssues(error)
         });
       }
       next(error instanceof Error ? error : new Error(String(error)));

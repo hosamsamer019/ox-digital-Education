@@ -7,15 +7,16 @@
  * ZERO connection to production PostgreSQL, Redis, or Cloudflare R2.
  */
 
+process.env.DATABASE_URL = 'postgresql://ox_digital_dev:ox_digital_dev@127.0.0.1:5433/ox_digital_dev_test?schema=public';
+process.env.JWT_SECRET = 'test-phase2c1-jwt-secret-key-32chars!!';
+const TEST_JWT_SECRET = process.env.JWT_SECRET;
+
 import { streamLessonHls, resolveLessonHlsMasterKey } from './src/controllers/course.controller.js';
 import { verifyToken, AuthRequest } from './src/middlewares/auth.middleware.js';
 import { setHlsStreamProviderForTests, HlsStreamResult } from './src/services/storage.adapter.js';
 import { db } from '../../packages/database/src/index.js';
 import jwt from 'jsonwebtoken';
 import { Readable } from 'stream';
-
-process.env.JWT_SECRET = 'test-phase2c1-jwt-secret-key-32chars!!';
-const TEST_JWT_SECRET = process.env.JWT_SECRET;
 
 import { Writable } from 'stream';
 import { EventEmitter } from 'events';
@@ -76,6 +77,7 @@ function createMockRequest(options: {
 
 // In-memory mock database state
 const mockDb = {
+  users: new Map<string, any>(),
   lessons: new Map<string, any>(),
   courses: new Map<string, any>(),
   enrollments: new Map<string, any>(),
@@ -83,34 +85,61 @@ const mockDb = {
 };
 
 // Wire mock database into Prisma db singleton
-(db as any).lesson = {
-  findUnique: async ({ where }: any) => {
-    const l = mockDb.lessons.get(where.id);
-    if (!l) return null;
-    const c = mockDb.courses.get(l.courseId);
-    return { ...l, course: c };
-  }
-};
-(db as any).course = {
-  findUnique: async ({ where }: any) => {
-    return mockDb.courses.get(where.id) || null;
-  }
-};
-(db as any).courseEnrollment = {
-  findFirst: async ({ where }: any) => {
-    for (const enr of mockDb.enrollments.values()) {
-      if (enr.studentId === where.studentId && enr.courseId === where.courseId) {
-        return { ...enr };
-      }
+const prismaMock: any = {
+  user: {
+    findUnique: async ({ where }: any) => {
+      return mockDb.users.get(where.id) || {
+        id: where.id,
+        role: 'ONLINE_STUDENT',
+        institutionId: 'inst-001',
+        financialAccessStatus: 'ACTIVE',
+        isPrimaryManager: false,
+        mustChangePassword: false
+      };
+    },
+    findFirst: async ({ where }: any) => {
+      const id = where.id;
+      return mockDb.users.get(id) || {
+        id: id,
+        role: 'ONLINE_STUDENT',
+        institutionId: 'inst-001',
+        financialAccessStatus: 'ACTIVE',
+        isPrimaryManager: false,
+        mustChangePassword: false
+      };
     }
-    return null;
+  },
+  lesson: {
+    findUnique: async ({ where }: any) => {
+      const l = mockDb.lessons.get(where.id);
+      if (!l) return null;
+      const c = mockDb.courses.get(l.courseId);
+      return { ...l, course: c };
+    }
+  },
+  course: {
+    findUnique: async ({ where }: any) => {
+      return mockDb.courses.get(where.id) || null;
+    }
+  },
+  courseEnrollment: {
+    findFirst: async ({ where }: any) => {
+      for (const enr of mockDb.enrollments.values()) {
+        if (enr.studentId === where.studentId && enr.courseId === where.courseId) {
+          return { ...enr };
+        }
+      }
+      return null;
+    }
+  },
+  videoUpload: {
+    findUnique: async ({ where }: any) => {
+      return mockDb.videoUploads.get(where.id) || null;
+    }
   }
 };
-(db as any).videoUpload = {
-  findUnique: async ({ where }: any) => {
-    return mockDb.videoUploads.get(where.id) || null;
-  }
-};
+
+(globalThis as any).prismaGlobal = prismaMock;
 
 // In-memory mock Cloudflare R2 objects
 const mockR2Storage = new Map<string, { buffer: Buffer; contentType: string }>();
@@ -185,7 +214,9 @@ async function runTestSuite() {
   mockDb.courses.set(COURSE_ID, {
     id: COURSE_ID,
     title: 'Advanced Mathematics',
-    teacherId: TEACHER_ID
+    teacherId: TEACHER_ID,
+    institutionId: 'inst-001',
+    status: 'PUBLISHED'
   });
 
   mockDb.lessons.set(LESSON_ID, {
@@ -244,10 +275,10 @@ async function runTestSuite() {
     });
     const res = createMockResponse();
     let nextCalled = false;
-    verifyToken(req, res as any, () => { nextCalled = true; });
+    await verifyToken(req, res as any, () => { nextCalled = true; });
     await streamLessonHls(req, res as any);
     const ok = nextCalled === true && res.statusCode === 200 && typeof res.body === 'string' && res.body.includes('#EXTM3U');
-    record('Test 2: authenticated authorized user allowed (200)', ok, `status=${res.statusCode}`);
+    record('Test 2: authenticated authorized user allowed (200)', ok, `status=${res.statusCode}, nextCalled=${nextCalled}, isStr=${typeof res.body === 'string'}, body=${JSON.stringify(res.body)}`);
   }
 
   // -------------------------------------------------------------
@@ -585,7 +616,7 @@ async function runTestSuite() {
 
   async function executeGatewayRequest(req: AuthRequest, res: MockResponseStream) {
     let proceed = false;
-    verifyToken(req, res as any, () => { proceed = true; });
+    await verifyToken(req, res as any, () => { proceed = true; });
     if (proceed) {
       await streamLessonHls(req, res as any);
     }
@@ -638,7 +669,7 @@ async function runTestSuite() {
     const ok = (res.statusCode === 200 || res.statusCode === 206) &&
       res.headers['content-type'] === 'video/mp2t' &&
       res.headers['cache-control']?.toString().includes('private');
-    record('Test 26: Authorization header token accesses .ts segment with private cache headers', ok, `status=${res.statusCode}`);
+    record('Test 26: Authorization header token accesses .ts segment with private cache headers', ok, `status=${res.statusCode}, body=${JSON.stringify(res.body)}`);
   }
 
   // 27. Invalid Authorization header token is rejected (401)

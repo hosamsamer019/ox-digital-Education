@@ -52,6 +52,7 @@ vi.mock('../services/brdSubscription.service', () => ({
   brdSubscriptionService: {
     getAccountantReceipts: vi.fn(),
     getAccountantStudents: vi.fn(),
+    getAccountantTeachers: vi.fn().mockResolvedValue({ success: true, teachers: [] }),
     recordPayment: vi.fn(),
   },
 }));
@@ -243,6 +244,57 @@ describe('Phase 5 Batch 2: Accountant Dashboard (ACC-DASH-01) Test Suite', () =>
     expect(screen.getByText(/إعداد سند صرف جديد \(Voucher Drafting\)/i)).toBeInTheDocument();
     expect(screen.getByText('EXP-1049')).toBeInTheDocument();
     expect(screen.getByText(/بانتظار توقيع المدير الرئيسي/i)).toBeInTheDocument();
+  });
+
+  it('excludes anomalous APPROVED vouchers with disbursedAt or disbursedById from pending disbursement action and label', async () => {
+    vi.mocked(accountingService.getExpenses).mockResolvedValueOnce({
+      vouchers: [
+        {
+          id: 'v-pending-disb',
+          voucherNumber: 'EXP-READY-01',
+          description: 'فواتير كهرباء معتمدة',
+          category: 'UTILITIES',
+          amount: 500,
+          status: 'APPROVED',
+          disbursedAt: null,
+          disbursedById: null,
+          createdAt: '2026-11-10T10:00:00Z',
+        },
+        {
+          id: 'v-anom-at',
+          voucherNumber: 'EXP-ANOM-02',
+          description: 'سند شاذ بتاريخ صرف',
+          category: 'SUPPLIES',
+          amount: 300,
+          status: 'APPROVED',
+          disbursedAt: '2026-11-10T11:00:00Z',
+          disbursedById: null,
+          createdAt: '2026-11-10T09:00:00Z',
+        },
+        {
+          id: 'v-anom-by',
+          voucherNumber: 'EXP-ANOM-03',
+          description: 'سند شاذ بمعرف صارف',
+          category: 'SUPPLIES',
+          amount: 250,
+          status: 'APPROVED',
+          disbursedAt: null,
+          disbursedById: 'acc-01',
+          createdAt: '2026-11-10T08:00:00Z',
+        },
+      ],
+    } as any);
+
+    renderWithProviders(<ExpensesPage />);
+
+    expect(await screen.findByText('EXP-READY-01')).toBeInTheDocument();
+    expect(screen.getByText('EXP-ANOM-02')).toBeInTheDocument();
+    expect(screen.getByText('EXP-ANOM-03')).toBeInTheDocument();
+
+    // Only the genuinely undisbursed APPROVED voucher shows "معتمد - جاهز للصرف" and its disburse button
+    expect(screen.getAllByText('معتمد - جاهز للصرف')).toHaveLength(1);
+    expect(screen.getAllByText('تم الصرف بنجاح')).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /صرف النقدية الآن/i })).toHaveLength(1);
   });
 
   it('renders daily blind count reconciliation and verifies UP-705 neutral discrepancy policy', () => {

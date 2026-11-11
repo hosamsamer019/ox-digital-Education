@@ -22,7 +22,7 @@ export interface TeacherStudentItem {
   phone?: string | null;
   profilePictureUrl?: string | null;
   parent?: { id: string; name: string; email: string; phone?: string | null } | null;
-  accessStatus: 'ACTIVE' | 'GRACE_PERIOD' | 'LOCKED';
+  accessStatus: 'ACTIVE' | 'GRACE_PERIOD' | 'LOCKED' | 'RESTRICTED';
   exceptionActiveUntil?: string | null;
   currentSubscription?: any;
   recentSubscriptions?: any[];
@@ -68,7 +68,7 @@ export interface ReceiptItem {
 
 export const brdSubscriptionService = {
   // TEACHER
-  async getTeacherStudents(params?: { search?: string; grade?: string; type?: string; subscriptionStatus?: string }) {
+  async getTeacherStudents(params?: { search?: string; grade?: string; type?: string; subscriptionStatus?: string; page?: number; limit?: number }) {
     const res = await api.get('/teacher/my-students', { params });
     return res.data;
   },
@@ -138,12 +138,12 @@ export const brdSubscriptionService = {
     return res.data;
   },
 
-  async assignTeacherBranch(teacherId: string, branchId: string) {
+  async assignTeacherBranch(teacherId: string, branchId: string | null) {
     const res = await api.post(`/manager/teachers/${teacherId}/assign-branch`, { branchId });
     return res.data;
   },
 
-  async getManagerStudents(params?: { search?: string; branchId?: string; teacherId?: string; grade?: string }) {
+  async getManagerStudents(params?: { search?: string; branchId?: string; teacherId?: string; grade?: string; status?: string }) {
     const res = await api.get('/manager/students', { params });
     return res.data;
   },
@@ -179,6 +179,11 @@ export const brdSubscriptionService = {
   },
 
   // ACCOUNTANT
+  async getAccountantTeachers() {
+    const res = await api.get('/accountant/teachers');
+    return res.data;
+  },
+
   async getAccountantStudents() {
     const res = await api.get('/accountant/students');
     return res.data;

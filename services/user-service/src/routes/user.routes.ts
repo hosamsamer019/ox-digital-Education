@@ -32,6 +32,9 @@ router.post('/lookup', verifyToken, lookupUser);
 router.post('/link-parent', verifyToken, linkParentStudent);
 router.post('/unlink-parent', verifyToken, unlinkParentStudent);
 router.get('/linked-relationships', verifyToken, getLinkedRelationships);
+router.get('/relationships', verifyToken, getLinkedRelationships);
+router.get('/account/relationships', verifyToken, getLinkedRelationships);
+router.get('/account/linked-relationships', verifyToken, getLinkedRelationships);
 
 // Admin / User Management Routes
 router.get('/risks', verifyToken, getRisks);

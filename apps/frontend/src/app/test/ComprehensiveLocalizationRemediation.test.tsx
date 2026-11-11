@@ -130,9 +130,10 @@ describe('OX-DIGITAL Comprehensive English Localization Remediation', () => {
 
   describe('2. Navigation Menu Translation Across All Roles', () => {
     it('translates SharedLayout navigation items in English when labelKey is absent but label is Arabic', () => {
+      const TestMenuIcon: React.ComponentType<{ className?: string }> = () => null;
       const testMenu: MenuItem[] = [
-        { path: '/test/1', label: 'لوحة القيادة التنفيذية' },
-        { path: '/test/2', label: 'سجل الطلاب وتوزيع المعلمين' },
+        { path: '/test/1', icon: TestMenuIcon, label: 'لوحة القيادة التنفيذية' },
+        { path: '/test/2', icon: TestMenuIcon, label: 'سجل الطلاب وتوزيع المعلمين' },
       ];
 
       render(

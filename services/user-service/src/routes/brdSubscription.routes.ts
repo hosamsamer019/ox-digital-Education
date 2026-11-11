@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { tenantContextMiddleware } from '@shared/utils';
 import { verifyToken, checkRole, requirePrimaryManager } from '../middlewares/auth.middleware.js';
 import { BrdSubscriptionController } from '../controllers/brdSubscription.controller.js';
 
@@ -8,8 +9,8 @@ const router = Router();
 router.get('/avatars/:filename', BrdSubscriptionController.getAvatar);
 router.get('/storage/avatars/:filename', BrdSubscriptionController.getAvatar);
 
-// Enforce authentication across all subscription & branch endpoints
-router.use(verifyToken);
+// Enforce authentication & tenant context across all subscription & branch endpoints
+router.use(verifyToken, tenantContextMiddleware());
 
 // ============================================================================
 // TEACHER ENDPOINTS
@@ -155,6 +156,12 @@ router.delete(
 // ACCOUNTANT ENDPOINTS (Scoped)
 // ============================================================================
 router.get(
+  '/accountant/teachers',
+  checkRole(['ACCOUNTANT']),
+  BrdSubscriptionController.getAccountantTeachers
+);
+
+router.get(
   '/accountant/students',
   checkRole(['ACCOUNTANT']),
   BrdSubscriptionController.getAccountantStudents
@@ -198,6 +205,21 @@ router.get(
 router.get(
   '/account/settings',
   BrdSubscriptionController.getAccountSettings
+);
+
+router.get(
+  '/account/relationships',
+  BrdSubscriptionController.getLinkedRelationships
+);
+
+router.get(
+  '/account/linked-relationships',
+  BrdSubscriptionController.getLinkedRelationships
+);
+
+router.get(
+  '/linked-relationships',
+  BrdSubscriptionController.getLinkedRelationships
 );
 
 router.put(

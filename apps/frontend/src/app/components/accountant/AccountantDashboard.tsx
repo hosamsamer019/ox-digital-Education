@@ -1,4 +1,5 @@
 import { useLanguage, t } from '../../contexts/LanguageContext';
+import { useSmartNavigationCounters } from '../../hooks/useSmartNavigationCounters';
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import {
@@ -90,9 +91,12 @@ const accountantMenuItems: MenuItem[] = [
 
 export const AccountantDashboard: React.FC = () => {
   const { t } = useLanguage();
+  const { applyBadgesToMenuItems } = useSmartNavigationCounters();
+  const dynamicMenuItems = applyBadgesToMenuItems(accountantMenuItems);
+
   return (
     <SharedLayout
-      menuItems={accountantMenuItems}
+      menuItems={dynamicMenuItems}
       title="OX-DIGITAL Education"
       subtitle={t('قسم الحسابات والتحصيلات')}
       accentColor="#9e1b1b"

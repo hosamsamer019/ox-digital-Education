@@ -1,13 +1,13 @@
-import { useLanguage, t } from '../../../contexts/LanguageContext';
-import { GraduationCap, Users, UserCheck, PlayCircle, FileText, CheckCircle2, ArrowRight } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
+import { GraduationCap, Users, UserCheck, PlayCircle, FileText, CheckCircle2 } from 'lucide-react';
 
 export default function RoleEcosystem() {
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   return (
     <section id="ecosystem" className="py-20 lg:py-28 bg-[#fcfcfd] dark:bg-[#0c0f17] border-b border-slate-200/80 dark:border-slate-800/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" dir="rtl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" dir={isRtl ? 'rtl' : 'ltr'}>
         {/* Section Header */}
-        <div className="text-right max-w-3xl mb-14 lg:mb-18">
+        <div className={`${isRtl ? 'text-right' : 'text-left'} max-w-3xl mb-14 lg:mb-18`}>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-red-50 dark:bg-red-950/40 border border-red-200/80 dark:border-red-900/60 text-[#9e1b1b] dark:text-red-400 text-xs font-semibold mb-3">
             <span>{t('المنظومة التعليمية المتكاملة')}</span>
           </div>
@@ -21,7 +21,7 @@ export default function RoleEcosystem() {
 
         {/* Asymmetric Tri-Role Architecture Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-          {/* Pillar 1: الطالب (The Student - 5 Cols on Desktop) */}
+          {/* Pillar 1: Student */}
           <div className="lg:col-span-5 rounded-2xl bg-white dark:bg-[#121624] border border-slate-200/90 dark:border-slate-800 p-6 sm:p-8 flex flex-col justify-between shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all">
             <div>
               <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200/60 dark:border-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-6">
@@ -59,7 +59,7 @@ export default function RoleEcosystem() {
             </div>
           </div>
 
-          {/* Pillar 2: المعلم والمراكز الأكاديمية (The Teacher & Center - 7 Cols on Desktop - Elevated Anchor) */}
+          {/* Pillar 2: Teacher & Admin */}
           <div className="lg:col-span-7 rounded-2xl bg-[#0f131c] text-white border border-slate-800 p-6 sm:p-8 flex flex-col justify-between shadow-xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-32 h-32 bg-red-900/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -133,7 +133,7 @@ export default function RoleEcosystem() {
             </div>
           </div>
 
-          {/* Pillar 3: ولي الأمر (The Parent - Full 12 Cols horizontal bar) */}
+          {/* Pillar 3: Parent */}
           <div className="lg:col-span-12 rounded-2xl bg-white dark:bg-[#121624] border border-slate-200/90 dark:border-slate-800 p-6 sm:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
             <div className="flex items-start gap-4">
               <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/60 dark:border-emerald-900/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5">

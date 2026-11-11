@@ -64,8 +64,20 @@ export const getReceiptDetails = async (req: AuthRequest, res: Response) => {
         return res.status(403).json({ message: 'Forbidden: Cannot access receipts of other students' });
       }
     } else if (userRole === 'ACCOUNTANT') {
-      if (req.user?.branchId && collection.branchId && collection.branchId !== req.user.branchId) {
-        return res.status(403).json({ message: 'Forbidden: Branch accountants can only access receipts of their assigned branch' });
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+      if (collection.branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Branch accountants can only access receipts of their assigned branch.'
+        });
       }
     }
 
@@ -164,8 +176,20 @@ export const getReceiptPdf = async (req: AuthRequest, res: Response) => {
         return res.status(403).json({ message: 'Forbidden: Cannot access receipts of other students' });
       }
     } else if (userRole === 'ACCOUNTANT') {
-      if (req.user?.branchId && collection.branchId && collection.branchId !== req.user.branchId) {
-        return res.status(403).json({ message: 'Forbidden: Branch accountants can only access receipts of their assigned branch' });
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+      if (collection.branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Branch accountants can only access receipts of their assigned branch.'
+        });
       }
     }
 
@@ -262,7 +286,11 @@ export const getReceiptHtml = async (req: AuthRequest, res: Response) => {
         return res.status(403).send('<h1>Forbidden: Cannot access receipts of other students</h1>');
       }
     } else if (userRole === 'ACCOUNTANT') {
-      if (req.user?.branchId && collection.branchId && collection.branchId !== req.user.branchId) {
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).send('<h1>Forbidden: Accountant is not assigned to any branch</h1>');
+      }
+      if (collection.branchId !== accountantBranchId) {
         return res.status(403).send('<h1>Forbidden: Branch accountants can only access receipts of their assigned branch</h1>');
       }
     }

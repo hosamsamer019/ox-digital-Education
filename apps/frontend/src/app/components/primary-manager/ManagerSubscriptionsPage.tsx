@@ -188,7 +188,7 @@ export default function ManagerSubscriptionsPage() {
 
         <button
           onClick={loadData}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          className="flex items-center gap-1.5 px-3 py-2 text-sm text-card-foreground bg-card border border-border rounded-lg hover:bg-muted transition"
         >
           <RefreshCw className="w-4 h-4" />
           {t('تحديث')}
@@ -250,7 +250,7 @@ export default function ManagerSubscriptionsPage() {
 
       {/* TAB 1: PRICING */}
       {activeTab === 'pricing' && (
-        <div className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-6">
+        <div className="p-6 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-6">
           <div className="flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-[#9e1b1b]" />
             <h2 className="text-base font-bold text-gray-900">{t('تحديد وتعديل أسعار الصفوف للمعلم')}</h2>
@@ -344,7 +344,7 @@ export default function ManagerSubscriptionsPage() {
 
       {/* TAB 2: SETTINGS (GRACE & LOCK DAYS) */}
       {activeTab === 'settings' && (
-        <div className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-6">
+        <div className="p-6 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-6">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-[#9e1b1b]" />
             <h2 className="text-base font-bold text-gray-900">{t('إعدادات مهلة السداد والإغلاق التلقائي للمعلم')}</h2>
@@ -435,7 +435,7 @@ export default function ManagerSubscriptionsPage() {
 
       {/* TAB 3: PAYMENT CANCELLATION */}
       {activeTab === 'cancellation' && (
-        <div className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-6">
+        <div className="p-6 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-6">
           <div className="flex items-center gap-2">
             <Ban className="w-5 h-5 text-red-600" />
             <h2 className="text-base font-bold text-gray-900">{t('إلغاء المدفوعات والقيود العكسية (Manager Reversals)')}</h2>

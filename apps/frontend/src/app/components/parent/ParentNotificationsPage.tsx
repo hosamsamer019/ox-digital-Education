@@ -43,6 +43,7 @@ export const ParentNotificationsPage: React.FC = () => {
   const handleMarkAsRead = async (id: string) => {
     try {
       await notificationService.markAsRead(id);
+      window.dispatchEvent(new Event('ox:counters-refresh'));
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read: true } : n))
       );
@@ -54,6 +55,7 @@ export const ParentNotificationsPage: React.FC = () => {
   const handleMarkAllAsRead = async () => {
     try {
       await notificationService.markAllAsRead();
+      window.dispatchEvent(new Event('ox:counters-refresh'));
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     } catch (err) {
       console.error('Failed to mark all as read:', err);

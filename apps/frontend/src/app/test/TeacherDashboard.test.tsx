@@ -151,6 +151,7 @@ vi.mock('recharts', async () => {
 describe('Phase 5.3: Approved Teacher Dashboard Remediation & Verification Suite', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.setItem('token', 'mock-token');
     vi.mocked(analyticsService.getTeacherAnalytics).mockResolvedValue({ data: mockTeacherOverview } as any);
     vi.mocked(analyticsService.getRiskAnalytics).mockResolvedValue({ data: { riskStudents: mockTeacherOverview.riskStudents } } as any);
     vi.mocked(notificationService.getNotifications).mockResolvedValue(mockNotifications as any);

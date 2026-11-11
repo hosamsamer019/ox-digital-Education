@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   getAllHomeworks,
+  getStudentPendingHomeworkCount,
   getHomeworksByCourse,
   getHomeworkDetails,
   createHomework,
@@ -16,6 +17,7 @@ const router = Router();
 
 // Public / Student accessible GET routes
 router.get('/', verifyToken, getAllHomeworks);
+router.get('/pending-count', verifyToken, getStudentPendingHomeworkCount);
 router.get('/course/:courseId', verifyToken, getHomeworksByCourse);
 router.get('/:id', verifyToken, getHomeworkDetails);
 

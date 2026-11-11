@@ -14,11 +14,21 @@ export interface Notification {
 }
 
 export const notificationService = {
-  getNotifications: (params?: { limit?: number; unread?: boolean }) =>
-    notificationApi.get<Notification[]>('/', { params }),
+  getNotifications: (params?: { limit?: number; unread?: boolean }) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      return Promise.resolve({ data: [] as Notification[] });
+    }
+    return notificationApi.get<Notification[]>('/', { params });
+  },
 
-  getUnreadCount: () =>
-    notificationApi.get<{ unreadCount: number }>('/unread-count'),
+  getUnreadCount: () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      return Promise.resolve({ data: { unreadCount: 0 } });
+    }
+    return notificationApi.get<{ unreadCount: number }>('/unread-count');
+  },
 
   markAsRead: (id: string) =>
     notificationApi.put(`/${id}/read`),

@@ -1,8 +1,9 @@
 import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   Search, Filter, Plus, Users, User, ShieldCheck,
-  CheckCircle, AlertTriangle, Lock, Eye, Download, Loader2, X, RefreshCw
+  CheckCircle, AlertTriangle, Lock, Eye, Download, Loader2, X, RefreshCw, Building2
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { brdSubscriptionService, TeacherStudentItem } from '../../services/brdSubscription.service';
@@ -22,6 +23,7 @@ const gradeLabels: Record<string, string> = {
 export default function TeacherStudentsPage() {
   const { t } = useLanguage();
   const { isDark } = useTheme();
+  const { user } = useAuth();
   const [students, setStudents] = useState<TeacherStudentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,6 +33,12 @@ export default function TeacherStudentsPage() {
   const [gradeFilter, setGradeFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Server-side Pagination State (>100 Students)
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
@@ -57,10 +65,10 @@ export default function TeacherStudentsPage() {
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchStudents();
-  }, [gradeFilter, typeFilter, statusFilter]);
+    fetchStudents(1);
+  }, [gradeFilter, typeFilter, statusFilter, limit]);
 
-  const fetchStudents = async () => {
+  const fetchStudents = async (targetPage = page) => {
     try {
       setLoading(true);
       setError(null);
@@ -68,10 +76,21 @@ export default function TeacherStudentsPage() {
         grade: gradeFilter,
         type: typeFilter,
         subscriptionStatus: statusFilter !== 'ALL' ? statusFilter : undefined,
-        search: search.trim() || undefined
+        search: search.trim() || undefined,
+        page: targetPage,
+        limit
       });
       if (res && res.data) {
         setStudents(res.data);
+        if (typeof res.total === 'number') {
+          setTotal(res.total);
+        } else if (typeof res.count === 'number') {
+          setTotal(res.count);
+        }
+        if (typeof res.totalPages === 'number') {
+          setTotalPages(res.totalPages);
+        }
+        setPage(targetPage);
       }
     } catch (err: any) {
       console.error('Failed to fetch teacher students:', err);
@@ -83,7 +102,7 @@ export default function TeacherStudentsPage() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchStudents();
+    fetchStudents(1);
   };
 
   const handleViewHistory = async (student: TeacherStudentItem) => {
@@ -154,7 +173,24 @@ export default function TeacherStudentsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className={`text-2xl font-bold ${textPrimary}`}>{t('قائمة طلابي وإدارة الاشتراكات')}</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className={`text-2xl font-bold ${textPrimary}`}>{t('قائمة طلابي وإدارة الاشتراكات')}</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <Users className="w-3.5 h-3.5" />
+              <span>{total} {t('طالب مسجل')}</span>
+            </span>
+            {user?.branch?.name ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20" data-testid="students-branch-badge">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>{t('branchColon', 'الفرع:')} {user.branch.name}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" data-testid="students-unassigned-badge">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>{t('unassignedBranch', 'غير مسند لفرع حالياً')}</span>
+              </span>
+            )}
+          </div>
           <p className={`text-sm ${textSecondary} mt-1`}>
             {t('إدارة الطلاب التابعين لك، تسجيل طلاب جدد، ومتابعة حالات السداد والوصول لمحتواك الأكاديمي')}
           </p>
@@ -206,11 +242,11 @@ export default function TeacherStudentsPage() {
         </div>
         <div className={`p-4 rounded-xl border ${cardBg}`}>
           <div className="flex items-center justify-between">
-            <span className={`text-xs font-medium ${textSecondary}`}>{t('موقوف مؤقتاً لعدم السداد')}</span>
+            <span className={`text-xs font-medium ${textSecondary}`}>{t('موقوف أو مقيد لعدم السداد')}</span>
             <Lock className="size-4 text-rose-500" />
           </div>
           <p className="text-2xl font-bold mt-2 text-rose-600">
-            {students.filter(s => s.accessStatus === 'LOCKED').length}
+            {students.filter(s => s.accessStatus === 'LOCKED' || s.accessStatus === 'RESTRICTED').length}
           </p>
         </div>
       </div>
@@ -262,6 +298,7 @@ export default function TeacherStudentsPage() {
               <option value="ACTIVE">{t('نشط (مسدد)')}</option>
               <option value="GRACE_PERIOD">{t('في المهلة')}</option>
               <option value="LOCKED">{t('مغلق لعدم السداد')}</option>
+              <option value="RESTRICTED">{t('مقيد لعدم سداد المصروفات')}</option>
             </select>
 
             <button
@@ -289,7 +326,8 @@ export default function TeacherStudentsPage() {
             <p className={`text-sm ${textSecondary} mt-1`}>{t('أضف طالباً جديداً أو قم بتعديل خيارات التصفية')}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            <div className="overflow-x-auto">
             <table className="w-full text-right text-sm">
               <thead className="bg-slate-50 dark:bg-slate-900/60 border-b border-border text-xs font-semibold text-slate-500">
                 <tr>
@@ -363,6 +401,12 @@ export default function TeacherStudentsPage() {
                           {t('موقوف لعدم السداد')}
                         </span>
                       )}
+                      {student.accessStatus === 'RESTRICTED' && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400">
+                          <Lock className="size-3" />
+                          {t('مقيد لعدم سداد المصروفات')}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-xs text-slate-500">
                       {new Date(student.enrolledAt).toLocaleDateString('ar-EG')}
@@ -382,8 +426,59 @@ export default function TeacherStudentsPage() {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+
+          {/* Server-Side Pagination Controls */}
+          {total > 0 && (
+            <div className={`p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs ${textSecondary}`}>
+              <div className="flex items-center gap-2">
+                <span>
+                  {t('عرض')} {(page - 1) * limit + 1} - {Math.min(page * limit, total)} {t('من إجمالي')} {total} {t('طالب')}
+                </span>
+                <span className="mx-2">•</span>
+                <label className="flex items-center gap-1.5">
+                  <span>{t('لكل صفحة:')}</span>
+                  <select
+                    value={limit}
+                    onChange={(e) => {
+                      setLimit(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className={`px-2 py-1 border rounded-lg outline-none ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fetchStudents(page - 1)}
+                  disabled={page <= 1 || loading}
+                  className="px-3 py-1.5 border rounded-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  {t('السابق')}
+                </button>
+                <span className="font-semibold px-2">
+                  {page} / {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => fetchStudents(page + 1)}
+                  disabled={page >= totalPages || loading}
+                  className="px-3 py-1.5 border rounded-lg font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                >
+                  {t('التالي')}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
 
       {/* ADD STUDENT MODAL */}
       {showAddModal && (
@@ -558,7 +653,7 @@ export default function TeacherStudentsPage() {
               }`}>
                 <div>
                   <p className="font-bold text-sm">
-                    {t('حالة وصول الطالب لمحتواك:')} {selectedStudent.accessStatus === 'ACTIVE' ? 'نشط ومسدد' : selectedStudent.accessStatus === 'GRACE_PERIOD' ? 'في فترة المهلة' : 'موقوف مؤقتاً لعدم السداد'}
+                    {t('حالة وصول الطالب لمحتواك:')} {selectedStudent.accessStatus === 'ACTIVE' ? 'نشط ومسدد' : selectedStudent.accessStatus === 'GRACE_PERIOD' ? 'في فترة المهلة' : selectedStudent.accessStatus === 'RESTRICTED' ? 'مقيد لعدم سداد المصروفات' : 'موقوف مؤقتاً لعدم السداد'}
                   </p>
                   {selectedStudent.exceptionActiveUntil && (
                     <p className="text-xs mt-0.5">{t('استثناء إداري ساري حتى:')} {new Date(selectedStudent.exceptionActiveUntil).toLocaleDateString('ar-EG')}</p>

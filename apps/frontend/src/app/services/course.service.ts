@@ -45,7 +45,15 @@ export interface PaginatedResponse<T> {
 // ─── Service ─────────────────────────────────────────────────────────
 export const courseService = {
   // ── Courses ──────────────────────────────────────────────────────
-  getCourses: (params?: { page?: number; limit?: number }) =>
+  getCourses: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    teacherId?: string;
+    branchId?: string;
+    includeArchived?: boolean;
+  }) =>
     courseApi.get<PaginatedResponse<any>>('/', { params }),
 
   getAvailableCourses: (params?: { page?: number; limit?: number }) =>
@@ -65,6 +73,9 @@ export const courseService = {
 
   deleteCourse: (id: string) =>
     courseApi.delete(`/${id}`),
+
+  restoreCourse: (id: string) =>
+    courseApi.post(`/${id}/restore`),
 
   updateCourse: (id: string, data: Partial<CreateCourseData>) =>
     courseApi.put(`/${id}`, data),

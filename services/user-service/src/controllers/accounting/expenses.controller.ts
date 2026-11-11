@@ -49,9 +49,32 @@ export const createExpenseVoucher = async (req: AuthRequest, res: Response) => {
     }
 
     const numAmount = Number(amount);
-    const targetBranchId = branchId || defaultBranchId || (await db.branch.findFirst({
-      where: { institutionId: institutionId as string, isDefault: true }
-    }))?.id;
+    const userRole = (req.user?.role || '').toUpperCase();
+
+    // Strict branch scoping for Accountants
+    if (userRole === 'ACCOUNTANT') {
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+      if (branchId && branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Accountants cannot create expense vouchers for other branches.'
+        });
+      }
+    }
+
+    const targetBranchId = userRole === 'ACCOUNTANT'
+      ? (req.user?.branchId as string)
+      : (branchId || defaultBranchId || (await db.branch.findFirst({
+          where: { institutionId: institutionId as string, isDefault: true }
+        }))?.id);
 
     if (!targetBranchId) {
       return res.status(400).json({ message: 'Valid branchId required for expense voucher' });
@@ -123,7 +146,7 @@ export const listExpenseVouchers = async (req: AuthRequest, res: Response) => {
       return res.status(dateRange.status || 400).json({ message: dateRange.message });
     }
 
-    const { status, category, page = '1', limit = '50' } = req.query;
+    const { status, category, pendingDisbursement, page = '1', limit = '50' } = req.query;
 
     const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
     const limitNum = Math.min(200, Math.max(1, parseInt(limit as string, 10) || 50));
@@ -133,7 +156,16 @@ export const listExpenseVouchers = async (req: AuthRequest, res: Response) => {
     if (scope.branchId) {
       where.branchId = scope.branchId;
     }
-    if (status) where.status = status as any;
+
+    const normalizedStatus = typeof status === 'string' ? status.trim().toUpperCase() : undefined;
+    if (normalizedStatus === 'APPROVED' || pendingDisbursement === 'true') {
+      // Strictly actionable approved vouchers awaiting physical disbursement
+      where.status = 'APPROVED';
+      where.disbursedAt = null;
+      where.disbursedById = null;
+    } else if (normalizedStatus) {
+      where.status = normalizedStatus as any;
+    }
     if (category) where.category = category as string;
 
     if (dateRange.startDate || dateRange.endDate) {
@@ -291,6 +323,18 @@ export const disburseExpenseVoucher = async (req: AuthRequest, res: Response) =>
       return res.status(403).json({ message: 'Forbidden: Insufficient permissions to disburse expenses' });
     }
 
+    // Critical Fix A: Strict Branch Ownership verification for Accountants
+    if (disburserRole === 'ACCOUNTANT') {
+      const accountantBranchId = req.user?.branchId;
+      if (!accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'ACCOUNTANT_BRANCH_UNASSIGNED',
+          message: 'Forbidden: Accountant is not assigned to any branch.'
+        });
+      }
+    }
+
     const voucher = await db.expenseVoucher.findFirst({
       where: { id, institutionId: institutionId as string },
       include: { preparedBy: true }
@@ -298,6 +342,18 @@ export const disburseExpenseVoucher = async (req: AuthRequest, res: Response) =>
 
     if (!voucher) {
       return res.status(404).json({ message: 'Expense voucher not found' });
+    }
+
+    // Critical Fix A: Object-level branch verification before any state changes
+    if (disburserRole === 'ACCOUNTANT') {
+      const accountantBranchId = req.user?.branchId;
+      if (voucher.branchId !== accountantBranchId) {
+        return res.status(403).json({
+          success: false,
+          error: 'CROSS_BRANCH_ACCESS_DENIED',
+          message: 'Forbidden: Accountants cannot disburse expense vouchers belonging to other branches.'
+        });
+      }
     }
 
     if (voucher.status !== 'APPROVED') {
@@ -322,7 +378,7 @@ export const disburseExpenseVoucher = async (req: AuthRequest, res: Response) =>
         }
 
         const cashbox = await tx.cashbox.findFirst({
-          where: { id: resolvedCashboxId, institutionId: institutionId as string, status: 'ACTIVE', deletedAt: null }
+          where: { id: resolvedCashboxId, institutionId: institutionId as string, branchId: voucher.branchId, status: 'ACTIVE', deletedAt: null }
         });
 
         if (!cashbox) {

@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, BookOpen, TrendingUp, AlertTriangle, RefreshCw,
-  ArrowUpRight, Eye, AlertCircle, Calendar, PlusCircle, CheckCircle
+  ArrowUpRight, Eye, AlertCircle, Calendar, PlusCircle, CheckCircle, Building2
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -84,6 +84,17 @@ export default function TeacherHomePage() {
               {t('بوابة المعلم')}
             </span>
             <span className="text-xs text-slate-400">{t('منظومة الإشراف الأكاديمي والتدريس')}</span>
+            {user?.branch?.name ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20" data-testid="teacher-branch-badge">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>{t('branchColon', 'الفرع:')} {user.branch.name}</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" data-testid="teacher-unassigned-badge">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>{t('unassignedBranch', 'غير مسند لفرع حالياً')}</span>
+              </span>
+            )}
           </div>
           <h1 className={`text-2xl sm:text-3xl font-extrabold ${textPrimary}`}>
             {t('مرحباً، أ.')} {user?.name || 'المعلم'}

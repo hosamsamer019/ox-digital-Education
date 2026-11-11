@@ -192,6 +192,17 @@ export const startAssessment = async (req: AuthRequest, res: Response) => {
     const assessment = await db.assessment.findUnique({ where: { id: assessmentId } });
     if (!assessment) return res.status(404).json({ message: 'Assessment not found' });
 
+    // Enforce course lifecycle & archive protection (Phase II-C)
+    if (assessment.courseId) {
+      const course = await db.course.findUnique({
+        where: { id: assessment.courseId },
+        select: { id: true, status: true, deletedAt: true }
+      });
+      if (course && (course.status !== 'PUBLISHED' || course.deletedAt !== null)) {
+        return res.status(403).json({ message: 'لا يمكن بدء الاختبار لدورة مؤرشفة أو غير منشورة', code: 'COURSE_ARCHIVED_OR_NOT_PUBLISHED' });
+      }
+    }
+
     const authError = await validateEnrollment(studentId, req.user!.role, assessment.courseId, req.user!.isGuest, assessment.id);
     if (authError) {
       let message = 'Unauthorized';

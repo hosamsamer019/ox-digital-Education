@@ -1,14 +1,14 @@
-import { useLanguage, t } from '../../../contexts/LanguageContext';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, GraduationCap, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, GraduationCap } from 'lucide-react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import QuickExamTerminal from './QuickExamTerminal';
 import MathGridBackground from '../ui/MathGridBackground';
 
 export default function EditorialHero() {
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
   const textContentRef = useRef<HTMLDivElement>(null);
@@ -42,6 +42,8 @@ export default function EditorialHero() {
     { scope: heroRef }
   );
 
+  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
+
   return (
     <section
       ref={heroRef}
@@ -52,11 +54,11 @@ export default function EditorialHero() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-          {/* Editorial Content (RTL Right Column - 7 Cols on Desktop) */}
+          {/* Editorial Content */}
           <div
             ref={textContentRef}
-            className="lg:col-span-7 text-right flex flex-col items-start lg:items-start"
-            dir="rtl"
+            className={`lg:col-span-7 ${isRtl ? 'text-right' : 'text-left'} flex flex-col items-start lg:items-start`}
+            dir={isRtl ? 'rtl' : 'ltr'}
           >
             {/* Academic Credential Badge */}
             <div className="hero-fade-up inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-medium mb-5 shadow-sm">
@@ -84,7 +86,7 @@ export default function EditorialHero() {
                 className="flex items-center justify-center gap-2.5 px-6 sm:px-7 py-3.5 rounded-xl bg-[#9e1b1b] hover:bg-[#b91c1c] text-white font-bold text-sm sm:text-base shadow-lg shadow-red-950/20 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               >
                 <span>{t('ابدأ كطالب في المنصة')}</span>
-                <ArrowLeft className="w-4 h-4 flex-shrink-0" />
+                <ArrowIcon className="w-4 h-4 flex-shrink-0" />
               </button>
 
               <button
@@ -98,23 +100,38 @@ export default function EditorialHero() {
 
             {/* Concrete Proof Pillars */}
             <div className="hero-fade-up w-full grid grid-cols-2 sm:grid-cols-3 gap-4 pt-6 border-t border-slate-200 dark:border-slate-800/80">
-              <div className="text-right">
-                <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">{t('تتبع المحاضرات')}</span>
-                <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-mono">{t('100% ثانية بثانية')}</span>
+              <div>
+                <span className="block text-xl sm:text-2xl font-bold text-slate-900 dark:text-white font-sans">
+                  {t('100% ثانية بثانية')}
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 block">
+                  {t('تتبع المحاضرات')}
+                </span>
               </div>
-              <div className="text-right">
-                <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">{t('نظام النزاهة')}</span>
-                <span className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono">{t('رصد محاولات الغش')}</span>
+              <div>
+                <span className="block text-xl sm:text-2xl font-bold text-slate-900 dark:text-white font-sans">
+                  {t('نظام النزاهة')}
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 block">
+                  {t('رصد محاولات الغش')}
+                </span>
               </div>
-              <div className="col-span-2 sm:col-span-1 text-right">
-                <span className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-0.5">{t('صياغة المعادلات')}</span>
-                <span className="text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 font-mono">{t('محرك KaTeX الرياضي')}</span>
+              <div className="col-span-2 sm:col-span-1">
+                <span className="block text-xl sm:text-2xl font-bold text-slate-900 dark:text-white font-sans">
+                  KaTeX
+                </span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 block">
+                  {t('صياغة المعادلات')}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Quick Exam Terminal (RTL Left Column - 5 Cols on Desktop) */}
-          <div ref={terminalWrapperRef} className="lg:col-span-5 w-full">
+          {/* Quick Exam Terminal Column */}
+          <div
+            ref={terminalWrapperRef}
+            className="lg:col-span-5 w-full flex justify-center lg:justify-end"
+          >
             <QuickExamTerminal />
           </div>
         </div>

@@ -90,6 +90,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<any>(null);
   const htmlVideoRef = useRef<HTMLVideoElement>(null);
+  const videoDomElementRef = useRef<HTMLVideoElement | null>(null);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTickTimeRef = useRef<number>(Date.now());
   const currentTimeRef = useRef<number>(0);
@@ -101,6 +102,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
   const hlsInstanceRef = useRef<any>(null);
   const currentQualityIdRef = useRef<number>(-1);
   const activeRequestIdRef = useRef<number>(0);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Source categorization
   const videoSourceType = getVideoSourceType(lesson?.videoUrl);
@@ -294,6 +296,25 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
       activeRequestIdRef.current++;
       window.removeEventListener('beforeunload', handleBeforeUnload);
       flushProgress();
+      const activeMedia = videoDomElementRef.current || htmlVideoRef.current;
+      if (activeMedia) {
+        try {
+          activeMedia.pause();
+          activeMedia.removeAttribute('src');
+          activeMedia.load();
+        } catch {}
+      }
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.stopVideo === 'function') {
+        try {
+          ytPlayerRef.current.stopVideo();
+        } catch {}
+      }
+      if (hlsInstanceRef.current) {
+        try {
+          hlsInstanceRef.current.destroy();
+          hlsInstanceRef.current = null;
+        } catch {}
+      }
     };
   }, [flushProgress]);
 
@@ -577,7 +598,10 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
             setDuration(d);
           }
         }
-      } else if (isNativePlayable && htmlVideoRef.current) {
+      } else if (htmlVideoRef.current) {
+        if (htmlVideoRef.current.paused) {
+          return;
+        }
         current = htmlVideoRef.current.currentTime || 0;
         if (htmlVideoRef.current.duration > 0 && htmlVideoRef.current.duration !== total) {
           total = htmlVideoRef.current.duration;
@@ -695,27 +719,58 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
     }
   };
 
-  const pausePlayback = () => {
+  const pausePlayback = useCallback(() => {
     setIsPlaying(false);
-    if (videoSourceType === 'youtube' && ytPlayerRef.current) {
-      if (typeof ytPlayerRef.current.pauseVideo === 'function') {
-        ytPlayerRef.current.pauseVideo();
-      }
-    } else if (isNativePlayable && htmlVideoRef.current) {
-      htmlVideoRef.current.pause();
-    }
-  };
 
-  const resumePlayback = () => {
+    // 1. Direct native HTML5 video element pause (Stops decoding and system audio)
+    if (htmlVideoRef.current) {
+      try {
+        htmlVideoRef.current.pause();
+        htmlVideoRef.current.muted = true; // prevent audio leaks while paused
+      } catch (err) {
+        console.error('Failed to pause htmlVideoRef:', err);
+      }
+    }
+
+    // 2. Direct YouTube API pause
+    if (ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === 'function') {
+      try {
+        ytPlayerRef.current.pauseVideo();
+      } catch (err) {
+        console.error('Failed to pause ytPlayerRef:', err);
+      }
+    }
+
+    // 3. Stop HLS loading on security pause to prevent background buffering/decoding
+    if (hlsInstanceRef.current && typeof hlsInstanceRef.current.stopLoad === 'function') {
+      try {
+        hlsInstanceRef.current.stopLoad();
+      } catch (err) {
+        console.error('Failed to stop HLS load:', err);
+      }
+    }
+  }, []);
+
+  const resumePlayback = useCallback(() => {
     if (activeQuizRef.current) return;
     setIsPlaying(true);
     setShowResumeAlert(false);
+
+    // Resume HLS loading if stopped
+    if (hlsInstanceRef.current && typeof hlsInstanceRef.current.startLoad === 'function') {
+      try {
+        hlsInstanceRef.current.startLoad();
+      } catch (err) {
+        console.error('Failed to start HLS load:', err);
+      }
+    }
 
     if (videoSourceType === 'youtube' && ytPlayerRef.current) {
       if (typeof ytPlayerRef.current.playVideo === 'function') {
         ytPlayerRef.current.playVideo();
       }
-    } else if (isNativePlayable && htmlVideoRef.current) {
+    } else if (htmlVideoRef.current) {
+      htmlVideoRef.current.muted = isMuted; // Restore original mute state on explicit resumption
       if (htmlVideoRef.current.error) {
         setIsPlaying(false);
         setLoadError(t('تعذر تشغيل هذا الفيديو (المصدر غير مدعوم أو غير متاح حالياً).'));
@@ -736,7 +791,34 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
         });
       }
     }
-  };
+  }, [videoSourceType, t, isMuted]);
+
+  const handleContinuePlayback = useCallback(async () => {
+    // 1. Verify user session still exists
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      toast.error(t('انتهت جلستك، يرجى تسجيل الدخول مرة أخرى.'));
+      navigate(backUrl);
+      return;
+    }
+
+    // 2. Revalidate server-side authorization before resuming media
+    try {
+      if (courseService && typeof courseService.getVideoTicket === 'function' && lessonId) {
+        await courseService.getVideoTicket(lessonId);
+      }
+    } catch (err: any) {
+      toast.error(t('انتهت صلاحية جلسة المشاهدة، يرجى إعادة تسجيل الدخول.'));
+      navigate(backUrl);
+      return;
+    }
+
+    // 3. Dismiss security overlay
+    setIsBlurred(false);
+
+    // 4. Resume media synchronized with actual element
+    resumePlayback();
+  }, [user, t, navigate, backUrl, resumePlayback, lessonId]);
 
   const seekTo = (targetSeconds: number) => {
     const maxDur = duration || targetSeconds;
@@ -954,25 +1036,73 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
     }
   };
 
-  // Anti-Cheat: Soft Window Blur Pause
+  // Anti-Cheat: Browser Lifecycle, Visibility, and Focus Protection
+  const pausePlaybackRef = useRef(pausePlayback);
   useEffect(() => {
-    const onBlur = () => {
-      setTimeout(() => {
-        if (document.activeElement?.tagName === 'IFRAME') return;
+    pausePlaybackRef.current = pausePlayback;
+  }, [pausePlayback]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden || document.visibilityState === 'hidden') {
+        setIsBlurred(true);
+        pausePlaybackRef.current();
+      }
+    };
+
+    const handlePageHide = () => {
+      pausePlaybackRef.current();
+      const current = htmlVideoRef.current?.currentTime || currentTimeRef.current;
+      const total = htmlVideoRef.current?.duration || durationRef.current;
+      flushProgress(current, total);
+    };
+
+    const handlePageShow = (e: PageTransitionEvent) => {
+      // If restored from bfcache or reopened, pause to ensure no stale audio/video leaks
+      if (e.persisted) {
+        setIsBlurred(true);
+        pausePlaybackRef.current();
+      }
+    };
+
+    const handleWindowBlur = () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+      blurTimeoutRef.current = setTimeout(() => {
+        if (
+          document.activeElement?.tagName === 'IFRAME' &&
+          playerContainerRef.current?.contains(document.activeElement)
+        ) {
+          return;
+        }
         if (document.hasFocus && document.hasFocus()) return;
         setIsBlurred(true);
-        pausePlayback();
-      }, 250);
+        pausePlaybackRef.current();
+      }, 150);
     };
-    const onFocus = () => setIsBlurred(false);
 
-    window.addEventListener('blur', onBlur);
-    window.addEventListener('focus', onFocus);
-    return () => {
-      window.removeEventListener('blur', onBlur);
-      window.removeEventListener('focus', onFocus);
+    const handleWindowFocus = () => {
+      // Focus regained: do not unpause automatically; student must click Continue button
     };
-  }, []);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+    window.addEventListener('pageshow', handlePageShow as any);
+    window.addEventListener('blur', handleWindowBlur);
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+      window.removeEventListener('pageshow', handlePageShow as any);
+      window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [flushProgress]);
 
   // Previous & Next Lesson Navigation
   const currentIndex = courseLessons.findIndex((l) => l.id === lessonId);
@@ -998,7 +1128,7 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
             {t('تم إيقاف الشرح مؤقتاً لمساعدتك على التركيز وحماية المحتوى التعليمي. انقر بالأسفل للاستمرار في المشاهدة.')}
           </p>
           <button
-            onClick={() => setIsBlurred(false)}
+            onClick={handleContinuePlayback}
             className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-xs sm:text-sm transition-all shadow-lg shadow-indigo-600/30 min-h-[44px] min-w-[140px] flex items-center justify-center"
           >
             {t('متابعة المشاهدة')}
@@ -1238,7 +1368,12 @@ export default function UnifiedVideoPlayer({ lessonId, backUrl, mode = 'online' 
                   {/* 2. Unified Native / Streamed Video (Direct MP4 / WebM / Google Drive / Uploads / CDN / HLS) */}
                   {isNativePlayable && (
                     <video
-                      ref={htmlVideoRef}
+                      ref={(el) => {
+                        (htmlVideoRef as any).current = el;
+                        if (el) {
+                          videoDomElementRef.current = el;
+                        }
+                      }}
                       src={isHlsStream ? undefined : playableMediaUrl}
                       className="w-full h-full object-contain"
                       playsInline

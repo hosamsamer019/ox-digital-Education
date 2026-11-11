@@ -110,14 +110,12 @@ export default function CoursesPage() {
 
     if (socket) {
       const handleSync = () => fetchCourses();
-      socket.on('course_created', handleSync);
       socket.on('course_updated', handleSync);
       socket.on('course_deleted', handleSync);
 
       return () => {
         clearInterval(intervalId);
         document.removeEventListener('visibilitychange', handleVisibilityChange);
-        socket.off('course_created', handleSync);
         socket.off('course_updated', handleSync);
         socket.off('course_deleted', handleSync);
       };

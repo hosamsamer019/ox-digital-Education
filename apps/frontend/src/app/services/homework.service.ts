@@ -28,6 +28,9 @@ export const homeworkService = {
   getHomeworks: (params?: { page?: number; limit?: number }) =>
     homeworkApi.get('/', { params }),
 
+  getPendingCount: () =>
+    homeworkApi.get<{ pendingCount: number; total?: number }>('/pending-count'),
+
   getHomeworksByCourse: (courseId: string) =>
     homeworkApi.get(`/course/${courseId}`),
 

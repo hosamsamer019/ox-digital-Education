@@ -1,4 +1,5 @@
 import { useLanguage, t } from '../../contexts/LanguageContext';
+import { useSmartNavigationCounters } from '../../hooks/useSmartNavigationCounters';
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import {
@@ -102,9 +103,12 @@ const primaryManagerMenuItems: MenuItem[] = [
 
 export const PrimaryManagerDashboard: React.FC = () => {
   const { t } = useLanguage();
+  const { applyBadgesToMenuItems } = useSmartNavigationCounters();
+  const dynamicMenuItems = applyBadgesToMenuItems(primaryManagerMenuItems);
+
   return (
     <SharedLayout
-      menuItems={primaryManagerMenuItems}
+      menuItems={dynamicMenuItems}
       title="OX-DIGITAL Education"
       subtitle={t('الإدارة التنفيذية العامة والحوكمة')}
       accentColor="#9e1b1b"

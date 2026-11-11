@@ -39,15 +39,18 @@ export default function HomeworkPage() {
       .then((res) => {
         const data = res.data.data ? res.data.data : Array.isArray(res.data) ? res.data : [];
         if (data.length > 0) {
-          const mapped = data.map((hw: any) => ({
-            id: hw.id,
-            title: hw.title,
-            status: hw.status === 'draft' ? 'pending' : hw.status,
-            score: hw.score || null,
-            deadline: new Date(hw.deadline || Date.now()).toLocaleDateString('ar-EG'),
-            deadlineRaw: hw.deadline,
-            isLocked: hw.isLocked || false
-          })).filter((hw: any) => {
+          const mapped = data.map((hw: any) => {
+            const effectiveCloseAt = hw.closeAt || hw.deadline || null;
+            return {
+              id: hw.id,
+              title: hw.title,
+              status: hw.status === 'draft' ? 'pending' : hw.status,
+              score: hw.score || null,
+              deadline: new Date(effectiveCloseAt || Date.now()).toLocaleDateString('ar-EG'),
+              deadlineRaw: effectiveCloseAt,
+              isLocked: hw.isLocked || false
+            };
+          }).filter((hw: any) => {
             const now = new Date().getTime();
             const isTooLate = hw.deadlineRaw && now > new Date(hw.deadlineRaw).getTime();
             if (isTooLate && hw.status !== 'completed') {
@@ -104,6 +107,7 @@ export default function HomeworkPage() {
         setScore(normalized.percentage);
         setAttemptId(res.data.id);
         setSubmitted(true);
+        window.dispatchEvent(new Event('ox:counters-refresh'));
       })
       .catch((err) => {
         console.error('API submission failed:', err);
@@ -167,18 +171,25 @@ export default function HomeworkPage() {
             </div>
           )}
 
-          {homeworks.map((hw) => (
+          {homeworks.map((hw) => {
+            const isUnavailable = !hw.isLocked && hw.status === 'unavailable';
+            const isInteractive = !hw.isLocked && (hw.status === 'pending' || hw.status === 'available');
+            return (
             <div
               key={hw.id}
               className={`${cardBg} border rounded-2xl p-6 transition-all hover:border-slate-700 flex flex-col justify-between ${
-                hw.isLocked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg group'
+                hw.isLocked || isUnavailable ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg group'
               }`}
               onClick={() => {
                 if (hw.isLocked) {
                   toast.info(t('يجب إكمال مشاهدة فيديو الدرس قبل فتح الواجب'));
                   return;
                 }
-                if (hw.status === 'pending' || hw.status === 'available') {
+                if (isUnavailable) {
+                  toast.info(t('هذا الواجب غير متاح للتسليم حالياً'));
+                  return;
+                }
+                if (isInteractive) {
                   setSelectedHomework(hw.id);
                 }
               }}
@@ -187,7 +198,7 @@ export default function HomeworkPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div
                     className={`w-11 h-11 rounded-xl flex items-center justify-center ${
-                      hw.isLocked
+                      hw.isLocked || isUnavailable
                         ? 'bg-slate-800 text-slate-500'
                         : hw.status === 'completed'
                         ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
@@ -224,14 +235,23 @@ export default function HomeworkPage() {
                       ? 'bg-slate-800 text-slate-400'
                       : hw.status === 'completed'
                       ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                      : isUnavailable
+                      ? 'bg-slate-800 text-slate-400 border border-slate-700/60'
                       : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
                   }`}
                 >
-                  {hw.isLocked ? 'مقفل (يتطلب إتمام الدرس)' : hw.status === 'completed' ? 'تم التسليم والتقييم' : 'بانتظار التسليم'}
+                  {hw.isLocked
+                    ? t('مقفل (يتطلب إتمام الدرس)')
+                    : hw.status === 'completed'
+                    ? t('تم التسليم والتقييم')
+                    : isUnavailable
+                    ? t('غير متاح حالياً')
+                    : t('بانتظار التسليم')}
                 </span>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );

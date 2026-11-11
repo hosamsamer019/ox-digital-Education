@@ -1,42 +1,45 @@
-import { useLanguage, t } from '../../../contexts/LanguageContext';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { useState } from 'react';
 import { BookOpen, CheckCircle, ArrowLeft, ArrowRight, Lightbulb, Code2 } from 'lucide-react';
 import { MathRenderer } from '../../ui/MathRenderer';
 
 export default function MathEngineSection() {
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const [activeStep, setActiveStep] = useState<number>(0);
 
   const steps = [
     {
-      title: 'الخطوة الأولى: تحديد المعادلة وتحليل المعاملات',
-      description: 'نكتب المعادلة التربيعية في صورتها القياسية ونحدد معاملات المتغيرات بدقة:',
+      title: t('الخطوة الأولى: تحديد المعادلة وتحليل المعاملات', 'Step 1: Equation Formulation & Coefficient Analysis'),
+      description: t('نكتب المعادلة التربيعية في صورتها القياسية ونحدد معاملات المتغيرات بدقة:', 'Express the quadratic equation in canonical form and identify variable coefficients:'),
       latex: '2x^2 + 5x - 3 = 0',
       mathDetails: 'ax^2 + bx + c = 0 \\quad \\implies \\quad a = 2, \\; b = 5, \\; c = -3',
-      arabicNote: 'المعامل القياسي a ≠ 0، إذن المعادلة تربيعية تامة من الدرجة الثانية.',
+      arabicNote: t('المعامل القياسي a ≠ 0، إذن المعادلة تربيعية تامة من الدرجة الثانية.', 'Standard coefficient a ≠ 0, confirming a second-degree quadratic equation.'),
     },
     {
-      title: 'الخطوة الثانية: حساب المميز (Discriminant)',
-      description: 'نحسب قيمة المميز للتحقق من نوع وطبيعة الجذور الحقيقية:',
+      title: t('الخطوة الثانية: حساب المميز (Discriminant)', 'Step 2: Calculating the Discriminant (Δ)'),
+      description: t('نحسب قيمة المميز للتحقق من نوع وطبيعة الجذور الحقيقية:', 'Evaluate the discriminant to determine the nature of the real roots:'),
       latex: '\\Delta = b^2 - 4ac = (5)^2 - 4(2)(-3) = 25 + 24 = 49',
       mathDetails: '\\Delta = 49 > 0 \\implies \\sqrt{\\Delta} = 7',
-      arabicNote: 'بما أن المميز موجب ومربع كامل، فإن للمعادلة جذرين حقيقيين نسبيين مختلفين.',
+      arabicNote: t('بما أن المميز موجب ومربع كامل، فإن للمعادلة جذرين حقيقيين نسبيين مختلفين.', 'Because the discriminant is positive and a perfect square, the equation has two distinct real rational roots.'),
     },
     {
-      title: 'الخطوة الثالثة: تطبيق القانون العام واستخراج الجذور',
-      description: 'نطبق صيغة حل المعادلة التربيعية للحصول على مجموعة الحل (S.S):',
+      title: t('الخطوة الثالثة: تطبيق القانون العام واستخراج الجذور', 'Step 3: Applying Quadratic Formula & Extracting Roots'),
+      description: t('نطبق صيغة حل المعادلة التربيعية للحصول على مجموعة الحل (S.S):', 'Apply the quadratic formula to derive the definitive Solution Set (S.S):'),
       latex: 'x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a} = \\frac{-5 \\pm 7}{2(2)} = \\frac{-5 \\pm 7}{4}',
       mathDetails: 'x_1 = \\frac{-5 + 7}{4} = \\frac{1}{2}, \\qquad x_2 = \\frac{-5 - 7}{4} = -3',
-      arabicNote: 'مجموعة الحل في ح (الأعداد الحقيقية): S.S = { 1/2 , -3 }',
+      arabicNote: t('مجموعة الحل في ح (الأعداد الحقيقية): S.S = { 1/2 , -3 }', 'Solution Set in Real Numbers (ℝ): S.S = { 1/2 , -3 }'),
     },
   ];
 
+  const PrevArrow = isRtl ? ArrowRight : ArrowLeft;
+  const NextArrow = isRtl ? ArrowLeft : ArrowRight;
+
   return (
     <section id="math-engine" className="py-20 lg:py-28 bg-white dark:bg-[#090b10] text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" dir="rtl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-          {/* Right Column: Editorial Explanation (5 Cols) */}
-          <div className="lg:col-span-5 text-right">
+          {/* Editorial Explanation Column (5 Cols) */}
+          <div className={`lg:col-span-5 ${isRtl ? 'text-right' : 'text-left'}`}>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs font-semibold mb-4">
               <Code2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
               <span>{t('محرك الصياغة والشرح الرياضي')}</span>
@@ -73,7 +76,7 @@ export default function MathEngineSection() {
             </div>
           </div>
 
-          {/* Left Column: Interactive Mathematical Step Stage (7 Cols) */}
+          {/* Interactive Mathematical Step Stage (7 Cols) */}
           <div className="lg:col-span-7 w-full">
             <div className="rounded-2xl bg-[#0f131c] border border-slate-800 shadow-2xl overflow-hidden">
               {/* Console Header Bar */}
@@ -87,7 +90,7 @@ export default function MathEngineSection() {
 
               {/* Step Navigation Tabs */}
               <div className="px-5 pt-4 pb-2 border-b border-slate-800/80 flex items-center gap-2 overflow-x-auto">
-                {steps.map((s, idx) => (
+                {steps.map((_s, idx) => (
                   <button
                     key={idx}
                     onClick={() => setActiveStep(idx)}
@@ -137,8 +140,8 @@ export default function MathEngineSection() {
                     disabled={activeStep === 0}
                     className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-900 text-slate-300 hover:text-white border border-slate-800 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
-                    <ArrowRight className="w-3.5 h-3.5" />
-                    <span>{t('الخطوة السابقة')}</span>
+                    <PrevArrow className="w-3.5 h-3.5" />
+                    <span>{t('السابق', 'Previous')}</span>
                   </button>
 
                   <span className="text-xs font-mono text-slate-500">
@@ -150,8 +153,8 @@ export default function MathEngineSection() {
                     disabled={activeStep === steps.length - 1}
                     className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-[#9e1b1b] hover:bg-[#b91c1c] text-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   >
-                    <span>{t('الخطوة التالية')}</span>
-                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>{t('التالي', 'Next')}</span>
+                    <NextArrow className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>

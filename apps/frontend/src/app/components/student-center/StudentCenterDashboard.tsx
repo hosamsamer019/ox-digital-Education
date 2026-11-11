@@ -1,5 +1,5 @@
 import { useLanguage, t } from '../../contexts/LanguageContext';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Home, FileText, ClipboardCheck, MessageCircle, User, Brain, Target, BookOpen, BarChart3, CreditCard, Settings } from 'lucide-react';
 import SharedLayout, { MenuItem } from '../shared/SharedLayout';
@@ -18,7 +18,7 @@ import VideoPlayerPage from './VideoPlayerPage';
 import ResultsPage from './ResultsPage';
 import AssessmentReviewPage from '../../pages/AssessmentReviewPage';
 import { userService } from '../../services/user.service';
-import { homeworkService } from '../../services/homework.service';
+import { useSmartNavigationCounters } from '../../hooks/useSmartNavigationCounters';
 
 const baseMenuItems: MenuItem[] = [
   { path: '/student/center/home', icon: Home, label: 'الرئيسية', labelKey: 'studentCenterMenuHome' },
@@ -37,56 +37,15 @@ const baseMenuItems: MenuItem[] = [
 export default function StudentCenterDashboard() {
   const { t, language } = useLanguage();
   const [profileName, setProfileName] = useState<string | null>(null);
-  const [pendingHomework, setPendingHomework] = useState(0);
-  const isFetchingRef = useRef(false);
-
-  const fetchHomeworkCount = useCallback(() => {
-    if (typeof document !== 'undefined' && document.hidden) return;
-    if (isFetchingRef.current) return;
-
-    isFetchingRef.current = true;
-    homeworkService.getHomeworks()
-      .then(res => {
-        const data = res.data?.data ? res.data.data : Array.isArray(res.data) ? res.data : [];
-        if (Array.isArray(data)) {
-          const pending = data.filter((h: any) => h.status === 'draft' || h.status === 'pending');
-          setPendingHomework(pending.length);
-        }
-      })
-      .catch(() => setPendingHomework(0))
-      .finally(() => {
-        isFetchingRef.current = false;
-      });
-  }, []);
+  const { applyBadgesToMenuItems } = useSmartNavigationCounters();
 
   useEffect(() => {
     userService.getProfile()
       .then(user => setProfileName(user?.name || null))
       .catch(() => setProfileName(null));
+  }, []);
 
-    fetchHomeworkCount();
-
-    const intervalId = setInterval(fetchHomeworkCount, 30000);
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchHomeworkCount();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [fetchHomeworkCount]);
-
-  const dynamicMenuItems: MenuItem[] = baseMenuItems.map(item =>
-    (item.labelKey === 'studentCenterMenuHomework' || item.label === 'الواجبات')
-      ? { ...item, badge: pendingHomework > 0 ? pendingHomework : undefined }
-      : item
-  );
+  const dynamicMenuItems: MenuItem[] = applyBadgesToMenuItems(baseMenuItems);
 
   const displayName = profileName || (language === 'ar' ? 'طالب سنتر' : 'Center Student');
   const displaySubtitle = language === 'ar' ? `طالب السنتر: ${displayName}` : `Center Student: ${displayName}`;

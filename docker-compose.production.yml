@@ -113,6 +113,7 @@ services:
       - SENTRY_ENVIRONMENT=${SENTRY_ENVIRONMENT:-production}
     volumes:
       - ./storage/receipts:/app/storage/receipts
+      - ox_digital_avatars_data:/app/storage/avatars
     restart: always
     networks:
       - ox-digital-network
@@ -325,3 +326,5 @@ volumes:
     name: ox-digital-course-uploads
   ox-digital-postgres-backups:
     name: ox-digital-postgres-backups
+  ox_digital_avatars_data:
+    name: ox_digital_avatars_data

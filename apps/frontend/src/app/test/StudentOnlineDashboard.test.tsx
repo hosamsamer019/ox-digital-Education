@@ -56,6 +56,7 @@ vi.mock('../services/analytics.service', () => ({
 vi.mock('../services/homework.service', () => ({
   homeworkService: {
     getHomeworks: vi.fn(),
+    getPendingCount: vi.fn(),
     getHomeworkDetails: vi.fn(),
     submitHomework: vi.fn(),
   },
@@ -93,6 +94,7 @@ const renderWithProviders = (ui: React.ReactElement, initialRoute = '/student/on
 describe('Online Student Dashboard Test Suite', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.setItem('token', 'mock-token');
 
     vi.mocked(userService.getProfile).mockResolvedValue({
       id: 'student-online-01',
@@ -151,6 +153,10 @@ describe('Online Student Dashboard Test Suite', () => {
           status: 'excellent',
         },
       ],
+    } as any);
+
+    vi.mocked(homeworkService.getPendingCount).mockResolvedValue({
+      data: { pendingCount: 2, total: 2 },
     } as any);
 
     vi.mocked(homeworkService.getHomeworks).mockResolvedValue({

@@ -1,17 +1,17 @@
-import { useLanguage, t } from '../../../contexts/LanguageContext';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Lock } from 'lucide-react';
 
 export default function InstitutionalFooter() {
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#07090e] text-slate-400 border-t border-slate-800/80 pt-16 pb-12" dir="rtl">
+    <footer className="bg-[#07090e] text-slate-400 border-t border-slate-800/80 pt-16 pb-12" dir={isRtl ? 'rtl' : 'ltr'}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-slate-800/80">
           {/* Brand Presentation (5 cols) */}
-          <div className="md:col-span-5 text-right">
+          <div className={`md:col-span-5 ${isRtl ? 'text-right' : 'text-left'}`}>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-white p-1 border border-slate-700/80 flex items-center justify-center overflow-hidden">
                 <img
@@ -43,7 +43,7 @@ export default function InstitutionalFooter() {
           </div>
 
           {/* Quick Platform Navigation (3 cols) */}
-          <div className="md:col-span-3 text-right">
+          <div className={`md:col-span-3 ${isRtl ? 'text-right' : 'text-left'}`}>
             <h4 className="text-white text-sm font-bold mb-4 font-sans">
               {t('أقسام المنصة')}
             </h4>
@@ -77,7 +77,7 @@ export default function InstitutionalFooter() {
           </div>
 
           {/* Official Portals & Gateways (4 cols) */}
-          <div className="md:col-span-4 text-right">
+          <div className={`md:col-span-4 ${isRtl ? 'text-right' : 'text-left'}`}>
             <h4 className="text-white text-sm font-bold mb-4 font-sans">
               {t('البوابات والخدمات المباشرة')}
             </h4>
@@ -102,7 +102,7 @@ export default function InstitutionalFooter() {
         </div>
 
         {/* Bottom Bar: Copyright & Security Note */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 text-center sm:text-right">
+        <div className={`pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 text-center ${isRtl ? 'sm:text-right' : 'sm:text-left'}`}>
           <div>
             <p>
               &copy; {currentYear} {t('جميع الحقوق محفوظة — منصة أو إكس الرقمية التعليمية (OX-DIGITAL Education)')}

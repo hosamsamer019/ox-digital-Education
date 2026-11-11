@@ -18,13 +18,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
   const auth = useAuth();
-  const user = auth?.user;
+  const userId = auth?.user?.id;
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    
     // Only establish real-time socket connection when a valid user session & token exist
-    if (!token || !user) {
+    if (!token || !userId) {
       if (socket) {
         socket.disconnect();
         setSocket(null);
@@ -36,7 +35,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // Connect to Course Service which handles courses, homeworks, exams
     const isLocalhost = typeof window !== 'undefined' ? (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') : false;
     const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
-    const useProdPaths = import.meta.env.PROD || !isLocalhost;
     const socketUrl = import.meta.env.VITE_COURSE_API_URL || '';
     
     if (isVercel && !import.meta.env.VITE_COURSE_API_URL) {
@@ -55,8 +53,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setConnected(true);
     });
 
-    newSocket.on('disconnect', () => {
-      console.log('❌ Disconnected from Real-Time Server');
+    newSocket.on('disconnect', (reason) => {
+      console.log('❌ Disconnected from Real-Time Server:', reason);
       setConnected(false);
     });
 
@@ -70,7 +68,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => {
       newSocket.disconnect();
     };
-  }, [user]);
+  }, [userId, token]);
 
   return (
     <SocketContext.Provider value={{ socket, connected }}>

@@ -13,6 +13,8 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./storage/receipts:/app/storage/receipts
+      - ox_digital_staging_avatars_data:/app/storage/avatars
     depends_on:
       - frontend
       - auth-service
@@ -38,6 +40,9 @@ services:
       context: .
       dockerfile: apps/frontend/Dockerfile
     container_name: ox-digital-staging-frontend
+    volumes:
+      - ./storage/receipts:/app/storage/receipts
+      - ox_digital_staging_avatars_data:/app/storage/avatars
     restart: always
     networks:
       - ox-digital-staging-network
@@ -80,6 +85,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - ./storage/receipts:/app/storage/receipts
+      - ox_digital_staging_avatars_data:/app/storage/avatars
     restart: always
     networks:
       - ox-digital-staging-network
@@ -108,6 +116,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - ./storage/receipts:/app/storage/receipts
+      - ox_digital_staging_avatars_data:/app/storage/avatars
     restart: always
     networks:
       - ox-digital-staging-network
@@ -150,6 +161,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - ./storage/receipts:/app/storage/receipts
+      - ox_digital_staging_avatars_data:/app/storage/avatars
     restart: always
     networks:
       - ox-digital-staging-network
@@ -182,13 +196,15 @@ services:
       - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
       - SENTRY_DSN=${SENTRY_DSN:-}
       - SENTRY_ENVIRONMENT=staging
-    volumes:
-      - ox-digital-staging-uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - ox-digital-staging-uploads:/app/uploads
+      - ./storage/receipts:/app/storage/receipts
+      - ox_digital_staging_avatars_data:/app/storage/avatars
     restart: always
     networks:
       - ox-digital-staging-network
@@ -217,6 +233,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - ./storage/receipts:/app/storage/receipts
+      - ox_digital_staging_avatars_data:/app/storage/avatars
     restart: always
     networks:
       - ox-digital-staging-network
@@ -247,6 +266,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    volumes:
+      - ./storage/receipts:/app/storage/receipts
+      - ox_digital_staging_avatars_data:/app/storage/avatars
     restart: always
     networks:
       - ox-digital-staging-network
@@ -332,3 +354,5 @@ volumes:
     name: ox-digital-staging-redis-data
   ox-digital-staging-uploads:
     name: ox-digital-staging-uploads
+  ox_digital_staging_avatars_data:
+    name: ox_digital_staging_avatars_data

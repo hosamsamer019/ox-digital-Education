@@ -56,7 +56,7 @@ export const getNotifications = async (req: AuthRequest, res: Response) => {
  */
 export const getUnreadCount = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.userId || (req.user as any)?.id;
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
     const now = new Date();

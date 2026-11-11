@@ -1,13 +1,14 @@
-import { useLanguage, t } from '../../contexts/LanguageContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Lock, Mail, Eye, EyeOff, ChevronLeft, AlertCircle, ArrowLeft, Sun, Moon } from 'lucide-react';
+import { Shield, Lock, Mail, Eye, EyeOff, ChevronLeft, AlertCircle, ArrowLeft, ArrowRight, Sun, Moon } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import LanguageToggle from '../ui/LanguageToggle';
 
 export default function AdminLoginPage() {
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const navigate = useNavigate();
   const { user, isAuthenticated, login } = useAuth();
   const { isDark, toggleTheme } = useTheme();
@@ -47,32 +48,41 @@ export default function AdminLoginPage() {
     }
   };
 
+  const BackArrow = isRtl ? ArrowLeft : ArrowRight;
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#090b10] text-slate-900 dark:text-white flex items-center justify-center p-4 relative overflow-hidden font-sans select-none transition-colors duration-200" dir="rtl">
+    <div
+      className="min-h-screen bg-slate-50 dark:bg-[#090b10] text-slate-900 dark:text-white flex items-center justify-center p-4 relative overflow-hidden font-sans select-none transition-colors duration-200"
+      dir={isRtl ? 'rtl' : 'ltr'}
+    >
       {/* Background Grid & Accents */}
       <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40 dark:opacity-25 pointer-events-none" />
       <div className="absolute top-1/4 -right-32 w-96 h-96 bg-[#9e1b1b]/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 -left-32 w-96 h-96 bg-slate-500/10 dark:bg-slate-800/20 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Top Header Actions (Return to Main Login & Theme Toggle) */}
+      {/* Top Header Actions (Return to Main Login, Language Toggle & Theme Toggle) */}
       <div className="absolute top-4 inset-x-4 sm:top-6 sm:inset-x-6 z-50 flex items-center justify-between">
         <button
           onClick={() => navigate('/login')}
           className="flex items-center gap-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all bg-white/90 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl backdrop-blur-md shadow-sm text-xs sm:text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e1b1b] cursor-pointer"
           aria-label={t('العودة لبوابة الدخول الموحدة')}
         >
-          <ChevronLeft className="w-4 h-4 rotate-180 text-slate-500 dark:text-slate-400" />
+          <ChevronLeft className={`w-4 h-4 ${isRtl ? 'rotate-180' : ''} text-slate-500 dark:text-slate-400`} />
           <span>{t('بوابة الدخول العامة')}</span>
         </button>
 
-        <button
-          onClick={toggleTheme}
-          className="p-2 sm:p-2.5 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white/90 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e1b1b] cursor-pointer"
-          aria-label={isDark ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن'}
-          title={isDark ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع الداكن'}
-        >
-          {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <LanguageToggle id="language-toggle-admin" />
+          <button
+            onClick={toggleTheme}
+            className="p-2 sm:p-2.5 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white/90 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e1b1b] cursor-pointer"
+            aria-label={isDark ? t('التبديل إلى الوضع الفاتح') : t('التبديل إلى الوضع الداكن')}
+            title={isDark ? t('التبديل إلى الوضع الفاتح') : t('التبديل إلى الوضع الداكن')}
+            id="theme-toggle-admin"
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+          </button>
+        </div>
       </div>
 
       <motion.div
@@ -110,12 +120,12 @@ export default function AdminLoginPage() {
                 {t('البريد الإلكتروني للإدارة')}
               </label>
               <div className="relative">
-                <Mail className="absolute top-1/2 -translate-y-1/2 right-3.5 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <Mail className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'right-3.5' : 'left-3.5'} w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none`} />
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full pr-10 pl-4 py-3 bg-white dark:bg-[#0a0d14] border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#9e1b1b]/30 focus:border-[#9e1b1b] text-sm transition-all"
+                  className={`w-full ${isRtl ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-3 bg-white dark:bg-[#0a0d14] border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#9e1b1b]/30 focus:border-[#9e1b1b] text-sm transition-all`}
                   placeholder="admin@ox-digital.edu"
                   required
                   autoComplete="email"
@@ -128,12 +138,12 @@ export default function AdminLoginPage() {
                 {t('كلمة المرور')}
               </label>
               <div className="relative">
-                <Lock className="absolute top-1/2 -translate-y-1/2 right-3.5 w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <Lock className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'right-3.5' : 'left-3.5'} w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none`} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full pr-10 pl-11 py-3 bg-white dark:bg-[#0a0d14] border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#9e1b1b]/30 focus:border-[#9e1b1b] text-sm transition-all"
+                  className={`w-full ${isRtl ? 'pr-10 pl-11' : 'pl-10 pr-11'} py-3 bg-white dark:bg-[#0a0d14] border border-slate-300 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#9e1b1b]/30 focus:border-[#9e1b1b] text-sm transition-all`}
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
@@ -141,8 +151,8 @@ export default function AdminLoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute top-1/2 -translate-y-1/2 left-3.5 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer"
-                  aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                  className={`absolute top-1/2 -translate-y-1/2 ${isRtl ? 'left-3.5' : 'right-3.5'} text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer`}
+                  aria-label={showPassword ? t('إخفاء كلمة المرور') : t('إظهار كلمة المرور')}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -181,7 +191,7 @@ export default function AdminLoginPage() {
               onClick={() => navigate('/login')}
               className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer py-1"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
+              <BackArrow className="w-3.5 h-3.5" />
               <span>{t('العودة لصفحة تسجيل الدخول الرئيسية')}</span>
             </button>
           </div>

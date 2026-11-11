@@ -24,7 +24,14 @@ const PORT = process.env.PORT || 4002;
 app.use(helmet());
 const corsOptions = createCorsOptions();
 app.use(cors(corsOptions));
-app.use(express.json());
+// Bounded route-specific body parser for avatar uploads (6MB ceiling for max 2MB binary payload plus base64/JSON overhead)
+app.use([
+  '/api/account/profile-picture',
+  '/api/users/account/profile-picture',
+  '/api/users/profile-picture',
+  '/api/profile-picture'
+], express.json({ limit: '6mb' }));
+app.use(express.json({ limit: '100kb' }));
 app.use(userRateLimiter);
 
 app.get('/health', (_req: Request, res: Response) => {

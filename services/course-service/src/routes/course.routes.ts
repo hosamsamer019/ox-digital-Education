@@ -13,6 +13,7 @@ import {
   getLessons,
   getLessonDetails,
   deleteCourse,
+  restoreCourse,
   deleteLesson,
   updateVideoProgress,
   getVideoAnalytics,
@@ -52,7 +53,8 @@ router.post('/lessons', verifyToken, checkRole(['teacher', 'admin']), createLess
 router.put('/lessons/:id', verifyToken, checkRole(['teacher', 'admin']), updateLesson);
 router.get('/uploads', verifyToken, checkRole(['teacher', 'admin']), getUploads);
 
-router.delete('/:id', verifyToken, checkRole(['admin']), deleteCourse);
+router.delete('/:id', verifyToken, checkRole(['teacher', 'admin']), deleteCourse);
+router.post('/:id/restore', verifyToken, checkRole(['teacher', 'admin']), restoreCourse);
 router.delete('/lessons/:id', verifyToken, checkRole(['teacher', 'admin']), deleteLesson);
 
 // Video Progress Routes

@@ -1,6 +1,6 @@
 import { useLanguage, t } from '../../contexts/LanguageContext';
 import { useEffect, useState } from 'react';
-import { Plus, Play, Edit, Trash2, Eye, Upload, Youtube, Clock, Users, Star, BookOpen, Database, CheckCircle, AlertTriangle, X, Loader2 } from 'lucide-react';
+import { Plus, Play, Edit, Trash2, Eye, Upload, Youtube, Clock, Users, Star, BookOpen, Database, CheckCircle, AlertTriangle, X, Loader2, RotateCcw, Archive } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { courseService } from '../../services/course.service';
 import { homeworkService } from '../../services/homework.service';
@@ -59,6 +59,12 @@ export default function TeacherCoursesPage() {
   const [showAddCourse, setShowAddCourse] = useState(false);
   const [showEditCourse, setShowEditCourse] = useState(false);
   const [editingCourse, setEditingCourse] = useState<any>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
   const [showAddVideo, setShowAddVideo] = useState(false);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'courses' | 'videos'>('courses');
@@ -77,15 +83,27 @@ export default function TeacherCoursesPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successDetails, setSuccessDetails] = useState({ title: '', source: '', isEdit: false });
 
-  useEffect(() => {
-    fetchCourses();
-  }, []);
+  const [courseLifecycleFilter, setCourseLifecycleFilter] = useState<'ACTIVE' | 'ARCHIVED' | 'ALL'>('ACTIVE');
 
-  const fetchCourses = async () => {
+  useEffect(() => {
+    fetchCourses(courseLifecycleFilter);
+  }, [courseLifecycleFilter]);
+
+  const fetchCourses = async (statusFilter: 'ACTIVE' | 'ARCHIVED' | 'ALL' = courseLifecycleFilter) => {
     try {
       setLoading(true);
       setError(null);
-      const res = await courseService.getCourses();
+      const params: any = { limit: 100 };
+      if (statusFilter === 'ARCHIVED') {
+        params.status = 'ARCHIVED';
+      } else if (statusFilter === 'ACTIVE') {
+        params.status = 'ALL';
+        params.includeArchived = false;
+      } else if (statusFilter === 'ALL') {
+        params.status = 'ALL';
+        params.includeArchived = true;
+      }
+      const res = await courseService.getCourses(params);
       const data = res.data.data ? res.data.data : Array.isArray(res.data) ? res.data : [];
       if (data && data.length > 0) {
         const mapped = data.map((c: any) => ({
@@ -97,6 +115,7 @@ export default function TeacherCoursesPage() {
           rating: c.rating || 5.0,
           progress: 0,
           status: c.status || 'مفعّل',
+          isArchived: c.status === 'ARCHIVED' || Boolean(c.deletedAt),
           level: c.level || 'ثانوي',
           thumbnail: c.thumbnail || '📚',
           color: c.color || 'from-indigo-500 to-blue-600',
@@ -200,13 +219,50 @@ export default function TeacherCoursesPage() {
   };
 
   const handleDeleteCourse = async (id: string) => {
-    if(confirm(t('هل أنت متأكد من الحذف؟'))) {
-      try {
-        await courseService.deleteCourse(id);
-        setCourses(c => c.filter(x => x.id !== id));
-      } catch(err) {
-        console.error('Delete failed', err);
+    const isConfirmed = window.confirm(
+      t('هل أنت متأكد من أرشفة هذه الدورة؟ سيتم أرشفة الدورة بأمان مع الحفاظ التام على سجلات الطلاب المشتركين والدروس والامتحانات، ويمكنك استعادتها كمسودة في أي وقت.')
+    );
+    if (!isConfirmed) return;
+
+    try {
+      const res = await courseService.deleteCourse(id);
+      fetchCourses(courseLifecycleFilter);
+      const successMsg = res.data?.message || t('تمت أرشفة الدورة بنجاح');
+      showToast(successMsg, 'success');
+    } catch (err: any) {
+      console.error('Archive failed', err);
+      let errorMsg = t('فشل في أرشفة الدورة');
+      if (err.response?.status === 403) {
+        errorMsg = err.response?.data?.message || t('غير مصرح لك بأرشفة هذه الدورة');
+      } else if (err.response?.status === 404) {
+        errorMsg = t('الدورة غير موجودة أو تم حذفها بالفعل');
+      } else if (err.response?.data?.message) {
+        errorMsg = err.response.data.message;
       }
+      showToast(errorMsg, 'error');
+    }
+  };
+
+  const handleRestoreCourse = async (id: string) => {
+    const isConfirmed = window.confirm(
+      t('هل أنت متأكد من استعادة هذه الدورة؟ سيتم استعادتها كمسودة (DRAFT) لتتمكن من مراجعتها قبل نشرها للطلاب.')
+    );
+    if (!isConfirmed) return;
+
+    try {
+      const res = await courseService.restoreCourse(id);
+      fetchCourses(courseLifecycleFilter);
+      const successMsg = res.data?.message || t('تمت استعادة الدورة بنجاح كمسودة');
+      showToast(successMsg, 'success');
+    } catch (err: any) {
+      console.error('Restore failed', err);
+      let errorMsg = t('فشل في استعادة الدورة');
+      if (err.response?.status === 403) {
+        errorMsg = err.response?.data?.message || t('غير مصرح لك باستعادة هذه الدورة');
+      } else if (err.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      }
+      showToast(errorMsg, 'error');
     }
   };
 
@@ -348,7 +404,12 @@ export default function TeacherCoursesPage() {
   const textSecondary = isDark ? 'text-slate-400' : 'text-slate-500';
 
   return (
-    <div className={`p-6 lg:p-8 ${isDark ? 'bg-[#090b10]' : 'bg-slate-50'} min-h-full font-['Cairo']`} dir="rtl">
+    <div className={`p-6 lg:p-8 ${isDark ? 'bg-[#090b10]' : 'bg-slate-50'} min-h-full font-['Cairo'] relative`} dir="rtl">
+      {toast && (
+        <div className={`fixed top-5 right-5 z-[100] px-5 py-3 rounded-xl shadow-2xl text-white font-medium flex items-center gap-2 animate-fade-in ${toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}>
+          <span>{toast.message}</span>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className={`text-2xl font-bold ${textPrimary}`}>{t('الدورات والمحتوى')}</h1>
@@ -379,21 +440,45 @@ export default function TeacherCoursesPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className={`flex gap-2 mb-6 ${cardBg} border rounded-xl p-1.5 w-fit shadow-sm`}>
-        {[{ key: 'courses', label: 'الدورات' }, { key: 'videos', label: 'مكتبة الفيديوهات' }].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as 'courses' | 'videos')}
-            className={`px-5 py-2 rounded-lg text-sm font-bold transition-colors ${
-              activeTab === tab.key
-                ? 'bg-[#9e1b1b] text-white shadow-sm'
-                : `${textSecondary} hover:${isDark ? 'text-white' : 'text-slate-900'}`
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Tabs & Lifecycle Filter */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className={`flex gap-2 ${cardBg} border rounded-xl p-1.5 w-fit shadow-sm`}>
+          {[{ key: 'courses', label: 'الدورات' }, { key: 'videos', label: 'مكتبة الفيديوهات' }].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as 'courses' | 'videos')}
+              className={`px-5 py-2 rounded-lg text-sm font-bold transition-colors ${
+                activeTab === tab.key
+                  ? 'bg-[#9e1b1b] text-white shadow-sm'
+                  : `${textSecondary} hover:${isDark ? 'text-white' : 'text-slate-900'}`
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'courses' && (
+          <div className={`flex items-center gap-1.5 ${cardBg} border rounded-xl p-1.5 shadow-sm`}>
+            {[
+              { key: 'ACTIVE', label: t('الدورات النشطة') },
+              { key: 'ARCHIVED', label: t('الدورات المؤرشفة') },
+              { key: 'ALL', label: t('الكل') }
+            ].map(filter => (
+              <button
+                key={filter.key}
+                onClick={() => setCourseLifecycleFilter(filter.key as any)}
+                className={`px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all ${
+                  courseLifecycleFilter === filter.key
+                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm'
+                    : `${textSecondary} hover:bg-slate-100 dark:hover:bg-slate-800`
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Stats */}
@@ -439,10 +524,12 @@ export default function TeacherCoursesPage() {
                       <h3 className="text-xl font-bold text-white mt-3">{course.title}</h3>
                       <p className="text-white/70 text-sm mt-1">{course.level}</p>
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                      course.status === 'مفعّل' ? 'bg-green-400/20 text-green-100' : 'bg-gray-400/20 text-gray-100'
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                      course.isArchived
+                        ? 'bg-amber-500/20 text-amber-200 border border-amber-400/30'
+                        : course.status === 'مفعّل' || course.status === 'PUBLISHED' ? 'bg-green-400/20 text-green-100' : 'bg-gray-400/20 text-gray-100'
                     }`}>
-                      {course.status}
+                      {course.isArchived ? t('مؤرشفة') : course.status}
                     </span>
                   </div>
                 </div>
@@ -490,9 +577,27 @@ export default function TeacherCoursesPage() {
                     >
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDeleteCourse(course.id)} className="p-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {course.isArchived ? (
+                      <button 
+                        onClick={() => handleRestoreCourse(course.id)} 
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all font-medium text-xs sm:text-sm"
+                        title={t('استعادة الدورة كمسودة')}
+                        aria-label={t('استعادة الدورة')}
+                      >
+                        <RotateCcw className="w-4 h-4 shrink-0" />
+                        <span className="hidden md:inline">{t('استعادة الدورة')}</span>
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => handleDeleteCourse(course.id)} 
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all font-medium text-xs sm:text-sm"
+                        title={t('أرشفة الدورة')}
+                        aria-label={t('أرشفة الدورة')}
+                      >
+                        <Trash2 className="w-4 h-4 shrink-0" />
+                        <span className="hidden md:inline">{t('أرشفة الدورة')}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

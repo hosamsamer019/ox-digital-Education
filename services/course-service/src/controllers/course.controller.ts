@@ -17,8 +17,9 @@ const courseCreateSchema = z.object({
   description: z.string().optional(),
   category: z.string().optional(),
   price: z.number().min(0).optional().default(0),
-  status: z.enum(['DRAFT', 'PUBLISHED']).optional().default('PUBLISHED'),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional().default('PUBLISHED'),
   teacherId: z.string().uuid().optional(),
+  branchId: z.string().uuid().optional().nullable(),
   academicLevel: z.enum(['PREP_1', 'PREP_2', 'PREP_3', 'SEC_1', 'SEC_2', 'SEC_3']).optional().nullable(),
   country: z.string().optional().nullable(),
   educationLevel: z.string().optional().nullable(),
@@ -30,13 +31,53 @@ const courseUpdateSchema = z.object({
   description: z.string().optional(),
   category: z.string().optional(),
   price: z.number().min(0).optional(),
-  status: z.enum(['DRAFT', 'PUBLISHED']).optional(),
+  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
   teacherId: z.string().uuid().optional(),
+  branchId: z.string().uuid().optional().nullable(),
   academicLevel: z.enum(['PREP_1', 'PREP_2', 'PREP_3', 'SEC_1', 'SEC_2', 'SEC_3']).optional().nullable(),
   country: z.string().optional().nullable(),
   educationLevel: z.string().optional().nullable(),
   gradeLevel: z.string().optional().nullable()
 });
+
+export const getRequesterInfo = (req: AuthRequest) => {
+  const role = (req.user?.role || '').toUpperCase();
+  const userId = req.user?.userId || (req.user as any)?.id;
+  const isManagerOrAdmin =
+    role === 'ADMIN' ||
+    role === 'PRIMARY_MANAGER' ||
+    Boolean((req.user as any)?.isPrimaryManager);
+  return { role, userId, isManagerOrAdmin };
+};
+
+export const getAuthorizedInstitutionId = (req: AuthRequest): string | null => {
+  const raw = (req as any).tenantContext?.institutionId ?? (req.user as any)?.institutionId ?? null;
+  if (typeof raw !== 'string') return null;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
+
+/**
+ * Authoritative branch ownership validation.
+ * Ensures a branch exists, is not soft-deleted, and strictly belongs to the authoritative institution.
+ */
+export async function validateBranchOwnership(
+  branchId: string,
+  institutionId: string | null | undefined
+): Promise<boolean> {
+  if (!branchId || !institutionId) {
+    return false;
+  }
+  const branch = await db.branch.findFirst({
+    where: {
+      id: branchId,
+      institutionId,
+      deletedAt: null
+    },
+    select: { id: true, institutionId: true }
+  });
+  return Boolean(branch);
+}
 
 const lessonCreateSchema = z.object({
   title: z.string().min(3, 'Title is too short'),
@@ -71,20 +112,68 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
     const skip = (page - 1) * limit;
 
     let whereClause: any = {};
-    const requesterRole = (req.user?.role || '').toUpperCase();
-    const requesterId = req.user?.userId;
+    const { role: requesterRole, userId: requesterId, isManagerOrAdmin } = getRequesterInfo(req);
     const isStudent = requesterRole === 'ONLINE_STUDENT' || requesterRole === 'CENTER_STUDENT';
 
+    // Authoritative server-side tenant isolation: scope courses strictly to authenticated institution
+    const institutionId = getAuthorizedInstitutionId(req);
+
     if (requesterRole === 'TEACHER') {
-      whereClause = { teacherId: requesterId };
+      whereClause.teacherId = requesterId;
+      if (institutionId) {
+        whereClause.OR = [
+          { institutionId },
+          { institutionId: null, teacherId: requesterId }
+        ];
+      } else {
+        whereClause.institutionId = null;
+      }
     } else if (isStudent) {
-      whereClause = { enrollments: { some: { studentId: requesterId } } };
+      if (!institutionId) {
+        return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
+      }
+      whereClause.enrollments = { some: { studentId: requesterId } };
+      whereClause.institutionId = institutionId;
+    } else {
+      // MANAGER / ADMIN: Scope strictly to manager's institution (stable historical ownership).
+      // Clean application-level fail-closed guard: if manager has no institution context, return empty set immediately.
+      if (!institutionId) {
+        return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
+      }
+      whereClause.institutionId = institutionId;
     }
 
-    // Tenant Isolation (OD-701): Scope courses to authenticated institution
-    const tenantContext = (req as any).tenantContext;
-    if (tenantContext && !tenantContext.isPlatformSuperAdmin && tenantContext.institutionId) {
-      whereClause.institutionId = tenantContext.institutionId;
+    // Status filter handling
+    const statusQuery = (req.query.status as string || '').toUpperCase();
+    if (statusQuery === 'ARCHIVED') {
+      whereClause.status = 'ARCHIVED';
+    } else if (statusQuery === 'PUBLISHED' || statusQuery === 'DRAFT') {
+      whereClause.status = statusQuery;
+      whereClause.deletedAt = null;
+    } else if (statusQuery === 'ALL' || req.query.includeArchived === 'true') {
+      // Show all including archived
+    } else {
+      // Default: exclude archived/deleted courses from active platform views
+      whereClause.deletedAt = null;
+      whereClause.status = { not: 'ARCHIVED' };
+    }
+
+    // Case-insensitive search filter by title
+    if (typeof req.query.search === 'string' && req.query.search.trim().length > 0) {
+      whereClause.title = {
+        contains: req.query.search.trim(),
+        mode: 'insensitive'
+      };
+    }
+
+    // Teacher filter for managers
+    if (isManagerOrAdmin && typeof req.query.teacherId === 'string' && req.query.teacherId.trim().length > 0) {
+      whereClause.teacherId = req.query.teacherId.trim();
+    }
+
+    // Branch filter
+    if (typeof req.query.branchId === 'string' && req.query.branchId.trim().length > 0) {
+      whereClause.branchId = req.query.branchId.trim();
     }
     
     const courses = await db.course.findMany({
@@ -107,7 +196,7 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
             } : false
           }
         },
-        teacher: { select: { id: true, name: true, email: true } },
+        teacher: { select: { id: true, name: true, email: true, institutionId: true, branchId: true } },
         _count: {
           select: { enrollments: true, lessons: true, exams: true, homeworks: true }
         }
@@ -170,10 +259,17 @@ export const getAvailableCourses = async (req: AuthRequest, res: Response) => {
 
     const whereClause: any = {
       status: 'PUBLISHED',
+      deletedAt: null,
       enrollments: {
         none: { studentId }
       }
     };
+
+    const institutionId = getAuthorizedInstitutionId(req);
+    if (!institutionId) {
+      return res.json([]);
+    }
+    whereClause.institutionId = institutionId;
 
     const orConditions: any[] = [];
     
@@ -254,7 +350,13 @@ export const enrollCourse = async (req: AuthRequest, res: Response) => {
 
     const course = await db.course.findUnique({ where: { id: courseId } });
     if (!course) return res.status(404).json({ message: 'Course not found' });
-    if (course.status !== 'PUBLISHED') return res.status(403).json({ message: 'Course is not published' });
+    if (course.status !== 'PUBLISHED' || course.deletedAt !== null) return res.status(403).json({ message: 'Course is not published or has been archived' });
+
+    // Fail-closed Tenant Isolation Guard (matches checkUserEnrollment)
+    const institutionId = getAuthorizedInstitutionId(req);
+    if (!institutionId || !course.institutionId || course.institutionId !== institutionId) {
+      return res.status(403).json({ message: 'Forbidden: Cannot enroll in course outside your institution' });
+    }
 
     if (student.country && student.educationLevel && student.gradeLevel && course.country && course.educationLevel && course.gradeLevel) {
       if (student.country !== course.country || student.educationLevel !== course.educationLevel || student.gradeLevel !== course.gradeLevel) {
@@ -494,17 +596,38 @@ export const getStudentVideoAnalytics = async (req: AuthRequest, res: Response) 
 export const getLessons = async (req: AuthRequest, res: Response) => {
   try {
     let whereClause: any = {};
-    const requesterRole = (req.user?.role || '').toUpperCase();
-    
-    if (requesterRole === 'TEACHER') {
-      whereClause = { course: { teacherId: req.user?.userId } };
-    } else if (requesterRole === 'ONLINE_STUDENT' || requesterRole === 'CENTER_STUDENT') {
-      whereClause = { course: { enrollments: { some: { studentId: req.user?.userId } } } };
-    }
+    const { role: requesterRole, userId: requesterId } = getRequesterInfo(req);
+    const isStudent = requesterRole === 'ONLINE_STUDENT' || requesterRole === 'CENTER_STUDENT';
+    const institutionId = getAuthorizedInstitutionId(req);
 
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 10));
     const skip = (page - 1) * limit;
+
+    if (requesterRole === 'TEACHER') {
+      whereClause.course = { teacherId: requesterId };
+      if (institutionId) {
+        whereClause.course.OR = [
+          { institutionId },
+          { institutionId: null, teacherId: requesterId }
+        ];
+      } else {
+        whereClause.course.institutionId = null;
+      }
+    } else if (isStudent) {
+      if (!institutionId) {
+        return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
+      }
+      whereClause.course = {
+        enrollments: { some: { studentId: requesterId } },
+        institutionId
+      };
+    } else {
+      if (!institutionId) {
+        return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
+      }
+      whereClause.course = { institutionId };
+    }
 
     const lessons = await db.lesson.findMany({
       where: whereClause,
@@ -614,13 +737,35 @@ export const getCourseDetails = async (req: AuthRequest, res: Response) => {
             } : true
           }
         },
-        teacher: { select: { id: true, name: true, email: true } },
+        teacher: { select: { id: true, name: true, email: true, institutionId: true, branchId: true } },
         _count: {
           select: { lessons: true, enrollments: true, exams: true, homeworks: true }
         }
       }
     });
     if (!course) return res.status(404).json({ message: 'Course not found' });
+
+    // Fail-closed Tenant Isolation Guard (no email or super-admin bypasses)
+    const institutionId = getAuthorizedInstitutionId(req);
+
+    if (course.institutionId) {
+      if (!institutionId || course.institutionId !== institutionId) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    } else {
+      // Legacy unscoped course (institutionId is null):
+      // Fail closed for managers (historical ownership stability: teacher transfers never transfer legacy course ownership).
+      // Only the verified creator teacher can access their unmigrated legacy course.
+      const isOwnerTeacher = requesterRole === 'TEACHER' && course.teacherId === requesterId;
+      if (!isOwnerTeacher) {
+        return res.status(403).json({ message: 'Forbidden: Unscoped legacy course is only accessible by verified creator teacher' });
+      }
+    }
+
+    // Role-specific check: non-owner teachers cannot view unpublished courses
+    if (requesterRole === 'TEACHER' && course.teacherId !== requesterId && course.status !== 'PUBLISHED') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
 
     // Auth check (Admins and course owner teachers can view without enrollment)
     if (isStudent) {
@@ -751,22 +896,56 @@ export const getStudentCourseStats = async (req: AuthRequest, res: Response) => 
 export const createCourse = async (req: AuthRequest, res: Response) => {
   try {
     const data = courseCreateSchema.parse(req.body);
-    const requesterRole = (req.user?.role || '').toUpperCase();
+    const { role: requesterRole, userId: requesterId, isManagerOrAdmin } = getRequesterInfo(req);
     
-    let teacherId = req.user?.userId;
-    if (requesterRole === 'ADMIN' && data.teacherId) {
+    if (!requesterId) return res.status(401).json({ message: 'Unauthorized' });
+
+    let teacherId = requesterId;
+    if (isManagerOrAdmin && data.teacherId) {
       teacherId = data.teacherId;
     }
 
-    if (!teacherId) return res.status(401).json({ message: 'Unauthorized' });
-
     // Explicit teacher existence/role validation
-    const teacher = await db.user.findUnique({ where: { id: teacherId } });
+    const teacher = await db.user.findUnique({
+      where: { id: teacherId },
+      select: { id: true, role: true, institutionId: true, branchId: true }
+    });
     if (!teacher) {
       return res.status(400).json({ message: 'المعلم غير موجود' }); // Teacher not found
     }
-    if (teacher.role !== 'TEACHER' && teacher.role !== 'ADMIN') {
+    if (teacher.role !== 'TEACHER' && teacher.role !== 'ADMIN' && teacher.role !== 'PRIMARY_MANAGER') {
       return res.status(403).json({ message: 'المستخدم ليس معلماً' }); // User is not a teacher
+    }
+
+    const tenantContext = (req as any).tenantContext;
+    const authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+
+    // Cross-tenant validation: If manager is assigning a teacher, teacher must belong to the same institution
+    if (isManagerOrAdmin) {
+      if (!authoritativeInstitutionId) {
+        return res.status(403).json({ message: 'Forbidden: Manager must belong to an institution' });
+      }
+      if (!teacher.institutionId || teacher.institutionId !== authoritativeInstitutionId) {
+        return res.status(403).json({ message: 'Forbidden: Cannot create course for teacher from another institution or without institution assignment' });
+      }
+    }
+
+    // Fail closed if teacher is attempting to create course outside their assigned institution
+    if (!isManagerOrAdmin && authoritativeInstitutionId && teacher.institutionId && authoritativeInstitutionId !== teacher.institutionId) {
+      return res.status(403).json({ message: 'Forbidden: Cannot create course outside your assigned institution' });
+    }
+
+    // Inherit verified institution:
+    // If teacher has assigned institution, course MUST inherit it so it never gets orphaned.
+    const institutionId = authoritativeInstitutionId || tenantContext?.institutionId || teacher.institutionId || null;
+    const branchId = (isManagerOrAdmin && data.branchId) ? data.branchId : (tenantContext?.branchId || teacher.branchId || null);
+
+    // Branch Ownership Validation (Phase B)
+    if (branchId) {
+      const isBranchValid = await validateBranchOwnership(branchId, institutionId);
+      if (!isBranchValid) {
+        return res.status(400).json({ message: 'الفرع المحدد غير تابع لهذه المؤسسة أو غير متاح' });
+      }
     }
 
     const course = await db.course.create({
@@ -777,13 +956,14 @@ export const createCourse = async (req: AuthRequest, res: Response) => {
         price: data.price,
         status: data.status,
         teacherId,
+        institutionId,
+        branchId,
         academicLevel: data.academicLevel as any,
         country: (data.country || null) as any,
         educationLevel: (data.educationLevel || null) as any,
         gradeLevel: (data.gradeLevel || null) as any
       }
     });
-    io.emit('course_created', course);
     res.status(201).json(course);
   } catch (error: any) {
     if (error instanceof z.ZodError) return res.status(400).json({ errors: error.errors });
@@ -798,24 +978,62 @@ export const updateCourse = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const data = courseUpdateSchema.parse(req.body);
-    const requesterRole = (req.user?.role || '').toUpperCase();
-    const requesterId = req.user?.userId;
+    const { role: requesterRole, userId: requesterId, isManagerOrAdmin } = getRequesterInfo(req);
 
-    const course = await db.course.findUnique({ where: { id } });
+    const course = await db.course.findUnique({
+      where: { id },
+      include: {
+        teacher: { select: { id: true, name: true, institutionId: true, branchId: true } }
+      }
+    });
     if (!course) return res.status(404).json({ message: 'Course not found' });
 
-    if (requesterRole !== 'ADMIN' && course.teacherId !== requesterId) {
+    // Fail-closed Tenant Isolation Guard
+    const tenantContext = (req as any).tenantContext;
+    const authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+    if (course.institutionId) {
+      if (!authoritativeInstitutionId || course.institutionId !== authoritativeInstitutionId) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    } else {
+      // Legacy unscoped course: only creator teacher
+      const isOwnerTeacher = requesterRole === 'TEACHER' && course.teacherId === requesterId;
+      if (!isOwnerTeacher) {
+        return res.status(403).json({ message: 'Forbidden: Unscoped legacy course is only modifiable by creator teacher' });
+      }
+    }
+
+    if (!isManagerOrAdmin && course.teacherId !== requesterId) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    if (requesterRole === 'ADMIN' && data.teacherId) {
+    if (isManagerOrAdmin && data.teacherId) {
       const teacher = await db.user.findUnique({ where: { id: data.teacherId } });
       if (!teacher) {
         return res.status(400).json({ message: 'المعلم غير موجود' });
       }
-      if (teacher.role !== 'TEACHER' && teacher.role !== 'ADMIN') {
+      if (teacher.role !== 'TEACHER' && teacher.role !== 'ADMIN' && teacher.role !== 'PRIMARY_MANAGER') {
         return res.status(403).json({ message: 'المستخدم ليس معلماً' });
       }
+      if (!authoritativeInstitutionId) {
+        return res.status(403).json({ message: 'Forbidden: Manager must belong to an institution' });
+      }
+      if (!teacher.institutionId || teacher.institutionId !== authoritativeInstitutionId) {
+        return res.status(403).json({ message: 'Forbidden: Cannot assign teacher from another institution or without institution assignment' });
+      }
+    }
+
+    // Branch Ownership Validation on Update (Phase C)
+    if (isManagerOrAdmin && data.branchId !== undefined) {
+      if (data.branchId !== null) {
+        // Authoritative institution for this course and tenant context
+        const branchValidationInstId = authoritativeInstitutionId || course.institutionId || null;
+        const isBranchValid = await validateBranchOwnership(data.branchId, branchValidationInstId);
+        if (!isBranchValid) {
+          return res.status(400).json({ message: 'الفرع المحدد غير تابع لهذه المؤسسة أو غير متاح' });
+        }
+      }
+      // If data.branchId === null: legitimate explicit branch removal, allowed without branch lookup
     }
 
     const updatedCourse = await db.course.update({
@@ -825,12 +1043,16 @@ export const updateCourse = async (req: AuthRequest, res: Response) => {
         ...(data.description !== undefined && { description: data.description }),
         ...(data.category !== undefined && { category: data.category }),
         ...(data.price !== undefined && { price: data.price }),
-        ...(data.status !== undefined && { status: data.status }),
+        ...(data.status !== undefined && {
+          status: data.status,
+          deletedAt: data.status === 'ARCHIVED' ? new Date() : null
+        }),
         ...(data.academicLevel !== undefined && { academicLevel: data.academicLevel as any }),
         ...(data.country !== undefined && { country: data.country as any }),
         ...(data.educationLevel !== undefined && { educationLevel: data.educationLevel as any }),
         ...(data.gradeLevel !== undefined && { gradeLevel: data.gradeLevel as any }),
-        ...(requesterRole === 'ADMIN' && data.teacherId && { teacherId: data.teacherId })
+        ...(isManagerOrAdmin && data.branchId !== undefined && { branchId: data.branchId }),
+        ...(isManagerOrAdmin && data.teacherId && { teacherId: data.teacherId })
       }
     });
 
@@ -857,8 +1079,17 @@ export const createLesson = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    const requesterRole = (req.user?.role || '').toUpperCase();
-    if (requesterRole !== 'ADMIN' && course.teacherId !== req.user?.userId) {
+    const { role: requesterRole, userId: requesterId, isManagerOrAdmin } = getRequesterInfo(req);
+    const authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+    if (course.institutionId) {
+      if (!authoritativeInstitutionId || course.institutionId !== authoritativeInstitutionId) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    } else if (isManagerOrAdmin || course.teacherId !== requesterId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    if (!isManagerOrAdmin && course.teacherId !== requesterId) {
       return res.status(403).json({ message: 'Forbidden: You do not own this course' });
     }
 
@@ -913,15 +1144,23 @@ export const updateLesson = async (req: AuthRequest, res: Response) => {
     
     const lesson = await db.lesson.findUnique({
       where: { id },
-      select: { id: true, courseId: true, videoUrl: true, course: { select: { teacherId: true } } }
+      select: { id: true, courseId: true, videoUrl: true, course: { select: { teacherId: true, institutionId: true } } }
     });
 
     if (!lesson) {
       return res.status(404).json({ message: 'Lesson not found' });
     }
 
-    const requesterRole = (req.user?.role || '').toUpperCase();
-    if (requesterRole !== 'ADMIN' && lesson.course.teacherId !== req.user?.userId) {
+    const { role: requesterRole, userId: requesterId, isManagerOrAdmin } = getRequesterInfo(req);
+    const authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+    if (lesson.course?.institutionId) {
+      if (!authoritativeInstitutionId || lesson.course.institutionId !== authoritativeInstitutionId) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    } else if (isManagerOrAdmin || lesson.course?.teacherId !== requesterId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    if (!isManagerOrAdmin && lesson.course?.teacherId !== requesterId) {
       return res.status(403).json({ message: 'Forbidden: You do not own this lesson' });
     }
 
@@ -1001,37 +1240,144 @@ export const updateLesson = async (req: AuthRequest, res: Response) => {
 export const deleteCourse = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const requesterRole = (req.user?.role || '').toUpperCase();
-    const requesterId = req.user?.userId;
+    const { role: requesterRole, userId: requesterId, isManagerOrAdmin } = getRequesterInfo(req);
 
-    const course = await db.course.findUnique({ where: { id } });
-    if (!course) return res.status(404).json({ message: 'Course not found' });
+    const course = await db.course.findUnique({
+      where: { id },
+      include: {
+        teacher: { select: { id: true, name: true, institutionId: true, branchId: true } },
+        _count: {
+          select: { enrollments: true, lessons: true, exams: true, homeworks: true, assessments: true }
+        }
+      }
+    });
+    if (!course) return res.status(404).json({ message: 'الدورة غير موجودة أو تم حذفها بالفعل' });
 
-    if (requesterRole !== 'ADMIN' && course.teacherId !== requesterId) {
-      return res.status(403).json({ message: 'Forbidden' });
+    const authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+    if (course.institutionId) {
+      if (!authoritativeInstitutionId || course.institutionId !== authoritativeInstitutionId) {
+        return res.status(403).json({ message: 'غير مصرح لك بإدارة دورات تابعة لمؤسسة أخرى' });
+      }
+    } else {
+      // Legacy unscoped course: only creator teacher
+      if (course.teacherId !== requesterId) {
+        return res.status(403).json({ message: 'غير مصرح لك بإدارة هذه الدورة' });
+      }
     }
 
-    await db.course.delete({ where: { id } });
+    if (!isManagerOrAdmin && course.teacherId !== requesterId) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف أو أرشفة دورة معلم آخر' });
+    }
+
+    const hasDependencies = (course._count?.enrollments || 0) > 0 ||
+      (course._count?.lessons || 0) > 0 ||
+      (course._count?.exams || 0) > 0 ||
+      (course._count?.homeworks || 0) > 0 ||
+      (course._count?.assessments || 0) > 0;
+
+    await db.course.update({
+      where: { id },
+      data: {
+        status: 'ARCHIVED',
+        deletedAt: new Date()
+      }
+    });
+
+    io.to(`course:${id}`).emit('course_archived', id);
     io.to(`course:${id}`).emit('course_deleted', id);
-    res.json({ message: 'Course deleted successfully' });
+
+    if (hasDependencies) {
+      return res.json({
+        message: 'تمت أرشفة الدورة بنجاح للحفاظ على سجلات الطلاب والدروس المرتبطة',
+        action: 'ARCHIVED'
+      });
+    }
+
+    res.json({
+      message: 'تمت أرشفة الدورة وحذفها بنجاح',
+      action: 'DELETED'
+    });
   } catch (error: any) {
-    res.status(500).json({ message: 'Error deleting course', error: error.message });
+    res.status(500).json({ message: 'حدث خطأ أثناء معالجة طلب حذف أو أرشفة الدورة' });
+  }
+};
+
+export const restoreCourse = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { role: requesterRole, userId: requesterId, isManagerOrAdmin } = getRequesterInfo(req);
+
+    const course = await db.course.findUnique({
+      where: { id },
+      include: {
+        teacher: { select: { id: true, name: true, institutionId: true, branchId: true } }
+      }
+    });
+    if (!course) return res.status(404).json({ message: 'الدورة غير موجودة' });
+
+    const authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+    if (course.institutionId) {
+      if (!authoritativeInstitutionId || course.institutionId !== authoritativeInstitutionId) {
+        return res.status(403).json({ message: 'غير مصرح لك بإدارة دورات تابعة لمؤسسة أخرى' });
+      }
+    } else {
+      // Legacy unscoped course: only creator teacher
+      if (course.teacherId !== requesterId) {
+        return res.status(403).json({ message: 'غير مصرح لك بإدارة هذه الدورة' });
+      }
+    }
+
+    if (!isManagerOrAdmin && course.teacherId !== requesterId) {
+      return res.status(403).json({ message: 'غير مصرح لك باستعادة دورة معلم آخر' });
+    }
+
+    if (course.status !== 'ARCHIVED' && !course.deletedAt) {
+      return res.status(400).json({ message: 'الدورة نشطة بالفعل وليست مؤرشفة' });
+    }
+
+    // Always restore safely to DRAFT so the teacher/manager reviews before publishing
+    const restoredCourse = await db.course.update({
+      where: { id },
+      data: {
+        status: 'DRAFT',
+        deletedAt: null
+      }
+    });
+
+    io.to(`course:${id}`).emit('course_restored', id);
+    io.emit('course_updated', { id, status: 'DRAFT' });
+
+    return res.json({
+      message: 'تمت استعادة الدورة بنجاح كمسودة. يمكنك مراجعتها وتفعيلها متى شئت.',
+      action: 'RESTORED',
+      course: restoredCourse
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: 'حدث خطأ أثناء معالجة طلب استعادة الدورة' });
   }
 };
 
 export const deleteLesson = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
-    const requesterRole = (req.user?.role || '').toUpperCase();
-    const requesterId = req.user?.userId;
+    const { role: requesterRole, userId: requesterId, isManagerOrAdmin } = getRequesterInfo(req);
 
     const lesson = await db.lesson.findUnique({
       where: { id },
-      select: { id: true, courseId: true, course: { select: { teacherId: true } } }
+      select: { id: true, courseId: true, course: { select: { teacherId: true, institutionId: true } } }
     });
     if (!lesson) return res.status(404).json({ message: 'Lesson not found' });
 
-    if (requesterRole !== 'ADMIN' && lesson.course.teacherId !== requesterId) {
+    const authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+    if (lesson.course?.institutionId) {
+      if (!authoritativeInstitutionId || lesson.course.institutionId !== authoritativeInstitutionId) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    } else if (isManagerOrAdmin || lesson.course?.teacherId !== requesterId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    if (!isManagerOrAdmin && lesson.course?.teacherId !== requesterId) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 
@@ -1133,7 +1479,8 @@ export const getVideoAnalytics = async (req: AuthRequest, res: Response) => {
             id: true,
             title: true,
             status: true,
-            teacherId: true
+            teacherId: true,
+            institutionId: true
           }
         }
       }
@@ -1141,6 +1488,15 @@ export const getVideoAnalytics = async (req: AuthRequest, res: Response) => {
 
     if (!lesson) {
       return res.status(404).json({ message: 'Lesson not found' });
+    }
+
+    const authoritativeInstitutionId = getAuthorizedInstitutionId(req);
+    if (lesson.course.institutionId) {
+      if (!authoritativeInstitutionId || lesson.course.institutionId !== authoritativeInstitutionId) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+    } else if (lesson.course.teacherId !== req.user?.userId) {
+      return res.status(403).json({ message: 'Forbidden' });
     }
 
     const requesterRole = (req.user?.role || '').toUpperCase();
@@ -1164,6 +1520,19 @@ export const submitLessonQuiz = async (req: AuthRequest, res: Response) => {
   try {
     const { id: lessonId, quizId } = req.params;
     const { answer } = req.body;
+
+    const lesson = await db.lesson.findUnique({
+      where: { id: lessonId },
+      select: { id: true, courseId: true }
+    });
+    if (!lesson) {
+      return res.status(404).json({ message: 'Lesson not found' });
+    }
+
+    const isEnrolled = await checkUserEnrollment(req.user, lesson.courseId);
+    if (!isEnrolled) {
+      return res.status(403).json({ message: 'Forbidden: You are not enrolled in this course' });
+    }
     
     const quiz = await db.lessonQuiz.findUnique({
       where: { id: quizId }
@@ -1204,10 +1573,16 @@ export const getUploads = async (req: AuthRequest, res: Response) => {
   try {
     const requesterRole = (req.user?.role || '').toUpperCase();
     const userId = req.user?.userId;
+    const institutionId = getAuthorizedInstitutionId(req);
     
     let whereClause: any = {};
-    if (requesterRole !== 'ADMIN') {
+    if (requesterRole !== 'ADMIN' && requesterRole !== 'PRIMARY_MANAGER') {
       whereClause = { userId };
+    } else {
+      if (!institutionId) {
+        return res.json([]);
+      }
+      whereClause = { user: { institutionId } };
     }
 
     const uploads = await db.videoUpload.findMany({
@@ -1388,9 +1763,12 @@ export const generateLessonVideoTicket = async (req: AuthRequest, res: Response)
       return res.status(403).json({ message: 'Not enrolled in this course' });
     }
 
+    const userId = req.user?.userId || (req.user as any)?.id;
     const ticket = generateVideoTicket({
-      userId: req.user!.userId,
+      userId,
       lessonId: id,
+      role: req.user?.role,
+      institutionId: (req.user as any)?.institutionId || (req as any).tenantContext?.institutionId,
       expiresInSeconds: 14400 // 4 hours viewing session
     });
 
@@ -1403,6 +1781,12 @@ export const generateLessonVideoTicket = async (req: AuthRequest, res: Response)
 export const streamLessonVideo = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+
+    // Explicit ticket lesson scope verification at media boundary
+    if ((req.user as any)?.purpose === 'video-stream' && (req.user as any).lessonId !== id) {
+      return res.status(403).json({ message: 'Forbidden: Ticket is not valid for this lesson' });
+    }
+
     const lesson = await db.lesson.findUnique({
       where: { id },
       select: { id: true, courseId: true, videoUrl: true }
@@ -1578,6 +1962,11 @@ export async function resolveLessonHlsMasterKey(
 export const streamLessonHls = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+
+    // Explicit ticket lesson scope verification at media boundary
+    if ((req.user as any)?.purpose === 'video-stream' && (req.user as any).lessonId !== id) {
+      return res.status(403).json({ message: 'Forbidden: Ticket is not valid for this lesson' });
+    }
 
     // Extract subpath after /lessons/:id/hls
     let subpath = (req.params as any)[0] || '';

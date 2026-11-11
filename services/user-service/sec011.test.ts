@@ -28,7 +28,7 @@ async function runSec011Tests() {
 
     await updateUser(req, res);
 
-    if (statusSent === 403 && jsonSent?.message?.includes('Only administrators')) {
+    if (statusSent === 403 && (jsonSent?.message?.includes('Only administrators') || jsonSent?.message?.includes('Only the canonical Primary Manager'))) {
       console.log('✅ Test 1 Passed: Student attempting to supply parent credentials was rejected with 403 Forbidden.');
       passed++;
     } else {

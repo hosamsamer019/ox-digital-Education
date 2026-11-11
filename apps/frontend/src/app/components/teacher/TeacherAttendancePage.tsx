@@ -8,7 +8,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { userService } from '../../services/user.service';
 import { courseService } from '../../services/course.service';
 
-type AttendanceStatus = 'PRESENT' | 'LATE' | 'ABSENT';
+type AttendanceStatus = 'PRESENT' | 'LATE' | 'ABSENT' | 'CANCELLED';
 
 interface StudentItem {
   id: string;
@@ -273,6 +273,7 @@ export default function TeacherAttendancePage() {
     let present = 0;
     let late = 0;
     let absent = 0;
+    let cancelled = 0;
     let unset = 0;
 
     for (const s of activeRoster) {
@@ -280,13 +281,14 @@ export default function TeacherAttendancePage() {
       if (st === 'PRESENT') present++;
       else if (st === 'LATE') late++;
       else if (st === 'ABSENT') absent++;
+      else if (st === 'CANCELLED') cancelled++;
       else unset++;
     }
 
-    const setTotal = present + late + absent;
+    const setTotal = present + late + absent + cancelled;
     const percentage = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
 
-    return { total, present, late, absent, unset, setTotal, percentage };
+    return { total, present, late, absent, cancelled, unset, setTotal, percentage };
   }, [activeRoster, attendanceMap]);
 
   // 6. Bulk Action Handlers
@@ -304,11 +306,25 @@ export default function TeacherAttendancePage() {
     setAttendanceMap({ ...originalMap });
   };
 
+  // Safe toggle/deselect handler: clicking active status unsets it to unrecorded
   const handleSingleStatusChange = (studentId: string, status: AttendanceStatus) => {
-    setAttendanceMap(prev => ({
-      ...prev,
-      [studentId]: status
-    }));
+    setAttendanceMap(prev => {
+      const next = { ...prev };
+      if (next[studentId] === status) {
+        delete next[studentId]; // Deselect / revert to unrecorded
+      } else {
+        next[studentId] = status;
+      }
+      return next;
+    });
+  };
+
+  const handleClearSingleStatus = (studentId: string) => {
+    setAttendanceMap(prev => {
+      const next = { ...prev };
+      delete next[studentId]; // Revert to unrecorded
+      return next;
+    });
   };
 
   // 7. Group Toggle Handlers
@@ -330,11 +346,11 @@ export default function TeacherAttendancePage() {
     }
   };
 
-  // 8. Bulk Save Handler
+  // 8. Bulk Save Handler (Supports Unsetting/Cancelling without deleting student enrollment)
   const handleSaveAttendance = async () => {
-    // Build payload of students with selected status from all selected groups (activeRoster)
-    const recordsToSave: Array<{ studentId: string; status: AttendanceStatus }> = [];
+    const recordsToSave: Array<{ studentId: string; status: AttendanceStatus | 'UNSET' }> = [];
 
+    // 1. Records currently marked in attendanceMap
     for (const student of activeRoster) {
       const status = attendanceMap[student.id];
       if (status) {
@@ -345,10 +361,20 @@ export default function TeacherAttendancePage() {
       }
     }
 
+    // 2. Previously recorded students who were deselected/cleared -> UNSET
+    for (const studentId of Object.keys(originalMap)) {
+      if (!attendanceMap[studentId]) {
+        recordsToSave.push({
+          studentId,
+          status: 'UNSET'
+        });
+      }
+    }
+
     if (recordsToSave.length === 0) {
       setFeedback({
         type: 'error',
-        message: 'لم يتم تحديد حالة الحضور لأي طالب. يرجى تحديد الحالات قبل الحفظ.'
+        message: 'لم يتم تحديد أي تغييرات في سجل الحضور.'
       });
       return;
     }
@@ -366,8 +392,8 @@ export default function TeacherAttendancePage() {
         setOriginalMap({ ...attendanceMap });
         setFeedback({
           type: 'success',
-          message: 'تم حفظ الحضور بنجاح!',
-          details: `حاضر: ${res.summary?.present ?? summary.present} | متأخر: ${res.summary?.late ?? summary.late} | غائب: ${res.summary?.absent ?? summary.absent}`
+          message: 'تم حفظ سجل الحضور وتصحيح الحالات بنجاح!',
+          details: `حاضر: ${res.summary?.present ?? summary.present} | متأخر: ${res.summary?.late ?? summary.late} | غائب: ${res.summary?.absent ?? summary.absent} | ملغي: ${res.summary?.cancelled ?? summary.cancelled} | غير مسجل: ${summary.unset}`
         });
       }
     } catch (err: any) {
@@ -756,11 +782,11 @@ export default function TeacherAttendancePage() {
                         {t(student.gradeLevel || 'غير محدد')}
                       </td>
                       <td className="py-4 px-6">
-                        <div className="flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-750 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-center gap-1.5 bg-gray-100 dark:bg-gray-750 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
                           <button
                             type="button"
                             onClick={() => handleSingleStatusChange(student.id, 'PRESENT')}
-                            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
                               currentStatus === 'PRESENT'
                                 ? 'bg-green-600 text-white shadow-sm'
                                 : 'text-gray-600 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400'
@@ -773,7 +799,7 @@ export default function TeacherAttendancePage() {
                           <button
                             type="button"
                             onClick={() => handleSingleStatusChange(student.id, 'LATE')}
-                            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
                               currentStatus === 'LATE'
                                 ? 'bg-amber-500 text-white shadow-sm'
                                 : 'text-gray-600 dark:text-gray-400 hover:text-amber-500 dark:hover:text-amber-400'
@@ -786,7 +812,7 @@ export default function TeacherAttendancePage() {
                           <button
                             type="button"
                             onClick={() => handleSingleStatusChange(student.id, 'ABSENT')}
-                            className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                            className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
                               currentStatus === 'ABSENT'
                                 ? 'bg-red-600 text-white shadow-sm'
                                 : 'text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'
@@ -795,6 +821,32 @@ export default function TeacherAttendancePage() {
                             <XCircle className="w-3.5 h-3.5" />
                             {t('غائب')}
                           </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleSingleStatusChange(student.id, 'CANCELLED')}
+                            className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                              currentStatus === 'CANCELLED'
+                                ? 'bg-purple-600 text-white shadow-sm'
+                                : 'text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
+                            }`}
+                            title={t('إلغاء الحصة لهذا الطالب')}
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5" />
+                            {t('ملغي')}
+                          </button>
+
+                          {currentStatus && (
+                            <button
+                              type="button"
+                              onClick={() => handleClearSingleStatus(student.id)}
+                              className="py-1.5 px-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                              title={t('إلغاء التحديد والعودة لغير مسجل')}
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span className="text-[11px]">{t('مسح')}</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -833,12 +885,12 @@ export default function TeacherAttendancePage() {
                     </span>
                   </div>
 
-                  {/* Segmented Status Selector */}
-                  <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-750 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
+                  {/* Segmented Status Selector with Cancel & Clear */}
+                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-750 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
                     <button
                       type="button"
                       onClick={() => handleSingleStatusChange(student.id, 'PRESENT')}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
                         currentStatus === 'PRESENT'
                           ? 'bg-green-600 text-white shadow-sm'
                           : 'text-gray-600 dark:text-gray-400'
@@ -851,7 +903,7 @@ export default function TeacherAttendancePage() {
                     <button
                       type="button"
                       onClick={() => handleSingleStatusChange(student.id, 'LATE')}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
                         currentStatus === 'LATE'
                           ? 'bg-amber-500 text-white shadow-sm'
                           : 'text-gray-600 dark:text-gray-400'
@@ -864,7 +916,7 @@ export default function TeacherAttendancePage() {
                     <button
                       type="button"
                       onClick={() => handleSingleStatusChange(student.id, 'ABSENT')}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
                         currentStatus === 'ABSENT'
                           ? 'bg-red-600 text-white shadow-sm'
                           : 'text-gray-600 dark:text-gray-400'
@@ -873,6 +925,31 @@ export default function TeacherAttendancePage() {
                       <XCircle className="w-3.5 h-3.5" />
                       {t('غائب')}
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSingleStatusChange(student.id, 'CANCELLED')}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                        currentStatus === 'CANCELLED'
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'text-gray-600 dark:text-gray-400'
+                      }`}
+                      title={t('إلغاء')}
+                    >
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {t('ملغي')}
+                    </button>
+
+                    {currentStatus && (
+                      <button
+                        type="button"
+                        onClick={() => handleClearSingleStatus(student.id)}
+                        className="py-1.5 px-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-600 cursor-pointer"
+                        title={t('إلغاء التحديد')}
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -892,6 +969,18 @@ export default function TeacherAttendancePage() {
               <span className="text-amber-500 font-bold">{summary.late} {t('متأخر')}</span>
               <span className="mx-1.5 text-gray-400">•</span>
               <span className="text-red-600 font-bold">{summary.absent} {t('غائب')}</span>
+              {summary.cancelled > 0 && (
+                <>
+                  <span className="mx-1.5 text-gray-400">•</span>
+                  <span className="text-purple-600 font-bold">{summary.cancelled} {t('ملغي')}</span>
+                </>
+              )}
+              {summary.unset > 0 && (
+                <>
+                  <span className="mx-1.5 text-gray-400">•</span>
+                  <span className="text-slate-400 font-medium">{summary.unset} {t('غير مسجل')}</span>
+                </>
+              )}
             </div>
           </div>
 

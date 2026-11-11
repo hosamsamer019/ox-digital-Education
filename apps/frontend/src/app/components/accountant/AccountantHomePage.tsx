@@ -179,7 +179,7 @@ export default function AccountantHomePage() {
             {totalTillLiquidity.toLocaleString('ar-EG', { minimumFractionDigits: 2 })} {t('ج.م')}
           </div>
           <div className="text-[11px] text-blue-700 dark:text-blue-400 font-semibold flex items-center justify-between">
-            <span>{cashboxes.length > 0 ? `${cashboxes.length} خزينة نشطة` : 'خزينة الفرع الرئيسية'}</span>
+            <span>{cashboxes.length > 0 ? `${cashboxes.length} ${t('خزينة نشطة')}` : t('خزينة الفرع الرئيسية')}</span>
             <span className="font-mono text-[10px] px-1 bg-muted text-muted-foreground rounded">CB-MAIN-01</span>
           </div>
         </div>
@@ -242,7 +242,7 @@ export default function AccountantHomePage() {
                   {Number(cb.currentBalance || 0).toLocaleString('ar-EG', { minimumFractionDigits: 2 })} {t('ج.م')}
                 </span>
                 <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                  {cb.status === 'ACTIVE' ? 'نشطة ومؤمنة' : 'قيد المراجعة'}
+                  {cb.status === 'ACTIVE' ? t('نشطة ومؤمنة') : t('قيد المراجعة')}
                 </span>
               </div>
             ))
@@ -358,17 +358,17 @@ export default function AccountantHomePage() {
                         {rec.receiptNumber}
                       </td>
                       <td className="py-2.5 px-3 text-slate-800 dark:text-slate-200">
-                        {rec.student?.name || 'طالب مسجل'}
+                        {rec.student?.name || t('طالب مسجل')}
                       </td>
                       <td className="py-2.5 px-3 font-bold text-emerald-600 dark:text-emerald-400">
                         {Number(rec.amount).toLocaleString('ar-EG', { minimumFractionDigits: 2 })} {t('ج.م')}
                       </td>
                       <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
-                        {rec.receivingMethod === 'CASH' ? 'نقدي' : rec.receivingMethod === 'BANK_TRANSFER' ? 'تحويل بنكي' : 'محفظة إلكترونية'}
+                        {rec.receivingMethod === 'CASH' ? t('نقدي (Cash)') : rec.receivingMethod === 'BANK_TRANSFER' ? t('تحويل بنكي (Bank Transfer)') : t('محفظة إلكترونية (Wallet)')}
                       </td>
                       <td className="py-2.5 px-3">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200">
-                          {rec.isCancelled ? 'ملغى' : 'معتمد ومرحل'}
+                          {rec.payment?.status === 'CANCELLED' || rec.payment?.cancelledAt ? t('ملغى') : t('معتمد ومرحل')}
                         </span>
                       </td>
                       <td className="py-2.5 px-3 text-center">
@@ -427,7 +427,7 @@ export default function AccountantHomePage() {
               <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
                 <span className="text-slate-500">{t('اسم الطالب:')}</span>
                 <span className="font-bold text-foreground">
-                  {selectedReceiptForView.student?.name || 'طالب مسجل'}
+                  {selectedReceiptForView.student?.name || t('طالب مسجل')}
                 </span>
               </div>
               <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">

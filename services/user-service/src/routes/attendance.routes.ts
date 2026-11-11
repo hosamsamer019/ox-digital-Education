@@ -7,7 +7,8 @@ import {
   getAttendanceByDate,
   getAttendancePercentage,
   updateAttendanceRecord,
-  deleteAttendanceRecord
+  deleteAttendanceRecord,
+  clearAttendanceRecord
 } from '../controllers/attendance.controller.js';
 import { verifyToken, checkRole } from '../middlewares/auth.middleware.js';
 
@@ -24,6 +25,7 @@ router.get('/my-attendance', verifyToken, getStudentAttendance);
 // Teacher / Staff / Admin endpoints
 router.get('/by-date', verifyToken, checkRole(['admin', 'teacher']), getAttendanceByDate);
 router.post('/bulk', verifyToken, checkRole(['admin', 'teacher']), bulkMarkAttendance);
+router.post('/clear', verifyToken, checkRole(['admin', 'teacher']), clearAttendanceRecord);
 router.post('/', verifyToken, checkRole(['admin', 'teacher']), markAttendance);
 router.get('/student/:studentId', verifyToken, getStudentAttendanceById);
 router.get('/:studentId/percentage', verifyToken, getAttendancePercentage);

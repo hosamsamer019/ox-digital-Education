@@ -1,7 +1,7 @@
-import { useLanguage, t } from '../../../contexts/LanguageContext';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HelpCircle, ChevronDown, MessageSquare, ArrowLeft, Key, User } from 'lucide-react';
+import { HelpCircle, ChevronDown, MessageSquare, ArrowLeft, ArrowRight, Key, User } from 'lucide-react';
 
 interface FaqItem {
   question: string;
@@ -9,7 +9,7 @@ interface FaqItem {
 }
 
 export default function SupportSection() {
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const navigate = useNavigate();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
@@ -50,15 +50,17 @@ export default function SupportSection() {
     setOpenIndex(openIndex === idx ? null : idx);
   };
 
+  const ArrowIcon = isRtl ? ArrowLeft : ArrowRight;
+
   return (
     <section
       id="faq"
       aria-labelledby="faq-heading"
       className="py-16 sm:py-20 lg:py-28 bg-[#fcfcfd] dark:bg-[#0c0f17] text-slate-900 dark:text-slate-100 border-b border-slate-200/80 dark:border-slate-800 transition-colors duration-200"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 lg:gap-14 items-start">
-          {/* Header & Support Guidance Column (5 cols on desktop, static flow on tablet/mobile) */}
+          {/* Header & Support Guidance Column */}
           <div className="lg:col-span-5 text-start lg:sticky lg:top-28 lg:self-start">
             {/* Category Pill */}
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900/60 text-purple-700 dark:text-purple-300 text-xs font-semibold mb-3.5">
@@ -89,7 +91,7 @@ export default function SupportSection() {
                 {t('إذا كان لديك استفسار متعلق بحسابك، أو تواجه صعوبة في الدخول إلى حصة أو امتحان محدد، يمكنك الدخول المباشر إلى المنصة أو بوابة الاختبارات.')}
               </p>
 
-              {/* Action Buttons: Stack on mobile and desktop sidebar; 2 columns on tablet */}
+              {/* Action Buttons */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
                 <button
                   type="button"
@@ -98,10 +100,10 @@ export default function SupportSection() {
                 >
                   <span className="flex items-center gap-2.5 min-w-0">
                     <User className="w-4 h-4 text-red-400 shrink-0" aria-hidden="true" />
-                    <span className="break-words leading-snug">{t('تسجيل الدخول للمساعدة الفنية المباشرة')}</span>
+                    <span className="break-words leading-snug">{t('تسجيل الدخول للمساعدة الفنية المباشرة', 'Sign In for Direct Support')}</span>
                   </span>
-                  <ArrowLeft
-                    className="w-4 h-4 text-slate-400 group-hover:text-white shrink-0 rtl:rotate-0 ltr:rotate-180 transition-transform group-hover:rtl:-translate-x-0.5 group-hover:ltr:translate-x-0.5"
+                  <ArrowIcon
+                    className="w-4 h-4 text-slate-400 group-hover:text-white shrink-0 transition-transform"
                     aria-hidden="true"
                   />
                 </button>
@@ -113,10 +115,10 @@ export default function SupportSection() {
                 >
                   <span className="flex items-center gap-2.5 min-w-0">
                     <Key className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />
-                    <span className="break-words leading-snug">{t('التحقق من كود الامتحان الخارجي')}</span>
+                    <span className="break-words leading-snug">{t('التحقق من كود الامتحان الخارجي', 'Verify External Exam Code')}</span>
                   </span>
-                  <ArrowLeft
-                    className="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white shrink-0 rtl:rotate-0 ltr:rotate-180 transition-transform group-hover:rtl:-translate-x-0.5 group-hover:ltr:translate-x-0.5"
+                  <ArrowIcon
+                    className="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white shrink-0 transition-transform"
                     aria-hidden="true"
                   />
                 </button>
@@ -124,7 +126,7 @@ export default function SupportSection() {
             </div>
           </div>
 
-          {/* FAQ Accordion Column (7 cols on desktop) */}
+          {/* FAQ Accordion Column */}
           <div className="lg:col-span-7 space-y-3.5 w-full">
             {faqs.map((faq, idx) => {
               const isOpen = openIndex === idx;
@@ -148,7 +150,7 @@ export default function SupportSection() {
                     aria-controls={answerId}
                     className="w-full text-start p-5 sm:p-6 flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-slate-900 dark:text-white hover:text-[#9e1b1b] dark:hover:text-red-400 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9e1b1b] focus-visible:ring-inset"
                   >
-                    <span className="leading-snug break-words min-w-0">{faq.question}</span>
+                    <span className="leading-snug break-words min-w-0">{t(faq.question)}</span>
                     <ChevronDown
                       className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 ${
                         isOpen ? 'transform rotate-180 text-[#9e1b1b] dark:text-red-400' : ''
@@ -164,7 +166,7 @@ export default function SupportSection() {
                       aria-labelledby={questionId}
                       className="px-5 sm:px-6 pb-5 pt-2 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed sm:leading-loose border-t border-slate-100 dark:border-slate-800/80 break-words"
                     >
-                      {faq.answer}
+                      {t(faq.answer)}
                     </div>
                   )}
                 </div>

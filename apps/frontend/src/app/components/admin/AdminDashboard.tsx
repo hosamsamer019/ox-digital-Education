@@ -1,4 +1,5 @@
 import { useLanguage, t } from '../../contexts/LanguageContext';
+import { useSmartNavigationCounters } from '../../hooks/useSmartNavigationCounters';
 import AccountSettingsPage from '../shared/AccountSettingsPage';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import {
@@ -31,7 +32,7 @@ export const adminMenuItems: MenuItem[] = [
   { path: '/admin/branches', icon: Building2, label: 'أداء وفروع المؤسسة', labelKey: 'adminMenuBranches' },
   { path: '/admin/accounts', icon: Landmark, label: 'الحسابات والإدارة المالية', labelKey: 'adminMenuAccounts' },
   { path: '/admin/team', icon: Users, label: 'إدارة فريق العمل والمحاسبين', labelKey: 'adminMenuTeam' },
-  { path: '/admin/approvals', icon: ShieldCheck, label: 'مركز الموافقات والاعتمادات', labelKey: 'adminMenuApprovals', badge: 3 },
+  { path: '/admin/approvals', icon: ShieldCheck, label: 'مركز الموافقات والاعتمادات', labelKey: 'adminMenuApprovals' },
   { path: '/admin/cashbox', icon: Vault, label: 'إدارة الخزائن المركزية', labelKey: 'adminMenuCashbox' },
   { path: '/admin/receipts', icon: Receipt, label: 'رقابة المقبوضات والإيصالات', labelKey: 'adminMenuReceipts' },
   { path: '/admin/financial-policy', icon: Settings2, label: 'حوكمة الرسوم والمهلة', labelKey: 'adminMenuPolicy' },
@@ -50,9 +51,12 @@ export const adminMenuItems: MenuItem[] = [
 
 export default function AdminDashboard() {
   const { t, isRtl } = useLanguage();
+  const { applyBadgesToMenuItems } = useSmartNavigationCounters();
+  const dynamicMenuItems = applyBadgesToMenuItems(adminMenuItems);
+
   return (
     <SharedLayout
-      menuItems={adminMenuItems}
+      menuItems={dynamicMenuItems}
       title="OX-DIGITAL Education"
       subtitle={t('الإدارة العامة الموحدة والحوكمة المالية')}
       accentColor="#9e1b1b"

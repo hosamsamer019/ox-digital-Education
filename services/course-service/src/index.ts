@@ -76,22 +76,43 @@ io.use(async (socket, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
     socket.data.user = decoded;
-    
-    // Admin namespace
-    if (decoded.role === 'ADMIN') socket.join('admin');
-    
-    // Teacher namespace
-    if (decoded.role === 'TEACHER') {
-      socket.join('teachers');
-      // Join all courses this teacher owns
-      const courses = await db.course.findMany({ where: { teacherId: decoded.userId }, select: { id: true } });
-      courses.forEach(c => socket.join(`course:${c.id}`));
+    const resolvedUserId = decoded.userId || decoded.id;
+    const userRole = (decoded.role || '').toUpperCase();
+
+    // Always join own user room for targeted individual notifications
+    if (resolvedUserId) {
+      socket.join(`user:${resolvedUserId}`);
     }
     
-    // Student namespace
-    if (decoded.role.includes('STUDENT') || decoded.role === 'PARENT') {
-      const enrollments = await db.courseEnrollment.findMany({ where: { studentId: decoded.userId }, select: { courseId: true } });
-      enrollments.forEach(e => socket.join(`course:${e.courseId}`));
+    // Scoped Admin & Primary Manager namespace: strictly scoped by institution/branch to prevent cross-tenant data leakage.
+    // NOTE: Global 'admin' room and unissued SUPER_ADMIN/isPlatformSuperAdmin claims are removed (fail-closed).
+    if (userRole === 'ADMIN' || userRole === 'PRIMARY_MANAGER') {
+      if (decoded.institutionId) {
+        socket.join(`institution:${decoded.institutionId}:admin`);
+        if (decoded.branchId) {
+          socket.join(`branch:${decoded.branchId}:admin`);
+        }
+      } else {
+        // FAIL-CLOSED: Admin/manager without institutionId is strictly confined to user:${resolvedUserId}
+        logger.warn(`[Socket Security] User ${resolvedUserId} (${userRole}) lacks institutionId; tenant admin room access denied.`);
+      }
+    }
+    
+    // Teacher namespace: strictly private teacher room + owned course rooms (NO global 'teachers' broadcast room)
+    if (userRole === 'TEACHER') {
+      if (resolvedUserId) {
+        socket.join(`teacher:${resolvedUserId}`);
+        const courses = await db.course.findMany({ where: { teacherId: resolvedUserId }, select: { id: true } });
+        courses.forEach(c => socket.join(`course:${c.id}`));
+      }
+    }
+    
+    // Student & Parent namespace
+    if (userRole.includes('STUDENT') || userRole === 'PARENT') {
+      if (resolvedUserId) {
+        const enrollments = await db.courseEnrollment.findMany({ where: { studentId: resolvedUserId }, select: { courseId: true } });
+        enrollments.forEach(e => socket.join(`course:${e.courseId}`));
+      }
     }
     
     next();

@@ -29,8 +29,8 @@ export const ParentSubscriptionPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await userService.getParentChildren();
-      const kids = Array.isArray(res) ? res : res?.data || [];
+      const res = await userService.getChildren();
+      const kids = Array.isArray(res) ? res : [];
       setChildren(kids);
 
       // Load financial account for each child

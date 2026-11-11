@@ -1,8 +1,8 @@
-import { useLanguage, t } from '../../../contexts/LanguageContext';
+import { useLanguage } from '../../../contexts/LanguageContext';
 import { ShieldCheck, Eye, Lock, FileCheck2, Cpu } from 'lucide-react';
 
 export default function SecurityProof() {
-  const { t } = useLanguage();
+  const { t, isRtl } = useLanguage();
   const pillars = [
     {
       icon: Eye,
@@ -32,9 +32,9 @@ export default function SecurityProof() {
 
   return (
     <section id="security" className="py-20 lg:py-28 bg-white dark:bg-[#090b10] text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800 transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" dir="rtl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" dir={isRtl ? 'rtl' : 'ltr'}>
         {/* Section Header */}
-        <div className="text-right max-w-3xl mb-14">
+        <div className={`${isRtl ? 'text-right' : 'text-left'} max-w-3xl mb-14`}>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold mb-3">
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>{t('النزاهة الأكاديمية وحماية المحتوى')}</span>
@@ -59,16 +59,16 @@ export default function SecurityProof() {
                   <item.icon className="w-5 h-5" />
                 </div>
                 <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mb-2.5">
-                  {item.title}
+                  {t(item.title)}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
-                  {item.description}
+                  {t(item.description)}
                 </p>
               </div>
 
               <div className="pt-4 border-t border-slate-200 dark:border-slate-800/80 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400/90 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span>{item.detail}</span>
+                <span>{t(item.detail)}</span>
               </div>
             </div>
           ))}

@@ -9,6 +9,7 @@ export interface UpdateProfileData {
 
 export interface UserFilters {
   search?: string;
+  role?: string;
   page?: number;
   limit?: number;
 }
@@ -124,12 +125,12 @@ export const userService = {
     return response.data;
   },
 
-  markAttendance: async (payload: { studentId: string; status: 'PRESENT' | 'ABSENT' | 'LATE'; date?: string }): Promise<any> => {
+  markAttendance: async (payload: { studentId: string; status: 'PRESENT' | 'ABSENT' | 'LATE' | 'CANCELLED'; date?: string }): Promise<any> => {
     const response = await attendanceApi.post('/', payload);
     return response.data;
   },
 
-  updateAttendance: async (id: string, payload: { status?: 'PRESENT' | 'ABSENT' | 'LATE'; date?: string }): Promise<any> => {
+  updateAttendance: async (id: string, payload: { status?: 'PRESENT' | 'ABSENT' | 'LATE' | 'CANCELLED'; date?: string }): Promise<any> => {
     const response = await attendanceApi.put(`/${id}`, payload);
     return response.data;
   },
@@ -139,7 +140,12 @@ export const userService = {
     return response.data;
   },
 
-  bulkMarkAttendance: async (payload: { records: Array<{ studentId: string; status: 'PRESENT' | 'ABSENT' | 'LATE' }>; date?: string }): Promise<any> => {
+  clearAttendance: async (payload: { studentId: string; date?: string }): Promise<any> => {
+    const response = await attendanceApi.post('/clear', payload);
+    return response.data;
+  },
+
+  bulkMarkAttendance: async (payload: { records: Array<{ studentId: string; status: 'PRESENT' | 'ABSENT' | 'LATE' | 'CANCELLED' | 'UNSET' }>; date?: string }): Promise<any> => {
     const response = await attendanceApi.post('/bulk', payload);
     return response.data;
   },
@@ -170,8 +176,20 @@ export const userService = {
   },
 
   getLinkedRelationships: async (): Promise<any> => {
-    const response = await userApi.get('/linked-relationships');
-    return response.data;
+    try {
+      const response = await userApi.get('/linked-relationships');
+      return response.data;
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        try {
+          const fallbackRes = await userApi.get('/account/relationships');
+          return fallbackRes.data;
+        } catch {
+          return { success: false, data: null };
+        }
+      }
+      return { success: false, data: null };
+    }
   }
 };
 

@@ -128,11 +128,13 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
       whereClause.role = roleFilter;
     }
 
-    // Tenant Isolation (OD-701): Scope users to authenticated institution
-    const tenantContext = (req as any).tenantContext;
-    if (tenantContext && !tenantContext.isPlatformSuperAdmin && tenantContext.institutionId) {
-      whereClause.institutionId = tenantContext.institutionId;
+    // Fail-closed Tenant Isolation (OD-701): Scope users strictly to authenticated institution
+    const authoritativeInstitutionId =
+      (req as any).tenantContext?.institutionId ?? (req.user as any)?.institutionId ?? null;
+    if (!authoritativeInstitutionId) {
+      return res.json({ data: [], total: 0, page, limit, totalPages: 0 });
     }
+    whereClause.institutionId = authoritativeInstitutionId;
 
     const requesterRole = (req.user?.role || '').toUpperCase();
     const isPrimaryManager = isAuthorizedPrimaryManager(req.user);
@@ -162,6 +164,15 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
           name: true,
           email: true,
           role: true,
+          branchId: true,
+          branch: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              isOnline: true
+            }
+          },
           academicLevel: true,
           country: true,
           educationLevel: true,
@@ -824,9 +835,16 @@ export const bulkDeleteUsers = async (req: AuthRequest, res: Response) => {
 
 export const getParentChildren = async (req: any, res: Response) => {
   try {
-    const parentId = req.user.userId;
+    const parentId = req.user?.userId;
+    const role = String(req.user?.role || '').toUpperCase();
+    if (!parentId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    if (role !== 'PARENT') {
+      return res.status(403).json({ message: 'Forbidden: Only parent accounts can list linked children' });
+    }
     const children = await db.user.findMany({
-      where: { parentId },
+      where: { parentId, deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -1302,15 +1320,18 @@ export const unlinkParentStudent = async (req: AuthRequest, res: Response) => {
  */
 export const getLinkedRelationships = async (req: AuthRequest, res: Response) => {
   try {
-    const userId = req.user?.userId;
-    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const userId = req.user?.userId || (req.user as any)?.id;
+    if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
     const user = await db.user.findUnique({
       where: { id: userId },
       include: {
         branch: { select: { id: true, name: true, code: true, isOnline: true } },
-        parent: { select: { id: true, name: true, email: true, phone: true } },
-        children: { select: { id: true, name: true, email: true, role: true, gradeLevel: true } },
+        parent: { select: { id: true, name: true, email: true, phone: true, deletedAt: true } },
+        children: {
+          where: { deletedAt: null },
+          select: { id: true, name: true, email: true, role: true, gradeLevel: true }
+        },
         studentTeacherLinks: {
           where: { status: 'ACTIVE' },
           include: { teacher: { select: { id: true, name: true, email: true } } }
@@ -1318,7 +1339,7 @@ export const getLinkedRelationships = async (req: AuthRequest, res: Response) =>
       }
     });
 
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     let branchAccountants: Array<{ id: string; name: string; email: string }> = [];
     if (user.branchId) {
@@ -1328,13 +1349,17 @@ export const getLinkedRelationships = async (req: AuthRequest, res: Response) =>
       });
     }
 
+    const activeParent = user.parent && !(user.parent as any).deletedAt
+      ? { id: user.parent.id, name: user.parent.name, email: user.parent.email, phone: user.parent.phone }
+      : null;
+
     return res.json({
       success: true,
       data: {
         userId: user.id,
         role: user.role,
         branch: user.branch,
-        parent: user.parent,
+        parent: activeParent,
         children: user.children,
         teachers: user.studentTeacherLinks.map(l => l.teacher),
         branchAccountants

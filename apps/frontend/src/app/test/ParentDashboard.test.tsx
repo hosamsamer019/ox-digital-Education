@@ -88,6 +88,7 @@ vi.mock('../services/analytics.service', () => ({
 vi.mock('../services/notification.service', () => ({
   notificationService: {
     getNotifications: vi.fn(),
+    getUnreadCount: vi.fn(),
     markAsRead: vi.fn(),
     markAllAsRead: vi.fn(),
   },
@@ -105,8 +106,10 @@ vi.mock('recharts', async () => {
 describe('Phase 5.2: Parent Dashboard Redesign & Data Integrity Suite', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.setItem('token', 'mock-token');
     vi.mocked(userService.getProfile).mockResolvedValue({ id: 'parent-01', name: 'حسام سامر', role: 'PARENT' } as any);
     vi.mocked(notificationService.getNotifications).mockResolvedValue(mockNotifications as any);
+    vi.mocked(notificationService.getUnreadCount).mockResolvedValue({ data: { unreadCount: 1 } } as any);
   });
 
   const renderComponent = (ui: React.ReactElement, initialEntry = '/parent/home') => {
@@ -168,7 +171,9 @@ describe('Phase 5.2: Parent Dashboard Redesign & Data Integrity Suite', () => {
     renderComponent(<ParentHomePage />);
 
     expect(await screen.findByText('أحمد حسام')).toBeInTheDocument();
-    expect(analyticsService.getParentChildOverview).toHaveBeenCalledWith('child-01');
+    await waitFor(() => {
+      expect(analyticsService.getParentChildOverview).toHaveBeenCalledWith('child-01');
+    });
 
     // Click on Sara
     fireEvent.click(screen.getByText('سارة حسام'));
@@ -235,9 +240,11 @@ describe('Phase 5.2: Parent Dashboard Redesign & Data Integrity Suite', () => {
     expect(notificationMenuItems.length).toBeGreaterThan(0);
     expect(screen.queryByText('التواصل مع المعلم')).not.toBeInTheDocument();
 
-    // Unread count badge should be 1 (from mockNotifications where 1 is unread)
-    const badges = screen.getAllByText('1');
-    expect(badges.length).toBeGreaterThan(0);
+    // Unread count badge should be 1 (from authoritative getUnreadCount)
+    await waitFor(() => {
+      const badges = screen.getAllByText('1');
+      expect(badges.length).toBeGreaterThan(0);
+    });
   });
 
   // 7. Error & Retry Resilience

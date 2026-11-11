@@ -51,6 +51,7 @@ export default function ApprovalsPage() {
         await accountingService.approveExpenseVoucher(item.id, 'APPROVE');
       }
       setQueue(prev => prev.map(q => (q.id === item.id ? { ...q, status: 'APPROVED' } : q)));
+      window.dispatchEvent(new Event('ox:counters-refresh'));
       toast.success(`تم اعتماد وتوقيع الطلب بنجاح: ${item.referenceNumber}`, {
         description: 'أصبح السند معتمداً ومتاحاً لأمين الصندوق لصرف النقدية'
       });
@@ -68,6 +69,7 @@ export default function ApprovalsPage() {
         await accountingService.approveExpenseVoucher(item.id, 'REJECT');
       }
       setQueue(prev => prev.map(q => (q.id === item.id ? { ...q, status: 'REJECTED' } : q)));
+      window.dispatchEvent(new Event('ox:counters-refresh'));
       toast.error(`تم رفض الطلب وإعادته للمحاسب: ${item.referenceNumber}`);
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'خطأ في رفض الطلب');

@@ -28,6 +28,22 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(6, 'كلمة المرور الجديدة يجب ألا تقل عن 6 أحرف')
 });
 
+/**
+ * Authoritative financial status resolution for auth responses (DEF-AUDIT-005).
+ * Enforces fail-closed semantics:
+ * - ACTIVE, GRACE_PERIOD, RESTRICTED, LOCKED are returned when explicitly present.
+ * - Missing (null, undefined, empty) or unrecognized/corrupted values fail closed to LOCKED.
+ */
+export function resolveAuthFinancialStatus(status?: string | null): 'ACTIVE' | 'GRACE_PERIOD' | 'LOCKED' | 'RESTRICTED' {
+  if (!status) return 'LOCKED';
+  const norm = String(status).trim().toUpperCase();
+  if (norm === 'ACTIVE') return 'ACTIVE';
+  if (norm === 'GRACE_PERIOD') return 'GRACE_PERIOD';
+  if (norm === 'RESTRICTED') return 'RESTRICTED';
+  if (norm === 'LOCKED') return 'LOCKED';
+  return 'LOCKED'; // fail-closed for unknown/corrupted values
+}
+
 
 export const register = async (req: Request, res: Response) => {
   return res.status(403).json({ 
@@ -140,7 +156,7 @@ export const login = async (req: Request, res: Response) => {
         branchId: user.branchId,
         isPrimaryManager: Boolean(user.isPrimaryManager),
         mustChangePassword: Boolean((user as any).mustChangePassword),
-        financialAccessStatus: (user as any).financialAccessStatus || 'ACTIVE',
+        financialAccessStatus: resolveAuthFinancialStatus((user as any).financialAccessStatus),
         academicLevel: user.academicLevel,
         country: user.country,
         educationLevel: user.educationLevel,
@@ -159,7 +175,27 @@ export const getMe = async (req: any, res: Response) => {
   try {
     const user = await db.user.findUnique({
       where: { id: req.user?.userId },
-      select: { id: true, name: true, email: true, role: true, institutionId: true, branchId: true, isPrimaryManager: true, mustChangePassword: true, financialAccessStatus: true, academicLevel: true, country: true, educationLevel: true, gradeLevel: true, language: true, phone: true, theme: true }
+      select: { 
+        id: true, 
+        name: true, 
+        email: true, 
+        role: true, 
+        institutionId: true, 
+        branchId: true, 
+        isPrimaryManager: true, 
+        mustChangePassword: true, 
+        financialAccessStatus: true, 
+        academicLevel: true, 
+        country: true, 
+        educationLevel: true, 
+        gradeLevel: true, 
+        language: true, 
+        phone: true, 
+        theme: true,
+        branch: {
+          select: { id: true, name: true, code: true, isOnline: true }
+        }
+      }
     });
     
     if (!user) {
@@ -170,7 +206,7 @@ export const getMe = async (req: any, res: Response) => {
       ...user,
       role: user.role,
       mustChangePassword: Boolean((user as any).mustChangePassword),
-      financialAccessStatus: (user as any).financialAccessStatus || 'ACTIVE'
+      financialAccessStatus: resolveAuthFinancialStatus((user as any).financialAccessStatus)
     });
   } catch (error) {
     res.status(500).json({ message: 'Internal server error' });

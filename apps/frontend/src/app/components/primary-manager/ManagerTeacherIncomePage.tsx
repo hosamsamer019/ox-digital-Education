@@ -110,7 +110,7 @@ export default function ManagerTeacherIncomePage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => loadReport()}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            className="flex items-center gap-1.5 px-3 py-2 text-sm text-card-foreground bg-card border border-border rounded-lg hover:bg-muted transition"
           >
             <RefreshCw className="w-4 h-4" />
             {t('تحديث')}
@@ -126,7 +126,7 @@ export default function ManagerTeacherIncomePage() {
       </div>
 
       {/* Teacher Selector */}
-      <div className="p-4 bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center gap-4">
+      <div className="p-4 bg-card text-card-foreground border border-border rounded-2xl shadow-sm flex flex-col sm:flex-row items-center gap-4">
         <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
           <User className="w-4 h-4 text-[#9e1b1b]" />
           {t('اختر المعلم المستهدف:')}
@@ -172,7 +172,7 @@ export default function ManagerTeacherIncomePage() {
               </div>
             </div>
 
-            <div className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm">
+            <div className="p-5 bg-card text-card-foreground border border-border rounded-2xl shadow-sm">
               <div className="flex items-center justify-between text-gray-600">
                 <span className="text-sm font-medium">{t('تحصيلات الشهر (')}{selectedMonth})</span>
                 <Calendar className="w-5 h-5 text-emerald-600" />
@@ -185,7 +185,7 @@ export default function ManagerTeacherIncomePage() {
               </div>
             </div>
 
-            <div className="p-5 bg-white border border-gray-200 rounded-2xl shadow-sm">
+            <div className="p-5 bg-card text-card-foreground border border-border rounded-2xl shadow-sm">
               <div className="flex items-center justify-between text-gray-600">
                 <span className="text-sm font-medium">{t('اختيار الشهر المالي')}</span>
                 <TrendingUp className="w-5 h-5 text-blue-600" />
@@ -210,7 +210,7 @@ export default function ManagerTeacherIncomePage() {
 
           {/* Breakdown */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-4">
+            <div className="p-6 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-4">
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-[#9e1b1b]" />
                 {t('طرق التحصيل لشهر')} {selectedMonth}
@@ -231,7 +231,7 @@ export default function ManagerTeacherIncomePage() {
               </div>
             </div>
 
-            <div className="p-6 bg-white border border-gray-200 rounded-2xl shadow-sm space-y-4">
+            <div className="p-6 bg-card text-card-foreground border border-border rounded-2xl shadow-sm space-y-4">
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-[#9e1b1b]" />
                 {t('تحصيلات الصفوف لشهر')} {selectedMonth}

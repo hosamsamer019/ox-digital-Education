@@ -71,7 +71,7 @@ export default function CashboxPage() {
 
         <button
           onClick={fetchCashboxes}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition self-start sm:self-auto cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-card-foreground bg-card border border-border rounded-xl hover:bg-muted transition self-start sm:self-auto cursor-pointer"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           <span>{t('تحديث الخزائن')}</span>

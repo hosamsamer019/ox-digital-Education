@@ -10,6 +10,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { notificationService } from '../../services/notification.service';
 import NotificationsPanel from './NotificationsPanel';
 import ScrollToTopButton from '../ui/ScrollToTopButton';
+import ContextualGuidanceBanner from './ContextualGuidanceBanner';
 
 export interface MenuItem {
   path: string;
@@ -49,7 +50,11 @@ export default function SharedLayout({
   const [unreadCount, setUnreadCount] = useState<number>(0);
 
   const fetchUnreadCount = async () => {
-    if (!user) return;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!user || !token) {
+      setUnreadCount(0);
+      return;
+    }
     try {
       const res = await notificationService.getUnreadCount();
       setUnreadCount(typeof res.data?.unreadCount === 'number' ? res.data.unreadCount : 0);
@@ -61,8 +66,15 @@ export default function SharedLayout({
   useEffect(() => {
     fetchUnreadCount();
     const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
+    const handleRefresh = () => {
+      fetchUnreadCount();
+    };
+    window.addEventListener('ox:counters-refresh', handleRefresh);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('ox:counters-refresh', handleRefresh);
+    };
+  }, [user?.id]);
 
   const handleLogout = () => {
     logout();
@@ -364,6 +376,7 @@ export default function SharedLayout({
           role="main"
           className="flex-1 overflow-y-auto outline-hidden relative bg-background text-foreground"
         >
+          <ContextualGuidanceBanner />
           {children}
           <ScrollToTopButton />
         </main>
